@@ -1,0 +1,6 @@
+sonar.organization=your-organization-key
+sonar.projectKey=Your-Org_your-project-key
+
+sonar.sources=.
+sonar.exclusions=**/migrations/**,**/tests/**,**/__pycache__/**,**/*.pyc
+sonar.python.coverage.reportPaths=coverage.xml

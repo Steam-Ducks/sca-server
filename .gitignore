@@ -16,3 +16,5 @@ env/
 .vscode/
 .idea/
 .claude
+.scannerwork
+sonar-project.properties
