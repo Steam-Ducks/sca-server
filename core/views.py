@@ -4,4 +4,4 @@ from rest_framework.response import Response
 
 @api_view(["GET"])
 def health_check(request):
-    return Response({"status": "ok", "version": "1.0.0"})
+    return Response({"status": "ok"})
