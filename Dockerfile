@@ -19,4 +19,8 @@ RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 # Copia o código
 COPY . .
 
+# Expõe porta
 EXPOSE 8000
+
+# Comando padrão (pode ser sobrescrito pelo docker-compose)
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

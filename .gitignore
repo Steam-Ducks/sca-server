@@ -18,3 +18,12 @@ env/
 .claude
 .scannerwork
 sonar-project.properties
+# Logs
+*.log
+logs/
+log/
+
+# Manter estrutura da pasta de logs
+!logs/.gitkeep
+*.out
+*.err
