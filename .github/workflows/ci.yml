@@ -27,7 +27,7 @@ jobs:
 
   test:
     name: Tests & Coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  
 
     services:
       postgres:
