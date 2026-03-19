@@ -29,12 +29,16 @@ SECRET_KEY = os.environ.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "0") == "1"
 
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
+if DEBUG:
+    ALLOWED_HOSTS = ["*"]
+else:
+    ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    "django_prometheus",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -50,6 +54,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -58,6 +63,9 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "core.middleware.RequestLogMiddleware",
+    "core.middleware.ErrorLogMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
@@ -87,13 +95,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'app_db'),
-        'USER': os.environ.get('DB_USER', 'app_user'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'app_password'),
-        'HOST': os.environ.get('DB_HOST', 'postgres'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER"),
+        "PASSWORD": os.environ.get("DB_PASSWORD"),
+        "HOST": os.environ.get("DB_HOST"),
+        "PORT": os.environ.get("DB_PORT"),
     }
 }
 
@@ -138,3 +146,30 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# LOGGING
+
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+os.makedirs(LOG_DIR, exist_ok=True)
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "json": {
+            "format": '{"level":"%(levelname)s","message":"%(message)s","time":"%(asctime)s"}'
+        },
+    },
+    "handlers": {
+        "file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(LOG_DIR, "app.log"),
+            "formatter": "json",
+        },
+    },
+    "root": {
+        "handlers": ["file"],
+        "level": "INFO",
+    },
+}
