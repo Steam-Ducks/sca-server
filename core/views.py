@@ -3,6 +3,7 @@ import logging
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET, require_POST
 
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -11,13 +12,14 @@ from rest_framework import status
 logger = logging.getLogger(__name__)
 
 
-# Healthcheck
+# Healthcheck (safe)
 @api_view(["GET"])
 def health_check(request):
     return Response({"status": "ok"}, status=status.HTTP_200_OK)
 
 
-# Simple log test
+# Simple log test (safe)
+@require_GET
 def test_log(request):
     logger.info("test endpoint accessed")
     return JsonResponse({"status": "ok"})
@@ -25,10 +27,8 @@ def test_log(request):
 
 # Receives logs from the frontend
 @csrf_exempt
+@require_POST
 def receive_log(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "invalid method"}, status=400)
-
     try:
         data = json.loads(request.body or "{}")
 
@@ -43,10 +43,8 @@ def receive_log(request):
 
 # Receives metrics from the frontend
 @csrf_exempt
+@require_POST
 def receive_metric(request):
-    if request.method != "POST":
-        return JsonResponse({"error": "invalid method"}, status=400)
-
     try:
         data = json.loads(request.body or "{}")
 
