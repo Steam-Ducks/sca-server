@@ -31,16 +31,12 @@ def receive_log(request):
     try:
         data = json.loads(request.body or "{}")
 
-        logger.info("frontend_log", extra={
-            "custom_data": data
-        })
+        logger.info("frontend_log", extra={"custom_data": data})
 
         return JsonResponse({"status": "ok"})
 
     except Exception as e:
-        logger.error("receive_log_error", extra={
-            "error": str(e)
-        })
+        logger.error("receive_log_error", extra={"error": str(e)})
         return JsonResponse({"error": str(e)}, status=500)
 
 
@@ -53,14 +49,10 @@ def receive_metric(request):
     try:
         data = json.loads(request.body or "{}")
 
-        logger.info("frontend_metric", extra={
-            "custom_data": data
-        })
+        logger.info("frontend_metric", extra={"custom_data": data})
 
         return JsonResponse({"status": "ok"})
 
     except Exception as e:
-        logger.error("receive_metric_error", extra={
-            "error": str(e)
-        })
+        logger.error("receive_metric_error", extra={"error": str(e)})
         return JsonResponse({"error": str(e)}, status=500)

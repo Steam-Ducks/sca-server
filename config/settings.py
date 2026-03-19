@@ -95,13 +95,13 @@ WSGI_APPLICATION = "config.wsgi.application"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'app_db'),
-        'USER': os.environ.get('DB_USER', 'app_user'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'app_password'),
-        'HOST': os.environ.get('DB_HOST', 'postgres'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DB_NAME", "app_db"),
+        "USER": os.environ.get("DB_USER", "app_user"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "app_password"),
+        "HOST": os.environ.get("DB_HOST", "postgres"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
 
@@ -155,13 +155,11 @@ os.makedirs(LOG_DIR, exist_ok=True)
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-
     "formatters": {
         "json": {
             "format": '{"level":"%(levelname)s","message":"%(message)s","time":"%(asctime)s"}'
         },
     },
-
     "handlers": {
         "file": {
             "level": "INFO",
@@ -170,7 +168,6 @@ LOGGING = {
             "formatter": "json",
         },
     },
-
     "root": {
         "handlers": ["file"],
         "level": "INFO",
