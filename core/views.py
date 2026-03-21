@@ -55,3 +55,21 @@ def receive_metric(request):
     except Exception as e:
         logger.error("receive_metric_error", extra={"error": str(e)})
         return JsonResponse({"error": str(e)}, status=500)
+
+# DASHBOARD
+# Returns dashboard statistics and optionally applies a date range filter.
+@api_view(["GET"])
+def dashboard_view(request):
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+
+    # Static mock data! In a real implementation, this would query the database and apply filters.
+    data = {
+        "users": 128,
+        "orders": 54,
+        "alerts": 3,
+        "start_date": start_date,
+        "end_date": end_date,
+    }
+
+    return Response(data, status=status.HTTP_200_OK)
