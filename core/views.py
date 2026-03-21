@@ -59,6 +59,7 @@ def receive_metric(request):
 # DASHBOARD
 # Returns dashboard statistics and optionally applies a date range filter.
 @api_view(["GET"])
+@require_GET
 def dashboard_view(request):
     start_date = request.GET.get("start_date")
     end_date = request.GET.get("end_date")
@@ -68,8 +69,10 @@ def dashboard_view(request):
         "users": 128,
         "orders": 54,
         "alerts": 3,
+        "status": "ok",
         "start_date": start_date,
         "end_date": end_date,
+        "message": "Dashboard data placeholder"
     }
 
     return Response(data, status=status.HTTP_200_OK)
