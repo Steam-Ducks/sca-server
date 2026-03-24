@@ -11,3 +11,4 @@ django-cors-headers==4.9.0
 djangorestframework
 django-cors-headers
 django-prometheus
+sqlalchemy
