@@ -41,8 +41,8 @@ def _build_df(endpoint: str, file: str) -> pd.DataFrame:
 
         _create_table(df, ENGINE, file.replace(".parquet", ""))
 
-    except:
-        logging.error(f"It was not possible to ingest file {file}.")
+    except Exception as e:
+        logging.error(f"It was not possible to ingest file {file}. Error {e}")
 
 
 def _make_request(endpoint: str):
