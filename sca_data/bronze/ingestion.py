@@ -1,9 +1,12 @@
 from sca_data.db.connection import getOrCreate
+from sqlalchemy import text
 import pandas as pd
 import requests
 import logging
 import datetime
 
+ENGINE = getOrCreate()
+ENDPOINT = "https://sca-api-sb1c.onrender.com/"
 
 logger = logging.getLogger(__name__)
 
@@ -11,9 +14,14 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s | %(name)s | %(levelname)s | %(message)s"
 )
 
-ENGINE = getOrCreate()
-ENDPOINT = "https://sca-api-sb1c.onrender.com/"
-
+def _create_schema_if_not_exists(engine):
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("CREATE SCHEMA IF NOT EXISTS bronze"))
+            conn.commit()
+        logging.info("Schema 'bronze' is ready.")
+    except Exception as e:
+        logging.error(f"Error creating schema 'bronze': {e}")
 
 def _create_table(df: pd.DataFrame, engine, tb_name: str):
     logging.info(f"Writing {tb_name} ...")
@@ -56,5 +64,5 @@ def _make_request(endpoint: str):
         logging.error(f"Error: {e}")
         return []
 
-
+_create_schema_if_not_exists(ENGINE) 
 _make_request(ENDPOINT)
