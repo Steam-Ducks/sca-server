@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     # project apps
     "core",
     "users",
+    "sca_data",
 ]
 
 MIDDLEWARE = [
