@@ -22,7 +22,7 @@ services:
       python manage.py runserver 0.0.0.0:8000 --noreload
       "
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')"]
       interval: 5s
       timeout: 2s
       retries: 5
