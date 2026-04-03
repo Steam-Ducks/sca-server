@@ -4,7 +4,9 @@ from sca_data.models import SilverPedidoCompra
 
 
 class MaterialsTableSerializer(serializers.ModelSerializer):
-    valor_total = serializers.DecimalField(max_digits=12, decimal_places=2, coerce_to_string=False)
+    valor_total = serializers.DecimalField(
+        max_digits=12, decimal_places=2, coerce_to_string=False
+    )
     material = serializers.SerializerMethodField()
     projeto = serializers.SerializerMethodField()
     programa = serializers.SerializerMethodField()
@@ -40,7 +42,11 @@ class MaterialsTableSerializer(serializers.ModelSerializer):
         return None
 
     def get_programa(self, obj):
-        if obj.solicitacao and obj.solicitacao.projeto and obj.solicitacao.projeto.programa:
+        if (
+            obj.solicitacao
+            and obj.solicitacao.projeto
+            and obj.solicitacao.projeto.programa
+        ):
             return obj.solicitacao.projeto.programa.nome_programa
         return None
 
