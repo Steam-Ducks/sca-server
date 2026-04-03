@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     # project apps
     "core",
     "users",
+    "sca_data.apps.ScaDataConfig",
+    "materials",
 ]
 
 MIDDLEWARE = [
@@ -94,6 +96,8 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+db_ssl_mode = os.environ.get("DB_SSL_MODE")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -102,11 +106,12 @@ DATABASES = {
         "PASSWORD": os.environ.get("DB_PASSWORD"),
         "HOST": os.environ.get("DB_HOST"),
         "PORT": os.environ.get("DB_PORT"),
-        "OPTIONS": {
-            "sslmode": os.environ.get("DB_SSL_MODE", "require"),
-        },
+        "OPTIONS": {},
     }
 }
+
+if db_ssl_mode:
+    DATABASES["default"]["OPTIONS"]["sslmode"] = db_ssl_mode
 
 
 # Password validation
