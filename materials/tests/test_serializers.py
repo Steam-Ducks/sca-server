@@ -31,7 +31,7 @@ def test_materials_serializer_retorna_dados_corretos():
     solicitacao = SilverSolicitacaoCompra.objects.create(
         id=1, numero_solicitacao="SC-001", projeto=projeto, material=material, quantidade=10, silver_ingested_at=now
     )
-    pedido = SilverPedidoCompra.objects.create(
+    SilverPedidoCompra.objects.create(
         id=1, numero_pedido="PC-001", solicitacao=solicitacao, fornecedor=fornecedor, valor_total=1500.00, silver_ingested_at=now
     )
 
