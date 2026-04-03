@@ -29,8 +29,8 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Instala APENAS a biblioteca de runtime do PostgreSQL (essencial para rodar, mas leve)
-RUN apk add --no-cache libpq
+# Instala utilit?rios de runtime do PostgreSQL e HTTP usados no compose
+RUN apk add --no-cache libpq postgresql-client curl
 
 # Copia apenas as bibliotecas instaladas no estágio anterior
 COPY --from=builder /root/.local /root/.local
