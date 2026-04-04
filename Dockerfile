@@ -1,3 +1,27 @@
+# --- ESTÁGIO 1: Builder (Compilação) ---
+FROM python:3.12-alpine AS builder
+
+WORKDIR /app
+
+# Impedir que o Python gere arquivos .pyc e garantir log em tempo real
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Instala dependências de compilação (apenas para o build)
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    postgresql-dev \
+    python3-dev \
+    libffi-dev
+
+# Instala as dependências do Python no diretório de usuário para facilitar a cópia
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install --user --no-cache-dir -r requirements.txt
+
+
+# --- ESTÁGIO 2: Final (Produção) ---
 FROM python:3.12-alpine
 
 WORKDIR /app
@@ -5,22 +29,17 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Dependências do sistema para PostgreSQL e compilação
-RUN apk add --no-cache \
-    postgresql-client \
-    gcc \
-    musl-dev \
-    postgresql-dev
+# Instala utilit?rios de runtime do PostgreSQL e HTTP usados no compose
+RUN apk add --no-cache libpq postgresql-client curl
 
-# Instala dependências Python
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
+# Copia apenas as bibliotecas instaladas no estágio anterior
+COPY --from=builder /root/.local /root/.local
+# Garante que os binários instalados (como o gunicorn) fiquem no PATH
+ENV PATH=/root/.local/bin:$PATH
 
-# Copia o código
+# Copia o código do seu projeto SCARS
 COPY . .
 
-# Expõe porta
-EXPOSE 8000
-
-# Comando padrão (pode ser sobrescrito pelo docker-compose)
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Em produção, use Gunicorn em vez do runserver (mais estável e leve)
+# Certifique-se de ter 'gunicorn' no seu requirements.txt
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "scars.wsgi:application"]
