@@ -2,6 +2,7 @@
 Conftest: mocks the DB connection before any sca_data.db module is imported.
 This prevents real DB connections during unit tests.
 """
+
 import sys
 from unittest.mock import MagicMock
 

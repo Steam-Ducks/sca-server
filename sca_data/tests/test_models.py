@@ -38,13 +38,20 @@ class TestSilverPrograma:
         assert _get_field(SilverPrograma, "status").max_length == 50
 
     def test_optional_fields_allow_null(self):
-        for fname in ("gerente_programa", "gerente_tecnico", "data_inicio", "data_fim_prevista", "status"):
+        for fname in (
+            "gerente_programa",
+            "gerente_tecnico",
+            "data_inicio",
+            "data_fim_prevista",
+            "status",
+        ):
             field = _get_field(SilverPrograma, fname)
             assert field.null is True, f"{fname} should allow null"
 
     def test_silver_ingested_at_is_datetimefield(self):
-        assert isinstance(_get_field(SilverPrograma, "silver_ingested_at"), dj_models.DateTimeField)
-
+        assert isinstance(
+            _get_field(SilverPrograma, "silver_ingested_at"), dj_models.DateTimeField
+        )
 
 
 class TestSilverMaterial:
@@ -58,6 +65,7 @@ class TestSilverMaterial:
         field = _get_field(SilverMaterial, "custo_estimado")
         assert isinstance(field, dj_models.FloatField)
         assert field.null is True
+
 
 class TestSilverFornecedor:
     def test_db_table(self):
@@ -116,7 +124,9 @@ class TestSilverTarefaProjeto:
         assert field.remote_field.related_name == "tarefas"
 
     def test_estimativa_horas_is_integerfield(self):
-        assert isinstance(_get_field(SilverTarefaProjeto, "estimativa_horas"), dj_models.IntegerField)
+        assert isinstance(
+            _get_field(SilverTarefaProjeto, "estimativa_horas"), dj_models.IntegerField
+        )
 
     def test_codigo_tarefa_max_length(self):
         assert _get_field(SilverTarefaProjeto, "codigo_tarefa").max_length == 50
@@ -138,11 +148,12 @@ class TestSilverTempoTarefa:
         assert field.remote_field.related_name == "tempos"
 
     def test_horas_trabalhadas_is_floatfield(self):
-        assert isinstance(_get_field(SilverTempoTarefa, "horas_trabalhadas"), dj_models.FloatField)
+        assert isinstance(
+            _get_field(SilverTempoTarefa, "horas_trabalhadas"), dj_models.FloatField
+        )
 
     def test_horas_trabalhadas_not_nullable(self):
         assert _get_field(SilverTempoTarefa, "horas_trabalhadas").null is False
-
 
 
 class TestSilverSolicitacaoCompra:
@@ -158,10 +169,15 @@ class TestSilverSolicitacaoCompra:
         assert field.related_model is SilverMaterial
 
     def test_quantidade_is_bigintegerfield(self):
-        assert isinstance(_get_field(SilverSolicitacaoCompra, "quantidade"), dj_models.BigIntegerField)
+        assert isinstance(
+            _get_field(SilverSolicitacaoCompra, "quantidade"), dj_models.BigIntegerField
+        )
 
     def test_numero_solicitacao_max_length(self):
-        assert _get_field(SilverSolicitacaoCompra, "numero_solicitacao").max_length == 50
+        assert (
+            _get_field(SilverSolicitacaoCompra, "numero_solicitacao").max_length == 50
+        )
+
 
 class TestSilverPedidoCompra:
     def test_db_table(self):
@@ -176,7 +192,9 @@ class TestSilverPedidoCompra:
         assert field.related_model is SilverFornecedor
 
     def test_valor_total_is_floatfield(self):
-        assert isinstance(_get_field(SilverPedidoCompra, "valor_total"), dj_models.FloatField)
+        assert isinstance(
+            _get_field(SilverPedidoCompra, "valor_total"), dj_models.FloatField
+        )
 
     def test_numero_pedido_max_length(self):
         assert _get_field(SilverPedidoCompra, "numero_pedido").max_length == 50
@@ -195,7 +213,10 @@ class TestSilverComprasProjeto:
         assert field.related_model is SilverProjeto
 
     def test_valor_alocado_is_floatfield(self):
-        assert isinstance(_get_field(SilverComprasProjeto, "valor_alocado"), dj_models.FloatField)
+        assert isinstance(
+            _get_field(SilverComprasProjeto, "valor_alocado"), dj_models.FloatField
+        )
+
 
 class TestSilverEmpenhoMaterial:
     def test_db_table(self):
@@ -210,12 +231,18 @@ class TestSilverEmpenhoMaterial:
         assert field.related_model is SilverMaterial
 
     def test_quantidade_empenhada_is_bigintegerfield(self):
-        assert isinstance(_get_field(SilverEmpenhoMaterial, "quantidade_empenhada"), dj_models.BigIntegerField)
+        assert isinstance(
+            _get_field(SilverEmpenhoMaterial, "quantidade_empenhada"),
+            dj_models.BigIntegerField,
+        )
 
 
 class TestSilverEstoqueMateriaisProjeto:
     def test_db_table(self):
-        assert SilverEstoqueMateriaisProjeto._meta.db_table == 'silver"."estoque_materiais_projeto'
+        assert (
+            SilverEstoqueMateriaisProjeto._meta.db_table
+            == 'silver"."estoque_materiais_projeto'
+        )
 
     def test_projeto_fk(self):
         field = _get_field(SilverEstoqueMateriaisProjeto, "projeto")
@@ -226,7 +253,12 @@ class TestSilverEstoqueMateriaisProjeto:
         assert field.related_model is SilverMaterial
 
     def test_quantidade_is_bigintegerfield(self):
-        assert isinstance(_get_field(SilverEstoqueMateriaisProjeto, "quantidade"), dj_models.BigIntegerField)
+        assert isinstance(
+            _get_field(SilverEstoqueMateriaisProjeto, "quantidade"),
+            dj_models.BigIntegerField,
+        )
 
     def test_localizacao_max_length(self):
-        assert _get_field(SilverEstoqueMateriaisProjeto, "localizacao").max_length == 100
+        assert (
+            _get_field(SilverEstoqueMateriaisProjeto, "localizacao").max_length == 100
+        )

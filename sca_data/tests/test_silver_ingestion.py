@@ -26,9 +26,11 @@ from sca_data.db.silver.ingestion_silver import (
     _write_silver,
 )
 
+
 @pytest.fixture
 def engine():
     return MagicMock()
+
 
 class TestToDate:
     def test_valid_iso_string(self):
@@ -59,6 +61,7 @@ class TestToDate:
         assert pd.isna(result[1])
         assert pd.isna(result[2])
 
+
 class TestToInt:
     def test_valid_integers(self):
         s = pd.Series([1, 2, 3])
@@ -88,6 +91,7 @@ class TestToInt:
         result = _to_int(s)
         assert str(result.dtype) == "Int64"
 
+
 class TestToFloat:
     def test_valid_floats(self):
         s = pd.Series(["1.5", "2.75"])
@@ -110,6 +114,7 @@ class TestToFloat:
         s = pd.Series(["-3.14"])
         result = _to_float(s)
         assert result[0] == pytest.approx(-3.14)
+
 
 class TestToStr:
     def test_strips_whitespace(self):
@@ -153,6 +158,7 @@ class TestToStr:
         result = _to_str(s)
         assert result[0] == "Fornecedor ABC"
 
+
 class TestReadBronze:
     @patch("sca_data.db.silver.ingestion_silver.pd.read_sql")
     def test_reads_correct_table(self, mock_read_sql, engine):
@@ -188,7 +194,6 @@ class TestWriteSilver:
         assert kwargs["index"] is False
 
 
-
 def _make_engine_with_df(df: pd.DataFrame):
     """Returns (engine, read_mock, write_mock) with _read_bronze patched."""
     engine = MagicMock()
@@ -199,16 +204,18 @@ class TestTransformProgramas:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
     def test_happy_path(self, mock_read, mock_write):
-        mock_read.return_value = pd.DataFrame({
-            "id": [1],
-            "codigo_programa": ["PRG-001"],
-            "nome_programa": ["Programa Alpha"],
-            "gerente_programa": ["Ana"],
-            "gerente_tecnico": ["Bruno"],
-            "data_inicio": ["2024-01-01"],
-            "data_fim_prevista": ["2024-12-31"],
-            "status": ["Ativo"],
-        })
+        mock_read.return_value = pd.DataFrame(
+            {
+                "id": [1],
+                "codigo_programa": ["PRG-001"],
+                "nome_programa": ["Programa Alpha"],
+                "gerente_programa": ["Ana"],
+                "gerente_tecnico": ["Bruno"],
+                "data_inicio": ["2024-01-01"],
+                "data_fim_prevista": ["2024-12-31"],
+                "status": ["Ativo"],
+            }
+        )
 
         _transform_programas(MagicMock())
 
@@ -229,15 +236,17 @@ class TestTransformMateriais:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
     def test_happy_path(self, mock_read, mock_write):
-        mock_read.return_value = pd.DataFrame({
-            "id": [2],
-            "codigo_material": ["MAT-001"],
-            "descricao": ["Cabo UTP"],
-            "categoria": ["Rede"],
-            "fabricante": ["Cisco"],
-            "custo_estimado": ["150.50"],
-            "status": ["Ativo"],
-        })
+        mock_read.return_value = pd.DataFrame(
+            {
+                "id": [2],
+                "codigo_material": ["MAT-001"],
+                "descricao": ["Cabo UTP"],
+                "categoria": ["Rede"],
+                "fabricante": ["Cisco"],
+                "custo_estimado": ["150.50"],
+                "status": ["Ativo"],
+            }
+        )
 
         _transform_materiais(MagicMock())
 
@@ -257,15 +266,17 @@ class TestTransformFornecedores:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
     def test_happy_path(self, mock_read, mock_write):
-        mock_read.return_value = pd.DataFrame({
-            "id": [3],
-            "codigo_fornecedor": ["FOR-001"],
-            "razao_social": ["Tech Ltda"],
-            "cidade": ["São Paulo"],
-            "estado": ["SP"],
-            "categoria": ["TI"],
-            "status": ["Ativo"],
-        })
+        mock_read.return_value = pd.DataFrame(
+            {
+                "id": [3],
+                "codigo_fornecedor": ["FOR-001"],
+                "razao_social": ["Tech Ltda"],
+                "cidade": ["São Paulo"],
+                "estado": ["SP"],
+                "categoria": ["TI"],
+                "status": ["Ativo"],
+            }
+        )
 
         _transform_fornecedores(MagicMock())
 
@@ -276,15 +287,17 @@ class TestTransformFornecedores:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
     def test_estado_truncated_to_2_chars(self, mock_read, mock_write):
-        mock_read.return_value = pd.DataFrame({
-            "id": [3],
-            "codigo_fornecedor": ["FOR-001"],
-            "razao_social": ["Tech Ltda"],
-            "cidade": ["São Paulo"],
-            "estado": ["SPA"],  # 3 chars, should be truncated
-            "categoria": ["TI"],
-            "status": ["Ativo"],
-        })
+        mock_read.return_value = pd.DataFrame(
+            {
+                "id": [3],
+                "codigo_fornecedor": ["FOR-001"],
+                "razao_social": ["Tech Ltda"],
+                "cidade": ["São Paulo"],
+                "estado": ["SPA"],  # 3 chars, should be truncated
+                "categoria": ["TI"],
+                "status": ["Ativo"],
+            }
+        )
 
         _transform_fornecedores(MagicMock())
 
@@ -303,17 +316,19 @@ class TestTransformProjetos:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
     def test_happy_path(self, mock_read, mock_write):
-        mock_read.return_value = pd.DataFrame({
-            "id": [10],
-            "codigo_projeto": ["PRJ-001"],
-            "nome_projeto": ["Projeto Alpha"],
-            "programa_id": [1],
-            "responsavel": ["Carlos"],
-            "custo_hora": ["200.0"],
-            "data_inicio": ["2024-02-01"],
-            "data_fim_prevista": ["2024-11-30"],
-            "status": ["Em andamento"],
-        })
+        mock_read.return_value = pd.DataFrame(
+            {
+                "id": [10],
+                "codigo_projeto": ["PRJ-001"],
+                "nome_projeto": ["Projeto Alpha"],
+                "programa_id": [1],
+                "responsavel": ["Carlos"],
+                "custo_hora": ["200.0"],
+                "data_inicio": ["2024-02-01"],
+                "data_fim_prevista": ["2024-11-30"],
+                "status": ["Em andamento"],
+            }
+        )
 
         _transform_projetos(MagicMock())
 
@@ -333,17 +348,19 @@ class TestTransformTarefasProjeto:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
     def test_happy_path(self, mock_read, mock_write):
-        mock_read.return_value = pd.DataFrame({
-            "id": [100],
-            "codigo_tarefa": ["TAR-001"],
-            "projeto_id": [10],
-            "titulo": ["Implementar módulo X"],
-            "responsavel": ["Diego"],
-            "estimativa_horas": ["40"],
-            "data_inicio": ["2024-03-01"],
-            "data_fim_prevista": ["2024-03-31"],
-            "status": ["Aberta"],
-        })
+        mock_read.return_value = pd.DataFrame(
+            {
+                "id": [100],
+                "codigo_tarefa": ["TAR-001"],
+                "projeto_id": [10],
+                "titulo": ["Implementar módulo X"],
+                "responsavel": ["Diego"],
+                "estimativa_horas": ["40"],
+                "data_inicio": ["2024-03-01"],
+                "data_fim_prevista": ["2024-03-31"],
+                "status": ["Aberta"],
+            }
+        )
 
         _transform_tarefas_projeto(MagicMock())
 
@@ -363,13 +380,15 @@ class TestTransformTempoTarefas:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
     def test_happy_path(self, mock_read, mock_write):
-        mock_read.return_value = pd.DataFrame({
-            "id": [200],
-            "tarefa_id": [100],
-            "usuario": ["Eduardo"],
-            "data": ["2024-03-10"],
-            "horas_trabalhadas": ["8.5"],
-        })
+        mock_read.return_value = pd.DataFrame(
+            {
+                "id": [200],
+                "tarefa_id": [100],
+                "usuario": ["Eduardo"],
+                "data": ["2024-03-10"],
+                "horas_trabalhadas": ["8.5"],
+            }
+        )
 
         _transform_tempo_tarefas(MagicMock())
 
@@ -389,16 +408,18 @@ class TestTransformSolicitacoesCompra:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
     def test_happy_path(self, mock_read, mock_write):
-        mock_read.return_value = pd.DataFrame({
-            "id": [300],
-            "numero_solicitacao": ["SC-001"],
-            "projeto_id": [10],
-            "material_id": [2],
-            "quantidade": ["5"],
-            "data_solicitacao": ["2024-04-01"],
-            "prioridade": ["Alta"],
-            "status": ["Pendente"],
-        })
+        mock_read.return_value = pd.DataFrame(
+            {
+                "id": [300],
+                "numero_solicitacao": ["SC-001"],
+                "projeto_id": [10],
+                "material_id": [2],
+                "quantidade": ["5"],
+                "data_solicitacao": ["2024-04-01"],
+                "prioridade": ["Alta"],
+                "status": ["Pendente"],
+            }
+        )
 
         _transform_solicitacoes_compra(MagicMock())
 
@@ -418,16 +439,18 @@ class TestTransformPedidosCompra:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
     def test_happy_path(self, mock_read, mock_write):
-        mock_read.return_value = pd.DataFrame({
-            "id": [400],
-            "numero_pedido": ["PC-001"],
-            "solicitacao_id": [300],
-            "fornecedor_id": [3],
-            "data_pedido": ["2024-04-05"],
-            "data_previsao_entrega": ["2024-04-20"],
-            "valor_total": ["7500.00"],
-            "status": ["Aprovado"],
-        })
+        mock_read.return_value = pd.DataFrame(
+            {
+                "id": [400],
+                "numero_pedido": ["PC-001"],
+                "solicitacao_id": [300],
+                "fornecedor_id": [3],
+                "data_pedido": ["2024-04-05"],
+                "data_previsao_entrega": ["2024-04-20"],
+                "valor_total": ["7500.00"],
+                "status": ["Aprovado"],
+            }
+        )
 
         _transform_pedidos_compra(MagicMock())
 
@@ -447,12 +470,14 @@ class TestTransformComprasProjeto:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
     def test_happy_path(self, mock_read, mock_write):
-        mock_read.return_value = pd.DataFrame({
-            "id": [500],
-            "pedido_compra_id": [400],
-            "projeto_id": [10],
-            "valor_alocado": ["3000.00"],
-        })
+        mock_read.return_value = pd.DataFrame(
+            {
+                "id": [500],
+                "pedido_compra_id": [400],
+                "projeto_id": [10],
+                "valor_alocado": ["3000.00"],
+            }
+        )
 
         _transform_compras_projeto(MagicMock())
 
@@ -472,13 +497,15 @@ class TestTransformEmpenhoMateriais:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
     def test_happy_path(self, mock_read, mock_write):
-        mock_read.return_value = pd.DataFrame({
-            "id": [600],
-            "projeto_id": [10],
-            "material_id": [2],
-            "quantidade_empenhada": ["10"],
-            "data_empenho": ["2024-05-01"],
-        })
+        mock_read.return_value = pd.DataFrame(
+            {
+                "id": [600],
+                "projeto_id": [10],
+                "material_id": [2],
+                "quantidade_empenhada": ["10"],
+                "data_empenho": ["2024-05-01"],
+            }
+        )
 
         _transform_empenho_materiais(MagicMock())
 
@@ -498,13 +525,15 @@ class TestTransformEstoqueMateriaisProjeto:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
     def test_happy_path(self, mock_read, mock_write):
-        mock_read.return_value = pd.DataFrame({
-            "id": [700],
-            "projeto_id": [10],
-            "material_id": [2],
-            "quantidade": ["50"],
-            "localizacao": ["Almoxarifado A"],
-        })
+        mock_read.return_value = pd.DataFrame(
+            {
+                "id": [700],
+                "projeto_id": [10],
+                "material_id": [2],
+                "quantidade": ["50"],
+                "localizacao": ["Almoxarifado A"],
+            }
+        )
 
         _transform_estoque_materiais_projeto(MagicMock())
 

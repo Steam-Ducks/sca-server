@@ -52,7 +52,6 @@ INSTALLED_APPS = [
     "core",
     "users",
     "sca_data",
-    "sca_data.apps.ScaDataConfig",
     "materials",
 ]
 

@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class SilverPrograma(models.Model):
     id = models.BigIntegerField(primary_key=True)
     codigo_programa = models.CharField(max_length=100)
@@ -57,7 +58,7 @@ class SilverProjeto(models.Model):
         db_column="programa_id",
         null=True,
         blank=True,
-        related_name="projetos"
+        related_name="projetos",
     )
 
     responsavel = models.CharField(max_length=100, null=True, blank=True)
@@ -80,7 +81,7 @@ class SilverTarefaProjeto(models.Model):
         SilverProjeto,
         on_delete=models.DO_NOTHING,
         db_column="projeto_id",
-        related_name="tarefas"
+        related_name="tarefas",
     )
 
     titulo = models.CharField(max_length=100, null=True, blank=True)
@@ -103,7 +104,7 @@ class SilverTempoTarefa(models.Model):
         SilverTarefaProjeto,
         on_delete=models.DO_NOTHING,
         db_column="tarefa_id",
-        related_name="tempos"
+        related_name="tempos",
     )
 
     usuario = models.CharField(max_length=100, null=True, blank=True)
@@ -121,15 +122,11 @@ class SilverSolicitacaoCompra(models.Model):
     numero_solicitacao = models.CharField(max_length=50)
 
     projeto = models.ForeignKey(
-        SilverProjeto,
-        on_delete=models.DO_NOTHING,
-        db_column="projeto_id"
+        SilverProjeto, on_delete=models.DO_NOTHING, db_column="projeto_id"
     )
 
     material = models.ForeignKey(
-        SilverMaterial,
-        on_delete=models.DO_NOTHING,
-        db_column="material_id"
+        SilverMaterial, on_delete=models.DO_NOTHING, db_column="material_id"
     )
 
     quantidade = models.BigIntegerField()
@@ -152,13 +149,11 @@ class SilverPedidoCompra(models.Model):
         on_delete=models.DO_NOTHING,
         db_column="solicitacao_id",
         null=True,
-        blank=True
+        blank=True,
     )
 
     fornecedor = models.ForeignKey(
-        SilverFornecedor,
-        on_delete=models.DO_NOTHING,
-        db_column="fornecedor_id"
+        SilverFornecedor, on_delete=models.DO_NOTHING, db_column="fornecedor_id"
     )
 
     data_pedido = models.DateField(null=True, blank=True)
@@ -176,15 +171,11 @@ class SilverComprasProjeto(models.Model):
     id = models.BigIntegerField(primary_key=True)
 
     pedido_compra = models.ForeignKey(
-        SilverPedidoCompra,
-        on_delete=models.DO_NOTHING,
-        db_column="pedido_compra_id"
+        SilverPedidoCompra, on_delete=models.DO_NOTHING, db_column="pedido_compra_id"
     )
 
     projeto = models.ForeignKey(
-        SilverProjeto,
-        on_delete=models.DO_NOTHING,
-        db_column="projeto_id"
+        SilverProjeto, on_delete=models.DO_NOTHING, db_column="projeto_id"
     )
 
     valor_alocado = models.FloatField(null=True, blank=True)
@@ -199,15 +190,11 @@ class SilverEmpenhoMaterial(models.Model):
     id = models.BigIntegerField(primary_key=True)
 
     projeto = models.ForeignKey(
-        SilverProjeto,
-        on_delete=models.DO_NOTHING,
-        db_column="projeto_id"
+        SilverProjeto, on_delete=models.DO_NOTHING, db_column="projeto_id"
     )
 
     material = models.ForeignKey(
-        SilverMaterial,
-        on_delete=models.DO_NOTHING,
-        db_column="material_id"
+        SilverMaterial, on_delete=models.DO_NOTHING, db_column="material_id"
     )
 
     quantidade_empenhada = models.BigIntegerField()
@@ -223,15 +210,11 @@ class SilverEstoqueMateriaisProjeto(models.Model):
     id = models.BigIntegerField(primary_key=True)
 
     projeto = models.ForeignKey(
-        SilverProjeto,
-        on_delete=models.DO_NOTHING,
-        db_column="projeto_id"
+        SilverProjeto, on_delete=models.DO_NOTHING, db_column="projeto_id"
     )
 
     material = models.ForeignKey(
-        SilverMaterial,
-        on_delete=models.DO_NOTHING,
-        db_column="material_id"
+        SilverMaterial, on_delete=models.DO_NOTHING, db_column="material_id"
     )
 
     quantidade = models.BigIntegerField()

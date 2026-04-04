@@ -10,9 +10,11 @@ from sca_data.db.bronze.ingestion import (
     _make_request,
 )
 
+
 @pytest.fixture
 def engine():
     return MagicMock()
+
 
 class TestEnsureSchema:
     def test_creates_bronze_schema(self, engine):
@@ -70,7 +72,6 @@ class TestCreateTable:
         assert kwargs["index"] is False
 
 
-
 class TestBuildDf:
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.bronze.ingestion.requests.get")
@@ -79,7 +80,9 @@ class TestBuildDf:
 
         _build_df("http://api.example.com", "programas.parquet")
 
-        mock_get.assert_called_once_with("http://api.example.com/files/programas.parquet")
+        mock_get.assert_called_once_with(
+            "http://api.example.com/files/programas.parquet"
+        )
 
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.bronze.ingestion.requests.get")
@@ -145,6 +148,7 @@ class TestMakeRequest:
     @patch("sca_data.db.bronze.ingestion.requests.get")
     def test_network_error_does_not_propagate(self, mock_get, mock_build):
         import requests as req_lib
+
         mock_get.side_effect = req_lib.exceptions.ConnectionError("timeout")
 
         _make_request("http://api.example.com")
