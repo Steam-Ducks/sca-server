@@ -5,9 +5,7 @@ import django.utils.timezone
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ("sca_data"), 
-    ]
+    dependencies = []
 
     operations = [
 
@@ -22,17 +20,14 @@ class Migration(migrations.Migration):
                 ("id",                models.BigIntegerField(primary_key=True, serialize=False)),
                 ("codigo_programa",   models.CharField(max_length=100)),
                 ("nome_programa",     models.CharField(max_length=100)),
-                ("gerente_programa",  models.CharField(max_length=100, null=True, blank=True)),
-                ("gerente_tecnico",   models.CharField(max_length=100, null=True, blank=True)),
-                ("data_inicio",       models.DateField(null=True, blank=True)),
-                ("data_fim_prevista", models.DateField(null=True, blank=True)),
-                ("status",            models.CharField(max_length=50, null=True, blank=True)),
+                ("gerente_programa",  models.CharField(blank=True, max_length=100, null=True)),
+                ("gerente_tecnico",   models.CharField(blank=True, max_length=100, null=True)),
+                ("data_inicio",       models.DateField(blank=True, null=True)),
+                ("data_fim_prevista", models.DateField(blank=True, null=True)),
+                ("status",            models.CharField(blank=True, max_length=50, null=True)),
                 ("silver_ingested_at",models.DateTimeField(default=django.utils.timezone.now)),
             ],
-            options={
-                "db_table": 'silver"."programas',
-                "managed": True,
-            },
+            options={"db_table": 'silver"."programas'},
         ),
 
         migrations.CreateModel(
@@ -40,17 +35,14 @@ class Migration(migrations.Migration):
             fields=[
                 ("id",               models.BigIntegerField(primary_key=True, serialize=False)),
                 ("codigo_material",  models.CharField(max_length=50)),
-                ("descricao",        models.CharField(max_length=100, null=True, blank=True)),
-                ("categoria",        models.CharField(max_length=100, null=True, blank=True)),
-                ("fabricante",       models.CharField(max_length=100, null=True, blank=True)),
-                ("custo_estimado",   models.FloatField(null=True, blank=True)),
-                ("status",           models.CharField(max_length=50, null=True, blank=True)),
+                ("descricao",        models.CharField(blank=True, max_length=100, null=True)),
+                ("categoria",        models.CharField(blank=True, max_length=100, null=True)),
+                ("fabricante",       models.CharField(blank=True, max_length=100, null=True)),
+                ("custo_estimado",   models.FloatField(blank=True, null=True)),
+                ("status",           models.CharField(blank=True, max_length=50, null=True)),
                 ("silver_ingested_at",models.DateTimeField(default=django.utils.timezone.now)),
             ],
-            options={
-                "db_table": 'silver"."materiais',
-                "managed": True,
-            },
+            options={"db_table": 'silver"."materiais'},
         ),
 
         migrations.CreateModel(
@@ -58,17 +50,14 @@ class Migration(migrations.Migration):
             fields=[
                 ("id",                models.BigIntegerField(primary_key=True, serialize=False)),
                 ("codigo_fornecedor", models.CharField(max_length=50)),
-                ("razao_social",      models.CharField(max_length=100, null=True, blank=True)),
-                ("cidade",            models.CharField(max_length=100, null=True, blank=True)),
-                ("estado",            models.CharField(max_length=2, null=True, blank=True)),
-                ("categoria",         models.CharField(max_length=100, null=True, blank=True)),
-                ("status",            models.CharField(max_length=50, null=True, blank=True)),
+                ("razao_social",      models.CharField(blank=True, max_length=100, null=True)),
+                ("cidade",            models.CharField(blank=True, max_length=100, null=True)),
+                ("estado",            models.CharField(blank=True, max_length=2, null=True)),
+                ("categoria",         models.CharField(blank=True, max_length=100, null=True)),
+                ("status",            models.CharField(blank=True, max_length=50, null=True)),
                 ("silver_ingested_at",models.DateTimeField(default=django.utils.timezone.now)),
             ],
-            options={
-                "db_table": 'silver"."fornecedores',
-                "managed": True,
-            },
+            options={"db_table": 'silver"."fornecedores'},
         ),
 
         migrations.CreateModel(
@@ -76,26 +65,23 @@ class Migration(migrations.Migration):
             fields=[
                 ("id",                models.BigIntegerField(primary_key=True, serialize=False)),
                 ("codigo_projeto",    models.CharField(max_length=50)),
-                ("nome_projeto",      models.CharField(max_length=100, null=True, blank=True)),
+                ("nome_projeto",      models.CharField(blank=True, max_length=100, null=True)),
                 ("programa",          models.ForeignKey(
-                                          "SilverPrograma",
-                                          on_delete=django.db.models.deletion.DO_NOTHING,
+                                          blank=True,
                                           db_column="programa_id",
                                           null=True,
-                                          blank=True,
+                                          on_delete=django.db.models.deletion.DO_NOTHING,
                                           related_name="projetos",
+                                          to="sca_data.silverprograma",
                                       )),
-                ("responsavel",       models.CharField(max_length=100, null=True, blank=True)),
-                ("custo_hora",        models.FloatField(null=True, blank=True)),
-                ("data_inicio",       models.DateField(null=True, blank=True)),
-                ("data_fim_prevista", models.DateField(null=True, blank=True)),
-                ("status",            models.CharField(max_length=50, null=True, blank=True)),
+                ("responsavel",       models.CharField(blank=True, max_length=100, null=True)),
+                ("custo_hora",        models.FloatField(blank=True, null=True)),
+                ("data_inicio",       models.DateField(blank=True, null=True)),
+                ("data_fim_prevista", models.DateField(blank=True, null=True)),
+                ("status",            models.CharField(blank=True, max_length=50, null=True)),
                 ("silver_ingested_at",models.DateTimeField(default=django.utils.timezone.now)),
             ],
-            options={
-                "db_table": 'silver"."projetos',
-                "managed": True,
-            },
+            options={"db_table": 'silver"."projetos'},
         ),
 
         migrations.CreateModel(
@@ -104,23 +90,20 @@ class Migration(migrations.Migration):
                 ("id",                models.BigIntegerField(primary_key=True, serialize=False)),
                 ("codigo_tarefa",     models.CharField(max_length=50)),
                 ("projeto",           models.ForeignKey(
-                                          "SilverProjeto",
-                                          on_delete=django.db.models.deletion.DO_NOTHING,
                                           db_column="projeto_id",
+                                          on_delete=django.db.models.deletion.DO_NOTHING,
                                           related_name="tarefas",
+                                          to="sca_data.silverprojeto",
                                       )),
-                ("titulo",            models.CharField(max_length=100, null=True, blank=True)),
-                ("responsavel",       models.CharField(max_length=100, null=True, blank=True)),
-                ("estimativa_horas",  models.IntegerField(null=True, blank=True)),
-                ("data_inicio",       models.DateField(null=True, blank=True)),
-                ("data_fim_prevista", models.DateField(null=True, blank=True)),
-                ("status",            models.CharField(max_length=50, null=True, blank=True)),
+                ("titulo",            models.CharField(blank=True, max_length=100, null=True)),
+                ("responsavel",       models.CharField(blank=True, max_length=100, null=True)),
+                ("estimativa_horas",  models.IntegerField(blank=True, null=True)),
+                ("data_inicio",       models.DateField(blank=True, null=True)),
+                ("data_fim_prevista", models.DateField(blank=True, null=True)),
+                ("status",            models.CharField(blank=True, max_length=50, null=True)),
                 ("silver_ingested_at",models.DateTimeField(default=django.utils.timezone.now)),
             ],
-            options={
-                "db_table": 'silver"."tarefas_projeto',
-                "managed": True,
-            },
+            options={"db_table": 'silver"."tarefas_projeto'},
         ),
 
         migrations.CreateModel(
@@ -128,20 +111,17 @@ class Migration(migrations.Migration):
             fields=[
                 ("id",                 models.BigIntegerField(primary_key=True, serialize=False)),
                 ("tarefa",             models.ForeignKey(
-                                           "SilverTarefaProjeto",
-                                           on_delete=django.db.models.deletion.DO_NOTHING,
                                            db_column="tarefa_id",
+                                           on_delete=django.db.models.deletion.DO_NOTHING,
                                            related_name="tempos",
+                                           to="sca_data.silvertarefaprojeto",
                                        )),
-                ("usuario",            models.CharField(max_length=100, null=True, blank=True)),
+                ("usuario",            models.CharField(blank=True, max_length=100, null=True)),
                 ("data",               models.DateField()),
                 ("horas_trabalhadas",  models.FloatField()),
                 ("silver_ingested_at", models.DateTimeField(default=django.utils.timezone.now)),
             ],
-            options={
-                "db_table": 'silver"."tempo_tarefas',
-                "managed": True,
-            },
+            options={"db_table": 'silver"."tempo_tarefas'},
         ),
 
         migrations.CreateModel(
@@ -150,25 +130,22 @@ class Migration(migrations.Migration):
                 ("id",                 models.BigIntegerField(primary_key=True, serialize=False)),
                 ("numero_solicitacao", models.CharField(max_length=50)),
                 ("projeto",            models.ForeignKey(
-                                           "SilverProjeto",
-                                           on_delete=django.db.models.deletion.DO_NOTHING,
                                            db_column="projeto_id",
+                                           on_delete=django.db.models.deletion.DO_NOTHING,
+                                           to="sca_data.silverprojeto",
                                        )),
                 ("material",           models.ForeignKey(
-                                           "SilverMaterial",
-                                           on_delete=django.db.models.deletion.DO_NOTHING,
                                            db_column="material_id",
+                                           on_delete=django.db.models.deletion.DO_NOTHING,
+                                           to="sca_data.silvermaterial",
                                        )),
                 ("quantidade",         models.BigIntegerField()),
-                ("data_solicitacao",   models.DateField(null=True, blank=True)),
-                ("prioridade",         models.CharField(max_length=50, null=True, blank=True)),
-                ("status",             models.CharField(max_length=50, null=True, blank=True)),
+                ("data_solicitacao",   models.DateField(blank=True, null=True)),
+                ("prioridade",         models.CharField(blank=True, max_length=50, null=True)),
+                ("status",             models.CharField(blank=True, max_length=50, null=True)),
                 ("silver_ingested_at", models.DateTimeField(default=django.utils.timezone.now)),
             ],
-            options={
-                "db_table": 'silver"."solicitacoes_compra',
-                "managed": True,
-            },
+            options={"db_table": 'silver"."solicitacoes_compra'},
         ),
 
         migrations.CreateModel(
@@ -177,27 +154,24 @@ class Migration(migrations.Migration):
                 ("id",                    models.BigIntegerField(primary_key=True, serialize=False)),
                 ("numero_pedido",         models.CharField(max_length=50)),
                 ("solicitacao",           models.ForeignKey(
-                                              "SilverSolicitacaoCompra",
-                                              on_delete=django.db.models.deletion.DO_NOTHING,
+                                              blank=True,
                                               db_column="solicitacao_id",
                                               null=True,
-                                              blank=True,
+                                              on_delete=django.db.models.deletion.DO_NOTHING,
+                                              to="sca_data.silversolicitacaocompra",
                                           )),
                 ("fornecedor",            models.ForeignKey(
-                                              "SilverFornecedor",
-                                              on_delete=django.db.models.deletion.DO_NOTHING,
                                               db_column="fornecedor_id",
+                                              on_delete=django.db.models.deletion.DO_NOTHING,
+                                              to="sca_data.silverfornecedor",
                                           )),
-                ("data_pedido",           models.DateField(null=True, blank=True)),
-                ("data_previsao_entrega", models.DateField(null=True, blank=True)),
-                ("valor_total",           models.FloatField(null=True, blank=True)),
-                ("status",                models.CharField(max_length=50, null=True, blank=True)),
+                ("data_pedido",           models.DateField(blank=True, null=True)),
+                ("data_previsao_entrega", models.DateField(blank=True, null=True)),
+                ("valor_total",           models.FloatField(blank=True, null=True)),
+                ("status",                models.CharField(blank=True, max_length=50, null=True)),
                 ("silver_ingested_at",    models.DateTimeField(default=django.utils.timezone.now)),
             ],
-            options={
-                "db_table": 'silver"."pedidos_compra',
-                "managed": True,
-            },
+            options={"db_table": 'silver"."pedidos_compra'},
         ),
 
         migrations.CreateModel(
@@ -205,22 +179,19 @@ class Migration(migrations.Migration):
             fields=[
                 ("id",               models.BigIntegerField(primary_key=True, serialize=False)),
                 ("pedido_compra",    models.ForeignKey(
-                                         "SilverPedidoCompra",
-                                         on_delete=django.db.models.deletion.DO_NOTHING,
                                          db_column="pedido_compra_id",
+                                         on_delete=django.db.models.deletion.DO_NOTHING,
+                                         to="sca_data.silverpedidocompra",
                                      )),
                 ("projeto",          models.ForeignKey(
-                                         "SilverProjeto",
-                                         on_delete=django.db.models.deletion.DO_NOTHING,
                                          db_column="projeto_id",
+                                         on_delete=django.db.models.deletion.DO_NOTHING,
+                                         to="sca_data.silverprojeto",
                                      )),
-                ("valor_alocado",    models.FloatField(null=True, blank=True)),
+                ("valor_alocado",    models.FloatField(blank=True, null=True)),
                 ("silver_ingested_at",models.DateTimeField(default=django.utils.timezone.now)),
             ],
-            options={
-                "db_table": 'silver"."compras_projeto',
-                "managed": True,
-            },
+            options={"db_table": 'silver"."compras_projeto'},
         ),
 
         migrations.CreateModel(
@@ -228,23 +199,20 @@ class Migration(migrations.Migration):
             fields=[
                 ("id",                   models.BigIntegerField(primary_key=True, serialize=False)),
                 ("projeto",              models.ForeignKey(
-                                             "SilverProjeto",
-                                             on_delete=django.db.models.deletion.DO_NOTHING,
                                              db_column="projeto_id",
+                                             on_delete=django.db.models.deletion.DO_NOTHING,
+                                             to="sca_data.silverprojeto",
                                          )),
                 ("material",             models.ForeignKey(
-                                             "SilverMaterial",
-                                             on_delete=django.db.models.deletion.DO_NOTHING,
                                              db_column="material_id",
+                                             on_delete=django.db.models.deletion.DO_NOTHING,
+                                             to="sca_data.silvermaterial",
                                          )),
                 ("quantidade_empenhada", models.BigIntegerField()),
-                ("data_empenho",         models.DateField(null=True, blank=True)),
+                ("data_empenho",         models.DateField(blank=True, null=True)),
                 ("silver_ingested_at",   models.DateTimeField(default=django.utils.timezone.now)),
             ],
-            options={
-                "db_table": 'silver"."empenho_materiais',
-                "managed": True,
-            },
+            options={"db_table": 'silver"."empenho_materiais'},
         ),
 
         migrations.CreateModel(
@@ -252,22 +220,19 @@ class Migration(migrations.Migration):
             fields=[
                 ("id",                models.BigIntegerField(primary_key=True, serialize=False)),
                 ("projeto",           models.ForeignKey(
-                                          "SilverProjeto",
-                                          on_delete=django.db.models.deletion.DO_NOTHING,
                                           db_column="projeto_id",
+                                          on_delete=django.db.models.deletion.DO_NOTHING,
+                                          to="sca_data.silverprojeto",
                                       )),
                 ("material",          models.ForeignKey(
-                                          "SilverMaterial",
-                                          on_delete=django.db.models.deletion.DO_NOTHING,
                                           db_column="material_id",
+                                          on_delete=django.db.models.deletion.DO_NOTHING,
+                                          to="sca_data.silvermaterial",
                                       )),
                 ("quantidade",        models.BigIntegerField()),
-                ("localizacao",       models.CharField(max_length=100, null=True, blank=True)),
+                ("localizacao",       models.CharField(blank=True, max_length=100, null=True)),
                 ("silver_ingested_at",models.DateTimeField(default=django.utils.timezone.now)),
             ],
-            options={
-                "db_table": 'silver"."estoque_materiais_projeto',
-                "managed": True,
-            },
+            options={"db_table": 'silver"."estoque_materiais_projeto'},
         ),
     ]
