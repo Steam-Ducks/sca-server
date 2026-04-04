@@ -12,7 +12,8 @@ class SilverPrograma(models.Model):
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
-        db_table = 'silver"."programas'
+        app_label = "sca_data"
+        db_table ='silver"."programas'
 
 
 class SilverMaterial(models.Model):
@@ -26,7 +27,8 @@ class SilverMaterial(models.Model):
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
-        db_table = 'silver"."materiais'
+        app_label = "sca_data"
+        db_table ='silver"."materiais'
 
 
 class SilverFornecedor(models.Model):
@@ -40,7 +42,8 @@ class SilverFornecedor(models.Model):
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
-        db_table = 'silver"."fornecedores'
+        app_label = "sca_data"
+        db_table ='silver"."fornecedores'
 
 
 class SilverProjeto(models.Model):
@@ -65,7 +68,8 @@ class SilverProjeto(models.Model):
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
-        db_table = 'silver"."projetos'
+        app_label = "sca_data"
+        db_table ='silver"."projetos'
 
 
 class SilverTarefaProjeto(models.Model):
@@ -88,7 +92,8 @@ class SilverTarefaProjeto(models.Model):
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
-        db_table = 'silver"."tarefas_projeto'
+        app_label = "sca_data"
+        db_table ='silver"."tarefas_projeto'
 
 
 class SilverTempoTarefa(models.Model):
@@ -107,7 +112,8 @@ class SilverTempoTarefa(models.Model):
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
-        db_table = 'silver"."tempo_tarefas'
+        app_label = "sca_data"
+        db_table ='silver"."tempo_tarefas'
 
 
 class SilverSolicitacaoCompra(models.Model):
@@ -133,7 +139,8 @@ class SilverSolicitacaoCompra(models.Model):
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
-        db_table = 'silver"."solicitacoes_compra'
+        app_label = "sca_data"
+        db_table ='silver"."solicitacoes_compra'
 
 
 class SilverPedidoCompra(models.Model):
@@ -161,7 +168,8 @@ class SilverPedidoCompra(models.Model):
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
-        db_table = 'silver"."pedidos_compra'
+        app_label = "sca_data"
+        db_table ='silver"."pedidos_compra'
 
 
 class SilverComprasProjeto(models.Model):
@@ -183,7 +191,8 @@ class SilverComprasProjeto(models.Model):
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
-        db_table = 'silver"."compras_projeto'
+        app_label = "sca_data"
+        db_table ='silver"."compras_projeto'
 
 
 class SilverEmpenhoMaterial(models.Model):
@@ -206,7 +215,8 @@ class SilverEmpenhoMaterial(models.Model):
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
-        db_table = 'silver"."empenho_materiais'
+        app_label = "sca_data"
+        db_table ='silver"."empenho_materiais'
 
 
 class SilverEstoqueMateriaisProjeto(models.Model):
@@ -229,4 +239,5 @@ class SilverEstoqueMateriaisProjeto(models.Model):
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
-        db_table = 'silver"."estoque_materiais_projeto'
+        app_label = "sca_data"
+        db_table ='silver"."estoque_materiais_projeto'
