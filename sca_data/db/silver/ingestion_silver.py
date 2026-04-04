@@ -1,6 +1,5 @@
 from sca_data.db.connection import getOrCreate
 import pandas as pd
-import numpy as np
 from sqlalchemy import text
 import logging
 import datetime
