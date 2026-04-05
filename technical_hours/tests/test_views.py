@@ -1,0 +1,125 @@
+import datetime
+from decimal import Decimal
+from unittest.mock import patch
+
+from django.utils import timezone
+from rest_framework.test import APIClient
+
+from sca_data.models import (
+    SilverPrograma,
+    SilverProjeto,
+    SilverTarefaProjeto,
+    SilverTempoTarefa,
+)
+from technical_hours.views import TechnicalHoursTableView
+
+
+def _criar_tempo_em_memoria():
+    now = timezone.now()
+
+    programa = SilverPrograma(
+        id=1,
+        codigo_programa="PROG-001",
+        nome_programa="Cloud",
+        silver_ingested_at=now,
+    )
+
+    projeto = SilverProjeto(
+        id=1,
+        codigo_projeto="PROJ-001",
+        nome_projeto="Migração AWS",
+        custo_hora=420.00,
+        silver_ingested_at=now,
+    )
+    projeto.programa = programa
+
+    tarefa = SilverTarefaProjeto(
+        id=1,
+        codigo_tarefa="TAR-001",
+        titulo="Arquitetura Cloud",
+        responsavel="Cloud Architect",
+        estimativa_horas=400,
+        silver_ingested_at=now,
+    )
+    tarefa.projeto = projeto
+
+    tempo = SilverTempoTarefa(
+        id=1,
+        usuario="Lucas Martins",
+        data=datetime.date(2024, 3, 15),
+        horas_trabalhadas=40.00,
+        silver_ingested_at=now,
+    )
+    tempo.tarefa = tarefa
+    tempo.custo_por_hora = 420.00
+    tempo.custo_total    = 40.00 * 420.00
+
+    return tempo
+
+
+def test_technical_hours_table_returns_200():
+    with patch.object(TechnicalHoursTableView, "get_queryset", return_value=[]):
+        client = APIClient()
+        response = client.get("/api/horas-tecnicas/")
+        assert response.status_code == 200
+
+
+def test_technical_hours_table_returns_list():
+    tempo = _criar_tempo_em_memoria()
+    with patch.object(TechnicalHoursTableView, "get_queryset", return_value=[tempo]):
+        client = APIClient()
+        response = client.get("/api/horas-tecnicas/")
+        assert isinstance(response.data, list)
+        assert len(response.data) == 1
+
+
+def test_technical_hours_table_retorna_campos_corretos():
+    tempo = _criar_tempo_em_memoria()
+    with patch.object(TechnicalHoursTableView, "get_queryset", return_value=[tempo]):
+        client = APIClient()
+        response = client.get("/api/horas-tecnicas/")
+
+        item = response.data[0]
+        assert item["colaborador"]       == "Lucas Martins"
+        assert item["funcao"]            == "Cloud Architect"
+        assert item["projeto"]           == "Migração AWS"
+        assert item["programa"]          == "Cloud"
+        assert item["horas_trabalhadas"] == Decimal("40.00")
+        assert item["custo_por_hora"]    == Decimal("420.00")
+        assert item["custo_total"]       == Decimal("16800.00")
+        assert item["periodo"]           == "2024-03"
+        assert item["tarefa"]            == "Arquitetura Cloud"
+
+
+def test_technical_hours_table_lista_vazia_retorna_200():
+    with patch.object(TechnicalHoursTableView, "get_queryset", return_value=[]):
+        client = APIClient()
+        response = client.get("/api/horas-tecnicas/")
+        assert response.status_code == 200
+        assert response.data == []
+
+
+def test_technical_hours_table_retorna_multiplos_registros():
+    now = timezone.now()
+
+    programa = SilverPrograma(id=2, codigo_programa="PROG-002", nome_programa="Desenvolvimento", silver_ingested_at=now)
+    projeto  = SilverProjeto(id=2, codigo_projeto="PROJ-002", nome_projeto="Portal Web", custo_hora=250.00, silver_ingested_at=now)
+    projeto.programa = programa
+
+    tarefa2 = SilverTarefaProjeto(id=2, codigo_tarefa="TAR-002", titulo="Desenvolvimento", responsavel="Full Stack Dev", estimativa_horas=520, silver_ingested_at=now)
+    tarefa2.projeto = projeto
+
+    tempo2 = SilverTempoTarefa(id=2, usuario="Ana Oliveira", data=datetime.date(2024, 1, 10), horas_trabalhadas=52.00, silver_ingested_at=now)
+    tempo2.tarefa        = tarefa2
+    tempo2.custo_por_hora = 250.00
+    tempo2.custo_total    = 52.00 * 250.00
+
+    tempo1 = _criar_tempo_em_memoria()
+
+    with patch.object(TechnicalHoursTableView, "get_queryset", return_value=[tempo1, tempo2]):
+        client = APIClient()
+        response = client.get("/api/horas-tecnicas/")
+        assert response.status_code == 200
+        assert len(response.data) == 2
+        assert response.data[0]["colaborador"] == "Lucas Martins"
+        assert response.data[1]["colaborador"] == "Ana Oliveira"
