@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     # project apps
     "core",
     "users",
-    "sca_data",
+    "sca_data.apps.ScaDataConfig",
     "materials",
 ]
 
