@@ -1,4 +1,3 @@
-import pytest
 from django.utils import timezone
 
 from sca_data.models import (
@@ -12,24 +11,24 @@ from sca_data.models import (
 from materials.serializers import MaterialsTableSerializer
 
 
-@pytest.mark.django_db
 def test_materials_serializer_retorna_dados_corretos():
     now = timezone.now()
 
-    programa = SilverPrograma.objects.create(
+    programa = SilverPrograma(
         id=1,
         codigo_programa="PROG-001",
         nome_programa="Programa Alpha",
         silver_ingested_at=now,
     )
-    projeto = SilverProjeto.objects.create(
+    projeto = SilverProjeto(
         id=1,
         codigo_projeto="PROJ-001",
         nome_projeto="Projeto Alpha",
-        programa=programa,
         silver_ingested_at=now,
     )
-    material = SilverMaterial.objects.create(
+    projeto.programa = programa
+
+    material = SilverMaterial(
         id=1,
         codigo_material="MAT-001",
         descricao="Cabo de aço",
@@ -37,36 +36,32 @@ def test_materials_serializer_retorna_dados_corretos():
         custo_estimado=150.00,
         silver_ingested_at=now,
     )
-    fornecedor = SilverFornecedor.objects.create(
+    fornecedor = SilverFornecedor(
         id=1,
         codigo_fornecedor="FORN-001",
         razao_social="Fornecedor Ltda",
         silver_ingested_at=now,
     )
-    solicitacao = SilverSolicitacaoCompra.objects.create(
+    solicitacao = SilverSolicitacaoCompra(
         id=1,
         numero_solicitacao="SC-001",
-        projeto=projeto,
-        material=material,
         quantidade=10,
         silver_ingested_at=now,
     )
-    SilverPedidoCompra.objects.create(
+    solicitacao.projeto = projeto
+    solicitacao.material = material
+
+    pedido = SilverPedidoCompra(
         id=1,
         numero_pedido="PC-001",
-        solicitacao=solicitacao,
-        fornecedor=fornecedor,
+        data_pedido=timezone.now().date(),
         valor_total=1500.00,
         silver_ingested_at=now,
     )
+    pedido.solicitacao = solicitacao
+    pedido.fornecedor = fornecedor
 
-    pedido_com_relacionamentos = SilverPedidoCompra.objects.select_related(
-        "solicitacao__material",
-        "solicitacao__projeto__programa",
-        "fornecedor",
-    ).get(id=1)
-
-    serializer = MaterialsTableSerializer(pedido_com_relacionamentos)
+    serializer = MaterialsTableSerializer(pedido)
 
     assert serializer.data["material"] == "Cabo de aço"
     assert serializer.data["projeto"] == "Projeto Alpha"

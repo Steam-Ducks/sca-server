@@ -3,6 +3,7 @@ import pandas as pd
 import requests
 import logging
 import datetime
+from sqlalchemy import text
 
 
 logger = logging.getLogger(__name__)
@@ -13,6 +14,13 @@ logging.basicConfig(
 
 ENGINE = getOrCreate()
 ENDPOINT = "https://sca-api-sb1c.onrender.com/"
+
+
+def _ensure_schema(engine):
+    with engine.connect() as conn:
+        conn.execute(text("CREATE SCHEMA IF NOT EXISTS bronze"))
+        conn.commit()
+    logging.info("Schema 'bronze' verificado/criado.")
 
 
 def _create_table(df: pd.DataFrame, engine, tb_name: str):
@@ -57,4 +65,6 @@ def _make_request(endpoint: str):
         return []
 
 
-_make_request(ENDPOINT)
+if __name__ == "__main__":
+    _ensure_schema(ENGINE)
+    _make_request(ENDPOINT)
