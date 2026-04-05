@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "users",
     "sca_data.apps.ScaDataConfig",
     "materials",
+    "technical_hours",
 ]
 
 MIDDLEWARE = [
