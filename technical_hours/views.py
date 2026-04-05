@@ -9,8 +9,7 @@ class TechnicalHoursTableView(generics.ListAPIView):
 
     def get_queryset(self):
         return (
-            SilverTempoTarefa.objects
-            .select_related("tarefa__projeto__programa")
+            SilverTempoTarefa.objects.select_related("tarefa__projeto__programa")
             .filter(tarefa__isnull=False)
             .annotate(
                 custo_por_hora=F("tarefa__projeto__custo_hora"),
