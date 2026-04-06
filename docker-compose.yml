@@ -22,7 +22,7 @@ services:
       python manage.py runserver 0.0.0.0:8000 --noreload
       "
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')"]
       interval: 5s
       timeout: 2s
       retries: 5
@@ -33,9 +33,9 @@ services:
     image: postgres:16-alpine
     container_name: postgres_db
     environment:
-      POSTGRES_DB: ${DB_NAME:-app_db}
-      POSTGRES_USER: ${DB_USER:-app_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-app_password}
+      POSTGRES_DB: ${DB_LOCAL_NAME:-app_db}
+      POSTGRES_USER: ${DB_LOCAL_USER:-app_user}
+      POSTGRES_PASSWORD: ${DB_LOCAL_PASSWORD:-app_password}
     ports:
       - "5432:5432"
     volumes:
