@@ -97,35 +97,21 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-IS_PRODUCTION = os.environ.get("IS_PRODUCTION", "0") == "1"
+db_ssl_mode = os.environ.get("DB_SSL_MODE")
 
-if IS_PRODUCTION:
-    db_ssl_mode = os.environ.get("DB_SSL_MODE")
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("DB_NAME"),
-            "USER": os.environ.get("DB_USER"),
-            "PASSWORD": os.environ.get("DB_PASSWORD"),
-            "HOST": os.environ.get("DB_HOST"),
-            "PORT": os.environ.get("DB_PORT"),
-            "OPTIONS": {},
-        }
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.environ.get("DB_NAME"),
+        "USER": os.environ.get("DB_USER"),
+        "PASSWORD": os.environ.get("DB_PASSWORD"),
+        "HOST": os.environ.get("DB_HOST"),
+        "PORT": os.environ.get("DB_PORT"),
+        "OPTIONS": {},
     }
-    if db_ssl_mode:
-        DATABASES["default"]["OPTIONS"]["sslmode"] = db_ssl_mode
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("DB_LOCAL_NAME", "app_db"),
-            "USER": os.environ.get("DB_LOCAL_USER", "app_user"),
-            "PASSWORD": os.environ.get("DB_LOCAL_PASSWORD", "app_password"),
-            "HOST": os.environ.get("DB_LOCAL_HOST", "postgres"),
-            "PORT": os.environ.get("DB_LOCAL_PORT", "5432"),
-            "OPTIONS": {},
-        }
-    }
+
+if db_ssl_mode:
+    DATABASES["default"]["OPTIONS"]["sslmode"] = db_ssl_mode
 
 
 # Password validation
