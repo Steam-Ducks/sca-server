@@ -164,11 +164,13 @@ class ConsolidatedDashboardView(generics.ListAPIView):
         )
 
 
-class ConsolidatedDashboardPeriodoView(generics.ListAPIView):
+class ConsolidatedDashboardPeriodoView(ConsolidatedDashboardView):
     """
     Endpoint dedicado para filtro por período no dashboard consolidado.
 
     Rota: GET /api/consolidated/periodo/<YYYY-MM>/
+
+    Herda _build_queryset e _parse_periodo de ConsolidatedDashboardView.
 
     Exemplos
     --------
@@ -177,35 +179,10 @@ class ConsolidatedDashboardPeriodoView(generics.ListAPIView):
     GET /api/consolidated/periodo/2024-03/?status=Em Andamento
     """
 
-    serializer_class = ConsolidatedDashboardSerializer
-
-    def _parse_periodo(self, raw: str) -> tuple:
-        """YYYY-MM → (primeiro_dia, último_dia) do mês."""
-        try:
-            if len(raw) != 7 or raw[4] != "-":
-                raise ValueError
-            year, month = int(raw[:4]), int(raw[5:7])
-            if not (1 <= month <= 12):
-                raise ValueError
-        except (ValueError, IndexError):
-            raise DRFValidationError(
-                {"periodo": f"Período inválido '{raw}'. Use o formato YYYY-MM."}
-            )
-
-        primeiro_dia = datetime.date(year, month, 1)
-        if month == 12:
-            ultimo_dia = datetime.date(year + 1, 1, 1) - datetime.timedelta(days=1)
-        else:
-            ultimo_dia = datetime.date(year, month + 1, 1) - datetime.timedelta(days=1)
-
-        return primeiro_dia, ultimo_dia
-
     def get_queryset(self):
         raw_periodo = self.kwargs.get("periodo", "")
         data_inicio, data_fim = self._parse_periodo(raw_periodo)
-
-        view = ConsolidatedDashboardView()
-        return view._build_queryset(
+        return self._build_queryset(
             data_inicio=data_inicio,
             data_fim=data_fim,
             params=self.request.query_params,
