@@ -1,13 +1,13 @@
 import datetime
 
-from consolidated.consolidated_dashboard.serializers import (
-    ConsolidatedDashboardSerializer,
-)
-from django.db.models import ExpressionWrapper, F, FloatField, Q, Sum
+from django.db.models import F, FloatField, ExpressionWrapper, Sum, Q
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from sca_data.models import SilverProjeto
+from consolidated.consolidated_dashboard.serializers import (
+    ConsolidatedDashboardSerializer,
+)
 
 
 class ConsolidatedDashboardView(generics.ListAPIView):
@@ -24,13 +24,16 @@ class ConsolidatedDashboardView(generics.ListAPIView):
     status      : str        — filtra pelo status do projeto
 
     Prioridade: data_inicio / data_fim > periodo
+
+    Mapeamento de related_names (models.py):
+      SilverProjeto → SilverTarefaProjeto        : tarefas
+      SilverTarefaProjeto → SilverTempoTarefa    : tempos
+      SilverProjeto → SilverComprasProjeto       : silvercomprasprojeto (default)
+      SilverComprasProjeto → SilverPedidoCompra  : pedido_compra (FK field name)
+      SilverProjeto → SilverSolicitacaoCompra    : silversolicitacaocompra_set (default)
     """
 
     serializer_class = ConsolidatedDashboardSerializer
-
-    # ------------------------------------------------------------------
-    # Helpers de parsing
-    # ------------------------------------------------------------------
 
     def _parse_date(self, raw: str, param_name: str) -> datetime.date:
         try:
@@ -86,57 +89,39 @@ class ConsolidatedDashboardView(generics.ListAPIView):
 
         return None, None
 
-    # ------------------------------------------------------------------
-    # Queryset
-    #
-    # SQL gerado pelo ORM:
-    #
-    #   SELECT
-    #     projetos.id,
-    #     projetos.nome_projeto,
-    #     projetos.status,
-    #     programas.nome_programa,
-    #     SUM(pedidos_compra.valor_total)          AS custo_materiais,
-    #     SUM(tempo_tarefas.horas_trabalhadas
-    #         * projetos.custo_hora)               AS custo_horas,
-    #     SUM(pedidos_compra.valor_total)
-    #     + SUM(horas * custo_hora)                AS custo_total,
-    #     SUM(solicitacoes_compra.quantidade)      AS qtd_materiais,
-    #     SUM(tempo_tarefas.horas_trabalhadas)     AS total_horas
-    #   FROM silver.projetos
-    #   LEFT JOIN silver.programas         ON ...
-    #   LEFT JOIN silver.solicitacoes_compra ON projeto_id = projetos.id
-    #   LEFT JOIN silver.pedidos_compra    ON solicitacao_id = solicitacoes.id
-    #     [AND data_pedido BETWEEN data_inicio AND data_fim]
-    #   LEFT JOIN silver.tarefas_projeto   ON projeto_id = projetos.id
-    #   LEFT JOIN silver.tempo_tarefas     ON tarefa_id = tarefas.id
-    #     [AND data BETWEEN data_inicio AND data_fim]
-    #   WHERE [programa / projeto / status filters]
-    #   GROUP BY projetos.id, projetos.nome_projeto, projetos.status,
-    #            programas.nome_programa
-    #   ORDER BY custo_total DESC
-    # ------------------------------------------------------------------
+    def _build_queryset(self, data_inicio=None, data_fim=None, params=None):
+        """
+        Monta o queryset anotado com filtros de data e query params opcionais.
 
-    def get_queryset(self):
-        data_inicio, data_fim = self._get_date_range()
-        params = self.request.query_params
+        Relacionamentos usados (conforme models.py):
+          - tarefas → tempos          (horas trabalhadas)
+          - silvercomprasprojeto → pedido_compra  (custo materiais via SilverComprasProjeto)
+          - silversolicitacaocompra_set            (qtd materiais)
+        """
+        if params is None:
+            params = {}
 
-        # Build date filters for related models
-        pedido_filter = Q(solicitacoes__pedidocompra__solicitacao__isnull=False)
+        # Filtro de datas para pedidos (via SilverComprasProjeto → SilverPedidoCompra)
+        compras_filter = Q()
+        # Filtro de datas para horas (via SilverTarefaProjeto → SilverTempoTarefa)
         tempo_filter = Q()
 
         if data_inicio:
-            pedido_filter &= Q(solicitacoes__pedidocompra__data_pedido__gte=data_inicio)
+            compras_filter &= Q(
+                silvercomprasprojeto__pedido_compra__data_pedido__gte=data_inicio
+            )
             tempo_filter &= Q(tarefas__tempos__data__gte=data_inicio)
         if data_fim:
-            pedido_filter &= Q(solicitacoes__pedidocompra__data_pedido__lte=data_fim)
+            compras_filter &= Q(
+                silvercomprasprojeto__pedido_compra__data_pedido__lte=data_fim
+            )
             tempo_filter &= Q(tarefas__tempos__data__lte=data_fim)
 
         qs = SilverProjeto.objects.select_related("programa").annotate(
-            # Custo materiais: soma do valor_total dos pedidos de compra do projeto
+            # Custo materiais: soma do valor_alocado por projeto em SilverComprasProjeto
             custo_materiais=Sum(
-                "solicitacoes__pedidocompra__valor_total",
-                filter=pedido_filter,
+                "silvercomprasprojeto__valor_alocado",
+                filter=compras_filter,
             ),
             # Custo horas: soma de horas_trabalhadas * custo_hora do projeto
             custo_horas=Sum(
@@ -146,10 +131,9 @@ class ConsolidatedDashboardView(generics.ListAPIView):
                 ),
                 filter=tempo_filter,
             ),
-            # Qtd materiais: soma das quantidades solicitadas
+            # Qtd materiais: soma das quantidades das solicitações de compra
             qtd_materiais=Sum(
-                "solicitacoes__quantidade",
-                filter=Q(solicitacoes__pedidocompra__isnull=False),
+                "silversolicitacaocompra__quantidade",
             ),
             # Total horas trabalhadas
             total_horas=Sum(
@@ -158,7 +142,6 @@ class ConsolidatedDashboardView(generics.ListAPIView):
             ),
         )
 
-        # Filtros adicionais por programa, projeto e status
         programa = params.get("programa")
         projeto = params.get("projeto")
         status = params.get("status")
@@ -171,3 +154,36 @@ class ConsolidatedDashboardView(generics.ListAPIView):
             qs = qs.filter(status__iexact=status)
 
         return qs.order_by(F("custo_materiais").desc(nulls_last=True))
+
+    def get_queryset(self):
+        data_inicio, data_fim = self._get_date_range()
+        return self._build_queryset(
+            data_inicio=data_inicio,
+            data_fim=data_fim,
+            params=self.request.query_params,
+        )
+
+
+class ConsolidatedDashboardPeriodoView(ConsolidatedDashboardView):
+    """
+    Endpoint dedicado para filtro por período no dashboard consolidado.
+
+    Rota: GET /api/consolidated/periodo/<YYYY-MM>/
+
+    Herda _build_queryset e _parse_periodo de ConsolidatedDashboardView.
+
+    Exemplos
+    --------
+    GET /api/consolidated/periodo/2024-03/
+    GET /api/consolidated/periodo/2024-03/?programa=Cloud
+    GET /api/consolidated/periodo/2024-03/?status=Em Andamento
+    """
+
+    def get_queryset(self):
+        raw_periodo = self.kwargs.get("periodo", "")
+        data_inicio, data_fim = self._parse_periodo(raw_periodo)
+        return self._build_queryset(
+            data_inicio=data_inicio,
+            data_fim=data_fim,
+            params=self.request.query_params,
+        )
