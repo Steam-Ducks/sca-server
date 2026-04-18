@@ -5,7 +5,9 @@ from rest_framework import generics
 from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from sca_data.models import SilverProjeto
-from consolidated.consolidated_dashboard.serializers import ConsolidatedDashboardSerializer
+from consolidated.consolidated_dashboard.serializers import (
+    ConsolidatedDashboardSerializer,
+)
 
 
 class ConsolidatedDashboardView(generics.ListAPIView):
@@ -70,7 +72,9 @@ class ConsolidatedDashboardView(generics.ListAPIView):
         raw_periodo = params.get("periodo")
 
         if raw_inicio or raw_fim:
-            data_inicio = self._parse_date(raw_inicio, "data_inicio") if raw_inicio else None
+            data_inicio = (
+                self._parse_date(raw_inicio, "data_inicio") if raw_inicio else None
+            )
             data_fim = self._parse_date(raw_fim, "data_fim") if raw_fim else None
 
             if data_inicio and data_fim and data_inicio > data_fim:
@@ -103,38 +107,39 @@ class ConsolidatedDashboardView(generics.ListAPIView):
         tempo_filter = Q()
 
         if data_inicio:
-            compras_filter &= Q(silvercomprasprojeto__pedido_compra__data_pedido__gte=data_inicio)
-            tempo_filter   &= Q(tarefas__tempos__data__gte=data_inicio)
-        if data_fim:
-            compras_filter &= Q(silvercomprasprojeto__pedido_compra__data_pedido__lte=data_fim)
-            tempo_filter   &= Q(tarefas__tempos__data__lte=data_fim)
-
-        qs = (
-            SilverProjeto.objects.select_related("programa")
-            .annotate(
-                # Custo materiais: soma do valor_alocado por projeto em SilverComprasProjeto
-                custo_materiais=Sum(
-                    "silvercomprasprojeto__valor_alocado",
-                    filter=compras_filter,
-                ),
-                # Custo horas: soma de horas_trabalhadas * custo_hora do projeto
-                custo_horas=Sum(
-                    ExpressionWrapper(
-                        F("tarefas__tempos__horas_trabalhadas") * F("custo_hora"),
-                        output_field=FloatField(),
-                    ),
-                    filter=tempo_filter,
-                ),
-                # Qtd materiais: soma das quantidades das solicitações de compra
-                qtd_materiais=Sum(
-                    "silversolicitacaocompra__quantidade",
-                ),
-                # Total horas trabalhadas
-                total_horas=Sum(
-                    "tarefas__tempos__horas_trabalhadas",
-                    filter=tempo_filter,
-                ),
+            compras_filter &= Q(
+                silvercomprasprojeto__pedido_compra__data_pedido__gte=data_inicio
             )
+            tempo_filter &= Q(tarefas__tempos__data__gte=data_inicio)
+        if data_fim:
+            compras_filter &= Q(
+                silvercomprasprojeto__pedido_compra__data_pedido__lte=data_fim
+            )
+            tempo_filter &= Q(tarefas__tempos__data__lte=data_fim)
+
+        qs = SilverProjeto.objects.select_related("programa").annotate(
+            # Custo materiais: soma do valor_alocado por projeto em SilverComprasProjeto
+            custo_materiais=Sum(
+                "silvercomprasprojeto__valor_alocado",
+                filter=compras_filter,
+            ),
+            # Custo horas: soma de horas_trabalhadas * custo_hora do projeto
+            custo_horas=Sum(
+                ExpressionWrapper(
+                    F("tarefas__tempos__horas_trabalhadas") * F("custo_hora"),
+                    output_field=FloatField(),
+                ),
+                filter=tempo_filter,
+            ),
+            # Qtd materiais: soma das quantidades das solicitações de compra
+            qtd_materiais=Sum(
+                "silversolicitacaocompra__quantidade",
+            ),
+            # Total horas trabalhadas
+            total_horas=Sum(
+                "tarefas__tempos__horas_trabalhadas",
+                filter=tempo_filter,
+            ),
         )
 
         programa = params.get("programa")

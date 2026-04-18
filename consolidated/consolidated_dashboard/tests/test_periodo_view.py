@@ -21,11 +21,18 @@ def _make_projeto(
 ):
     now = timezone.now()
     programa = SilverPrograma(
-        id=id, codigo_programa=f"P-{id}", nome_programa=nome_programa, silver_ingested_at=now
+        id=id,
+        codigo_programa=f"P-{id}",
+        nome_programa=nome_programa,
+        silver_ingested_at=now,
     )
     projeto = SilverProjeto(
-        id=id, codigo_projeto=f"PR-{id}", nome_projeto=nome_projeto,
-        custo_hora=custo_hora, status=status, silver_ingested_at=now,
+        id=id,
+        codigo_projeto=f"PR-{id}",
+        nome_projeto=nome_projeto,
+        custo_hora=custo_hora,
+        status=status,
+        silver_ingested_at=now,
     )
     projeto.programa = programa
     projeto.custo_materiais = custo_materiais
@@ -39,8 +46,11 @@ def _make_projeto(
 # Testes do endpoint dedicado /api/consolidated/periodo/<YYYY-MM>/
 # ---------------------------------------------------------------------------
 
+
 def test_periodo_endpoint_retorna_200():
-    with patch.object(ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[]):
+    with patch.object(
+        ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[]
+    ):
         client = APIClient()
         response = client.get("/api/consolidated/periodo/2024-03/")
         assert response.status_code == 200
@@ -48,7 +58,9 @@ def test_periodo_endpoint_retorna_200():
 
 def test_periodo_endpoint_retorna_lista():
     projeto = _make_projeto()
-    with patch.object(ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[projeto]):
+    with patch.object(
+        ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[projeto]
+    ):
         client = APIClient()
         response = client.get("/api/consolidated/periodo/2024-03/")
         assert isinstance(response.data, list)
@@ -57,7 +69,9 @@ def test_periodo_endpoint_retorna_lista():
 
 def test_periodo_endpoint_retorna_campos_corretos():
     projeto = _make_projeto()
-    with patch.object(ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[projeto]):
+    with patch.object(
+        ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[projeto]
+    ):
         client = APIClient()
         response = client.get("/api/consolidated/periodo/2024-03/")
         item = response.data[0]
@@ -93,6 +107,7 @@ def test_periodo_endpoint_com_barra_retorna_404():
 def test_periodo_endpoint_dezembro_ultimo_dia_correto():
     """Edge case: dezembro deve ir até 31/12, não 01/01 do ano seguinte."""
     from consolidated_dashboard.views import ConsolidatedDashboardPeriodoView
+
     view = ConsolidatedDashboardPeriodoView()
     inicio, fim = view._parse_periodo("2024-12")
     assert inicio == datetime.date(2024, 12, 1)
@@ -107,21 +122,27 @@ def test_periodo_endpoint_janeiro_ultimo_dia_correto():
 
 
 def test_periodo_endpoint_com_filtro_programa():
-    with patch.object(ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[]):
+    with patch.object(
+        ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[]
+    ):
         client = APIClient()
         response = client.get("/api/consolidated/periodo/2024-03/?programa=Cloud")
         assert response.status_code == 200
 
 
 def test_periodo_endpoint_com_filtro_status():
-    with patch.object(ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[]):
+    with patch.object(
+        ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[]
+    ):
         client = APIClient()
         response = client.get("/api/consolidated/periodo/2024-03/?status=Em Andamento")
         assert response.status_code == 200
 
 
 def test_periodo_endpoint_lista_vazia():
-    with patch.object(ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[]):
+    with patch.object(
+        ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[]
+    ):
         client = APIClient()
         response = client.get("/api/consolidated/periodo/2024-03/")
         assert response.status_code == 200
