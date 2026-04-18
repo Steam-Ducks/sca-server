@@ -1,11 +1,11 @@
 import datetime
 
-from django.db.models import F, FloatField, ExpressionWrapper, Sum, Count, Q
+from .serializers import ConsolidatedDashboardSerializer
+from django.db.models import ExpressionWrapper, F, FloatField, Q, Sum
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from sca_data.models import SilverProjeto
-from consolidated_dashboard.serializers import ConsolidatedDashboardSerializer
 
 
 class ConsolidatedDashboardView(generics.ListAPIView):

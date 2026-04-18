@@ -1,17 +1,12 @@
 import datetime
+
 import pytest
 from django.utils import timezone
 
-from sca_data.models import (
-    SilverPrograma,
-    SilverProjeto,
-    SilverTarefaProjeto,
-    SilverTempoTarefa,
-    SilverMaterial,
-    SilverFornecedor,
-    SilverSolicitacaoCompra,
-    SilverPedidoCompra,
-)
+from sca_data.models import (SilverFornecedor, SilverMaterial,
+                             SilverPedidoCompra, SilverPrograma, SilverProjeto,
+                             SilverSolicitacaoCompra, SilverTarefaProjeto,
+                             SilverTempoTarefa)
 
 
 @pytest.fixture

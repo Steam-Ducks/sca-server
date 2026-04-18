@@ -1,5 +1,6 @@
 from django.urls import path
-from consolidated_dashboard.views import ConsolidatedDashboardView
+
+from consolidated.consolidated_dashboard.views import ConsolidatedDashboardView
 
 urlpatterns = [
     path(

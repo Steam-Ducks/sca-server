@@ -1,12 +1,11 @@
 import datetime
-from decimal import Decimal
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from django.utils import timezone
 from rest_framework.test import APIClient
 
+from consolidated.consolidated_dashboard.views import ConsolidatedDashboardView
 from sca_data.models import SilverPrograma, SilverProjeto
-from consolidated_dashboard.views import ConsolidatedDashboardView
 
 
 def _make_projeto(
@@ -236,7 +235,7 @@ def test_get_queryset_aplica_filtro_data_inicio(rf):
     with patch("consolidated_dashboard.views.SilverProjeto.objects", mock_qs):
         view.get_queryset()
 
-    filter_calls_str = str(mock_qs.annotate.call_args_list)
+    str(mock_qs.annotate.call_args_list)
     assert "data_inicio" in str(datetime.date(2024, 3, 1)) or True  # ORM aplica via Q filter
 
 

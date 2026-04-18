@@ -3,15 +3,10 @@ from unittest.mock import patch
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from sca_data.models import (
-    SilverFornecedor,
-    SilverMaterial,
-    SilverPedidoCompra,
-    SilverPrograma,
-    SilverProjeto,
-    SilverSolicitacaoCompra,
-)
 from materials.views import MaterialsTableView
+from sca_data.models import (SilverFornecedor, SilverMaterial,
+                             SilverPedidoCompra, SilverPrograma, SilverProjeto,
+                             SilverSolicitacaoCompra)
 
 
 def _criar_pedido_em_memoria():

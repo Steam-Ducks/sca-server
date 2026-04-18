@@ -1,6 +1,7 @@
+from .serializers import ConsolidatedDashboardSerializer
 from django.utils import timezone
+
 from sca_data.models import SilverPrograma, SilverProjeto
-from consolidated_dashboard.serializers import ConsolidatedDashboardSerializer
 
 
 def _make_projeto(custo_materiais=1500.00, custo_horas=16800.00, qtd_materiais=10, total_horas=40.00):

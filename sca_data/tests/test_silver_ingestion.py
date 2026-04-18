@@ -5,26 +5,12 @@ import pandas as pd
 import pytest
 
 from sca_data.db.silver.ingestion_silver import (
-    PIPELINE,
-    _read_bronze,
-    _run_pipeline,
-    _to_date,
-    _to_float,
-    _to_int,
-    _to_str,
-    _transform_compras_projeto,
-    _transform_empenho_materiais,
-    _transform_estoque_materiais_projeto,
-    _transform_fornecedores,
-    _transform_materiais,
-    _transform_pedidos_compra,
-    _transform_programas,
-    _transform_projetos,
-    _transform_solicitacoes_compra,
-    _transform_tarefas_projeto,
-    _transform_tempo_tarefas,
-    _write_silver,
-)
+    PIPELINE, _read_bronze, _run_pipeline, _to_date, _to_float, _to_int,
+    _to_str, _transform_compras_projeto, _transform_empenho_materiais,
+    _transform_estoque_materiais_projeto, _transform_fornecedores,
+    _transform_materiais, _transform_pedidos_compra, _transform_programas,
+    _transform_projetos, _transform_solicitacoes_compra,
+    _transform_tarefas_projeto, _transform_tempo_tarefas, _write_silver)
 
 
 @pytest.fixture

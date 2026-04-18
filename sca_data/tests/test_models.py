@@ -1,18 +1,11 @@
 import django.db.models as dj_models
 
-from sca_data.models import (
-    SilverComprasProjeto,
-    SilverEmpenhoMaterial,
-    SilverEstoqueMateriaisProjeto,
-    SilverFornecedor,
-    SilverMaterial,
-    SilverPedidoCompra,
-    SilverPrograma,
-    SilverProjeto,
-    SilverSolicitacaoCompra,
-    SilverTarefaProjeto,
-    SilverTempoTarefa,
-)
+from sca_data.models import (SilverComprasProjeto, SilverEmpenhoMaterial,
+                             SilverEstoqueMateriaisProjeto, SilverFornecedor,
+                             SilverMaterial, SilverPedidoCompra,
+                             SilverPrograma, SilverProjeto,
+                             SilverSolicitacaoCompra, SilverTarefaProjeto,
+                             SilverTempoTarefa)
 
 
 def _get_field(model, name):
