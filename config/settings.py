@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "sca_data.apps.ScaDataConfig",
     "materials",
     "technical_hours",
+    "consolidated.consolidated_dashboard",
 ]
 
 MIDDLEWARE = [
