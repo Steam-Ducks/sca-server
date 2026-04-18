@@ -3,8 +3,12 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from sca_data.db.bronze.ingestion import (_build_df, _create_table,
-                                          _ensure_schema, _make_request)
+from sca_data.db.bronze.ingestion import (
+    _build_df,
+    _create_table,
+    _ensure_schema,
+    _make_request,
+)
 
 
 @pytest.fixture

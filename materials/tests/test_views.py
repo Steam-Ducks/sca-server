@@ -4,9 +4,14 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from materials.views import MaterialsTableView
-from sca_data.models import (SilverFornecedor, SilverMaterial,
-                             SilverPedidoCompra, SilverPrograma, SilverProjeto,
-                             SilverSolicitacaoCompra)
+from sca_data.models import (
+    SilverFornecedor,
+    SilverMaterial,
+    SilverPedidoCompra,
+    SilverPrograma,
+    SilverProjeto,
+    SilverSolicitacaoCompra,
+)
 
 
 def _criar_pedido_em_memoria():

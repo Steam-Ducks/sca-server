@@ -5,8 +5,12 @@ from unittest.mock import patch
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from sca_data.models import (SilverPrograma, SilverProjeto,
-                             SilverTarefaProjeto, SilverTempoTarefa)
+from sca_data.models import (
+    SilverPrograma,
+    SilverProjeto,
+    SilverTarefaProjeto,
+    SilverTempoTarefa,
+)
 from technical_hours.views import TechnicalHoursTableView
 
 

@@ -1,13 +1,24 @@
-from .serializers import ConsolidatedDashboardSerializer
+from consolidated.consolidated_dashboard.serializers import ConsolidatedDashboardSerializer
 from django.utils import timezone
 
 from sca_data.models import SilverPrograma, SilverProjeto
 
 
-def _make_projeto(custo_materiais=1500.00, custo_horas=16800.00, qtd_materiais=10, total_horas=40.00):
+def _make_projeto(
+    custo_materiais=1500.00, custo_horas=16800.00, qtd_materiais=10, total_horas=40.00
+):
     now = timezone.now()
-    programa = SilverPrograma(id=1, codigo_programa="P-001", nome_programa="Cloud", silver_ingested_at=now)
-    projeto = SilverProjeto(id=1, codigo_projeto="PR-001", nome_projeto="Migração AWS", custo_hora=420.00, status="Em Andamento", silver_ingested_at=now)
+    programa = SilverPrograma(
+        id=1, codigo_programa="P-001", nome_programa="Cloud", silver_ingested_at=now
+    )
+    projeto = SilverProjeto(
+        id=1,
+        codigo_projeto="PR-001",
+        nome_projeto="Migração AWS",
+        custo_hora=420.00,
+        status="Em Andamento",
+        silver_ingested_at=now,
+    )
     projeto.programa = programa
     projeto.custo_materiais = custo_materiais
     projeto.custo_horas = custo_horas
@@ -34,7 +45,17 @@ def test_serializer_retorna_campos_corretos():
 def test_serializer_retorna_todos_os_campos():
     projeto = _make_projeto()
     serializer = ConsolidatedDashboardSerializer(projeto)
-    expected = {"id", "nome_projeto", "programa", "custo_materiais", "custo_horas", "custo_total", "qtd_materiais", "total_horas", "status"}
+    expected = {
+        "id",
+        "nome_projeto",
+        "programa",
+        "custo_materiais",
+        "custo_horas",
+        "custo_total",
+        "qtd_materiais",
+        "total_horas",
+        "status",
+    }
     assert set(serializer.data.keys()) == expected
 
 
@@ -46,7 +67,13 @@ def test_serializer_custo_total_soma_materiais_e_horas():
 
 def test_serializer_programa_none_quando_sem_programa():
     now = timezone.now()
-    projeto = SilverProjeto(id=1, codigo_projeto="PR-001", nome_projeto="Sem Programa", custo_hora=100.00, silver_ingested_at=now)
+    projeto = SilverProjeto(
+        id=1,
+        codigo_projeto="PR-001",
+        nome_projeto="Sem Programa",
+        custo_hora=100.00,
+        silver_ingested_at=now,
+    )
     projeto.programa = None
     projeto.custo_materiais = 0
     projeto.custo_horas = 0

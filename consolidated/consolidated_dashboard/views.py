@@ -1,6 +1,6 @@
 import datetime
 
-from .serializers import ConsolidatedDashboardSerializer
+from consolidated.consolidated_dashboard.serializers import ConsolidatedDashboardSerializer
 from django.db.models import ExpressionWrapper, F, FloatField, Q, Sum
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError as DRFValidationError
@@ -67,7 +67,9 @@ class ConsolidatedDashboardView(generics.ListAPIView):
         raw_periodo = params.get("periodo")
 
         if raw_inicio or raw_fim:
-            data_inicio = self._parse_date(raw_inicio, "data_inicio") if raw_inicio else None
+            data_inicio = (
+                self._parse_date(raw_inicio, "data_inicio") if raw_inicio else None
+            )
             data_fim = self._parse_date(raw_fim, "data_fim") if raw_fim else None
 
             if data_inicio and data_fim and data_inicio > data_fim:
@@ -118,45 +120,40 @@ class ConsolidatedDashboardView(generics.ListAPIView):
         params = self.request.query_params
 
         # Build date filters for related models
-        pedido_filter = Q(
-            solicitacoes__pedidocompra__solicitacao__isnull=False
-        )
+        pedido_filter = Q(solicitacoes__pedidocompra__solicitacao__isnull=False)
         tempo_filter = Q()
 
         if data_inicio:
             pedido_filter &= Q(solicitacoes__pedidocompra__data_pedido__gte=data_inicio)
-            tempo_filter  &= Q(tarefas__tempos__data__gte=data_inicio)
+            tempo_filter &= Q(tarefas__tempos__data__gte=data_inicio)
         if data_fim:
             pedido_filter &= Q(solicitacoes__pedidocompra__data_pedido__lte=data_fim)
-            tempo_filter  &= Q(tarefas__tempos__data__lte=data_fim)
+            tempo_filter &= Q(tarefas__tempos__data__lte=data_fim)
 
-        qs = (
-            SilverProjeto.objects.select_related("programa")
-            .annotate(
-                # Custo materiais: soma do valor_total dos pedidos de compra do projeto
-                custo_materiais=Sum(
-                    "solicitacoes__pedidocompra__valor_total",
-                    filter=pedido_filter,
+        qs = SilverProjeto.objects.select_related("programa").annotate(
+            # Custo materiais: soma do valor_total dos pedidos de compra do projeto
+            custo_materiais=Sum(
+                "solicitacoes__pedidocompra__valor_total",
+                filter=pedido_filter,
+            ),
+            # Custo horas: soma de horas_trabalhadas * custo_hora do projeto
+            custo_horas=Sum(
+                ExpressionWrapper(
+                    F("tarefas__tempos__horas_trabalhadas") * F("custo_hora"),
+                    output_field=FloatField(),
                 ),
-                # Custo horas: soma de horas_trabalhadas * custo_hora do projeto
-                custo_horas=Sum(
-                    ExpressionWrapper(
-                        F("tarefas__tempos__horas_trabalhadas") * F("custo_hora"),
-                        output_field=FloatField(),
-                    ),
-                    filter=tempo_filter,
-                ),
-                # Qtd materiais: soma das quantidades solicitadas
-                qtd_materiais=Sum(
-                    "solicitacoes__quantidade",
-                    filter=Q(solicitacoes__pedidocompra__isnull=False),
-                ),
-                # Total horas trabalhadas
-                total_horas=Sum(
-                    "tarefas__tempos__horas_trabalhadas",
-                    filter=tempo_filter,
-                ),
-            )
+                filter=tempo_filter,
+            ),
+            # Qtd materiais: soma das quantidades solicitadas
+            qtd_materiais=Sum(
+                "solicitacoes__quantidade",
+                filter=Q(solicitacoes__pedidocompra__isnull=False),
+            ),
+            # Total horas trabalhadas
+            total_horas=Sum(
+                "tarefas__tempos__horas_trabalhadas",
+                filter=tempo_filter,
+            ),
         )
 
         # Filtros adicionais por programa, projeto e status

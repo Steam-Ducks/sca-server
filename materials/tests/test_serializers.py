@@ -1,9 +1,14 @@
 from django.utils import timezone
 
 from materials.serializers import MaterialsTableSerializer
-from sca_data.models import (SilverFornecedor, SilverMaterial,
-                             SilverPedidoCompra, SilverPrograma, SilverProjeto,
-                             SilverSolicitacaoCompra)
+from sca_data.models import (
+    SilverFornecedor,
+    SilverMaterial,
+    SilverPedidoCompra,
+    SilverPrograma,
+    SilverProjeto,
+    SilverSolicitacaoCompra,
+)
 
 
 def test_materials_serializer_retorna_dados_corretos():

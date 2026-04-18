@@ -3,15 +3,22 @@ import datetime
 import pytest
 from django.utils import timezone
 
-from sca_data.models import (SilverFornecedor, SilverMaterial,
-                             SilverPedidoCompra, SilverPrograma, SilverProjeto,
-                             SilverSolicitacaoCompra, SilverTarefaProjeto,
-                             SilverTempoTarefa)
+from sca_data.models import (
+    SilverFornecedor,
+    SilverMaterial,
+    SilverPedidoCompra,
+    SilverPrograma,
+    SilverProjeto,
+    SilverSolicitacaoCompra,
+    SilverTarefaProjeto,
+    SilverTempoTarefa,
+)
 
 
 @pytest.fixture
 def rf():
     from django.test import RequestFactory
+
     return RequestFactory()
 
 
@@ -92,7 +99,7 @@ def projeto_em_memoria():
 
     # Attach annotations manually (as the ORM would)
     projeto.custo_materiais = 1500.00
-    projeto.custo_horas = 40.00 * 420.00   # 16800.00
+    projeto.custo_horas = 40.00 * 420.00  # 16800.00
     projeto.qtd_materiais = 10
     projeto.total_horas = 40.00
 
