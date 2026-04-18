@@ -1,6 +1,8 @@
 import datetime
 
-from consolidated.consolidated_dashboard.serializers import ConsolidatedDashboardSerializer
+from consolidated.consolidated_dashboard.serializers import (
+    ConsolidatedDashboardSerializer,
+)
 from django.db.models import ExpressionWrapper, F, FloatField, Q, Sum
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError as DRFValidationError

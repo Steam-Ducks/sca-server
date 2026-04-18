@@ -1,4 +1,6 @@
-from consolidated.consolidated_dashboard.serializers import ConsolidatedDashboardSerializer
+from consolidated.consolidated_dashboard.serializers import (
+    ConsolidatedDashboardSerializer,
+)
 from django.utils import timezone
 
 from sca_data.models import SilverPrograma, SilverProjeto
