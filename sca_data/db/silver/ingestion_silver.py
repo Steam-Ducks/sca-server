@@ -144,7 +144,12 @@ def _transform_fornecedores(engine, run_id: str, log):
 
     except Exception as e:
         logging.error(f"It was not possible to transform 'fornecedores'. Error: {e}")
-        log("fornecedores", OperationStatus.FAILED, started_at, metadata={"error": str(e)})
+        log(
+            "fornecedores",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
 def _transform_projetos(engine, run_id: str, log):
@@ -198,7 +203,12 @@ def _transform_tarefas_projeto(engine, run_id: str, log):
 
     except Exception as e:
         logging.error(f"It was not possible to transform 'tarefas_projeto'. Error: {e}")
-        log("tarefas_projeto", OperationStatus.FAILED, started_at, metadata={"error": str(e)})
+        log(
+            "tarefas_projeto",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
 def _transform_tempo_tarefas(engine, run_id: str, log):
@@ -221,7 +231,12 @@ def _transform_tempo_tarefas(engine, run_id: str, log):
 
     except Exception as e:
         logging.error(f"It was not possible to transform 'tempo_tarefas'. Error: {e}")
-        log("tempo_tarefas", OperationStatus.FAILED, started_at, metadata={"error": str(e)})
+        log(
+            "tempo_tarefas",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
 def _transform_solicitacoes_compra(engine, run_id: str, log):
@@ -249,7 +264,12 @@ def _transform_solicitacoes_compra(engine, run_id: str, log):
         logging.error(
             f"It was not possible to transform 'solicitacoes_compra'. Error: {e}"
         )
-        log("solicitacoes_compra", OperationStatus.FAILED, started_at, metadata={"error": str(e)})
+        log(
+            "solicitacoes_compra",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
 def _transform_pedidos_compra(engine, run_id: str, log):
@@ -275,7 +295,12 @@ def _transform_pedidos_compra(engine, run_id: str, log):
 
     except Exception as e:
         logging.error(f"It was not possible to transform 'pedidos_compra'. Error: {e}")
-        log("pedidos_compra", OperationStatus.FAILED, started_at, metadata={"error": str(e)})
+        log(
+            "pedidos_compra",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
 def _transform_compras_projeto(engine, run_id: str, log):
@@ -297,7 +322,12 @@ def _transform_compras_projeto(engine, run_id: str, log):
 
     except Exception as e:
         logging.error(f"It was not possible to transform 'compras_projeto'. Error: {e}")
-        log("compras_projeto", OperationStatus.FAILED, started_at, metadata={"error": str(e)})
+        log(
+            "compras_projeto",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
 def _transform_empenho_materiais(engine, run_id: str, log):
@@ -322,7 +352,12 @@ def _transform_empenho_materiais(engine, run_id: str, log):
         logging.error(
             f"It was not possible to transform 'empenho_materiais'. Error: {e}"
         )
-        log("empenho_materiais", OperationStatus.FAILED, started_at, metadata={"error": str(e)})
+        log(
+            "empenho_materiais",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
 def _transform_estoque_materiais_projeto(engine, run_id: str, log):
@@ -341,13 +376,23 @@ def _transform_estoque_materiais_projeto(engine, run_id: str, log):
         )
 
         affected_rows = _write_silver(out, engine, "estoque_materiais_projeto")
-        log("estoque_materiais_projeto", OperationStatus.SUCCESS, started_at, affected_rows)
+        log(
+            "estoque_materiais_projeto",
+            OperationStatus.SUCCESS,
+            started_at,
+            affected_rows,
+        )
 
     except Exception as e:
         logging.error(
             f"It was not possible to transform 'estoque_materiais_projeto'. Error: {e}"
         )
-        log("estoque_materiais_projeto", OperationStatus.FAILED, started_at, metadata={"error": str(e)})
+        log(
+            "estoque_materiais_projeto",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
 PIPELINE = [

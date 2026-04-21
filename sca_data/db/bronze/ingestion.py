@@ -45,7 +45,7 @@ def _create_table(df: pd.DataFrame, engine, tb_name: str):
 
 
 def _build_df(endpoint: str, file: str, run_id: str) -> pd.DataFrame:
-    
+
     started_at = datetime.datetime.now()
     table_name = file.replace(".parquet", "")
     route = f"{endpoint}/files/{file}"
@@ -60,17 +60,17 @@ def _build_df(endpoint: str, file: str, run_id: str) -> pd.DataFrame:
         _create_table(df, ENGINE, table_name)
 
         audit.log_exec(
-            engine = ENGINE,
-            run_id = run_id,
-            operation = OperationType.INGEST,
-            status = OperationStatus.SUCCESS,
-            table_schema = LayerSchema.BRONZE,
-            table_name = table_name,
-            affected_rows = len(df),
-            started_at = started_at,
+            engine=ENGINE,
+            run_id=run_id,
+            operation=OperationType.INGEST,
+            status=OperationStatus.SUCCESS,
+            table_schema=LayerSchema.BRONZE,
+            table_name=table_name,
+            affected_rows=len(df),
+            started_at=started_at,
             metadata={
                 "endpoint": route,
-                "columns":  list(df.columns),
+                "columns": list(df.columns),
             },
         )
 
@@ -78,14 +78,14 @@ def _build_df(endpoint: str, file: str, run_id: str) -> pd.DataFrame:
         logging.error(f"It was not possible to ingest file {file}. Error {e}")
 
         audit.log_exec(
-            engine = ENGINE,
-            run_id = run_id,
-            operation = OperationType.INGEST,
-            status = OperationStatus.FAILED,
-            table_schema = LayerSchema.BRONZE,
-            table_name = table_name,
-            affected_rows = 0,
-            started_at = started_at,
+            engine=ENGINE,
+            run_id=run_id,
+            operation=OperationType.INGEST,
+            status=OperationStatus.FAILED,
+            table_schema=LayerSchema.BRONZE,
+            table_name=table_name,
+            affected_rows=0,
+            started_at=started_at,
             metadata={
                 "endpoint": route,
                 "error": str(e),

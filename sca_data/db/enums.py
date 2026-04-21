@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class OperationStatus(str, Enum):
     SUCCESS = "SUCCESS"
     FAILED = "FAILED"
