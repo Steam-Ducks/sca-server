@@ -1,6 +1,8 @@
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 from django.db.models import ExpressionWrapper, F, FloatField
+from rest_framework import generics
+
 from sca_data.models import SilverTempoTarefa
 from technical_hours.serializers import TechnicalHoursTableSerializer
 

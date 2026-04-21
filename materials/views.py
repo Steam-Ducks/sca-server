@@ -1,7 +1,7 @@
 from rest_framework import generics
 
-from sca_data.models import SilverPedidoCompra
 from materials.serializers import MaterialsTableSerializer
+from sca_data.models import SilverPedidoCompra
 
 
 class MaterialsTableView(generics.ListAPIView):
