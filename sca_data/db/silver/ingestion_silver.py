@@ -1,9 +1,10 @@
-from sca_data.db.connection import getOrCreate
+import datetime
+import logging
+
 import pandas as pd
 from sqlalchemy import text
-import logging
-import datetime
 
+from sca_data.db.connection import getOrCreate
 
 logger = logging.getLogger(__name__)
 

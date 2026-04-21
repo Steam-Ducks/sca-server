@@ -1,4 +1,5 @@
 from django.urls import path
+
 from technical_hours.views import TechnicalHoursTableView
 
 urlpatterns = [
