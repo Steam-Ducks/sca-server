@@ -1,6 +1,9 @@
 from django.urls import resolve, reverse
 
-from technical_hours.views import TechnicalHoursTablePeriodoView, TechnicalHoursTableView
+from technical_hours.views import (
+    TechnicalHoursTablePeriodoView,
+    TechnicalHoursTableView,
+)
 
 
 def test_technical_hours_url_resolve():

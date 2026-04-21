@@ -1,6 +1,9 @@
 from django.urls import path
 
-from technical_hours.views import TechnicalHoursTablePeriodoView, TechnicalHoursTableView
+from technical_hours.views import (
+    TechnicalHoursTablePeriodoView,
+    TechnicalHoursTableView,
+)
 
 urlpatterns = [
     path(

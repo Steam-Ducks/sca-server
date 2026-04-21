@@ -5,7 +5,12 @@ from unittest.mock import patch
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from sca_data.models import SilverPrograma, SilverProjeto, SilverTarefaProjeto, SilverTempoTarefa
+from sca_data.models import (
+    SilverPrograma,
+    SilverProjeto,
+    SilverTarefaProjeto,
+    SilverTempoTarefa,
+)
 from technical_hours.views import TechnicalHoursTablePeriodoView
 
 URL = "/api/horas-tecnicas/periodo/"
@@ -24,21 +29,34 @@ def _make_tempo(
 ):
     now = timezone.now()
     programa = SilverPrograma(
-        id=id, codigo_programa=f"P-{id}", nome_programa=nome_programa, silver_ingested_at=now
+        id=id,
+        codigo_programa=f"P-{id}",
+        nome_programa=nome_programa,
+        silver_ingested_at=now,
     )
     projeto = SilverProjeto(
-        id=id, codigo_projeto=f"PR-{id}", nome_projeto=nome_projeto,
-        custo_hora=custo_hora, silver_ingested_at=now,
+        id=id,
+        codigo_projeto=f"PR-{id}",
+        nome_projeto=nome_projeto,
+        custo_hora=custo_hora,
+        silver_ingested_at=now,
     )
     projeto.programa = programa
     tarefa = SilverTarefaProjeto(
-        id=id, codigo_tarefa=f"TAR-{id}", titulo=titulo_tarefa,
-        responsavel=responsavel, estimativa_horas=400, silver_ingested_at=now,
+        id=id,
+        codigo_tarefa=f"TAR-{id}",
+        titulo=titulo_tarefa,
+        responsavel=responsavel,
+        estimativa_horas=400,
+        silver_ingested_at=now,
     )
     tarefa.projeto = projeto
     tempo = SilverTempoTarefa(
-        id=id, usuario=usuario, data=data,
-        horas_trabalhadas=horas_trabalhadas, silver_ingested_at=now,
+        id=id,
+        usuario=usuario,
+        data=data,
+        horas_trabalhadas=horas_trabalhadas,
+        silver_ingested_at=now,
     )
     tempo.tarefa = tarefa
     tempo.custo_por_hora = custo_hora
@@ -60,7 +78,9 @@ def test_periodo_endpoint_retorna_200():
 
 def test_periodo_endpoint_retorna_lista():
     tempo = _make_tempo()
-    with patch.object(TechnicalHoursTablePeriodoView, "get_queryset", return_value=[tempo]):
+    with patch.object(
+        TechnicalHoursTablePeriodoView, "get_queryset", return_value=[tempo]
+    ):
         client = APIClient()
         response = client.get(f"{URL}2024-03/")
         assert isinstance(response.data, list)
@@ -69,7 +89,9 @@ def test_periodo_endpoint_retorna_lista():
 
 def test_periodo_endpoint_retorna_campos_corretos():
     tempo = _make_tempo()
-    with patch.object(TechnicalHoursTablePeriodoView, "get_queryset", return_value=[tempo]):
+    with patch.object(
+        TechnicalHoursTablePeriodoView, "get_queryset", return_value=[tempo]
+    ):
         client = APIClient()
         response = client.get(f"{URL}2024-03/")
         item = response.data[0]
@@ -129,10 +151,15 @@ def test_periodo_endpoint_janeiro_ultimo_dia_correto():
 def test_periodo_endpoint_multiplos_registros():
     tempo1 = _make_tempo(id=1)
     tempo2 = _make_tempo(
-        id=2, usuario="Ana Oliveira", data=datetime.date(2024, 3, 20),
-        horas_trabalhadas=52.00, custo_hora=250.00,
-        nome_projeto="Portal Web", nome_programa="Desenvolvimento",
-        responsavel="Full Stack Dev", titulo_tarefa="Desenvolvimento",
+        id=2,
+        usuario="Ana Oliveira",
+        data=datetime.date(2024, 3, 20),
+        horas_trabalhadas=52.00,
+        custo_hora=250.00,
+        nome_projeto="Portal Web",
+        nome_programa="Desenvolvimento",
+        responsavel="Full Stack Dev",
+        titulo_tarefa="Desenvolvimento",
     )
     with patch.object(
         TechnicalHoursTablePeriodoView, "get_queryset", return_value=[tempo1, tempo2]
