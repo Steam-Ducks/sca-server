@@ -13,6 +13,8 @@ from sca_data.models import (
 )
 from technical_hours.views import TechnicalHoursTableView
 
+URL = "/api/horas-tecnicas/"
+
 
 def test_technical_hours_table_returns_200():
     with patch.object(TechnicalHoursTableView, "get_queryset", return_value=[]):
@@ -108,3 +110,85 @@ def test_technical_hours_table_retorna_multiplos_registros(tempo_em_memoria):
         assert len(response.data) == 2
         assert response.data[0]["colaborador"] == "Lucas Martins"
         assert response.data[1]["colaborador"] == "Ana Oliveira"
+
+
+# ─── Filtros por período ─────────────────────────────────────────────────────
+
+
+def test_filtro_por_periodo_yyyy_mm_retorna_200(tempo_em_memoria):
+    with patch.object(
+        TechnicalHoursTableView, "get_queryset", return_value=[tempo_em_memoria]
+    ):
+        client = APIClient()
+        response = client.get(f"{URL}?periodo=2024-03")
+        assert response.status_code == 200
+        assert len(response.data) == 1
+        assert response.data[0]["periodo"] == "2024-03"
+
+
+def test_filtro_por_ano_retorna_200(tempo_em_memoria):
+    with patch.object(
+        TechnicalHoursTableView, "get_queryset", return_value=[tempo_em_memoria]
+    ):
+        client = APIClient()
+        response = client.get(f"{URL}?ano=2024")
+        assert response.status_code == 200
+        assert len(response.data) == 1
+
+
+def test_filtro_por_mes_retorna_200(tempo_em_memoria):
+    with patch.object(
+        TechnicalHoursTableView, "get_queryset", return_value=[tempo_em_memoria]
+    ):
+        client = APIClient()
+        response = client.get(f"{URL}?mes=3")
+        assert response.status_code == 200
+        assert len(response.data) == 1
+
+
+def test_filtro_por_ano_e_mes_retorna_200(tempo_em_memoria):
+    with patch.object(
+        TechnicalHoursTableView, "get_queryset", return_value=[tempo_em_memoria]
+    ):
+        client = APIClient()
+        response = client.get(f"{URL}?ano=2024&mes=3")
+        assert response.status_code == 200
+        assert len(response.data) == 1
+
+
+def test_periodo_invalido_retorna_400():
+    client = APIClient()
+    response = client.get(f"{URL}?periodo=invalido")
+    assert response.status_code == 400
+    assert "periodo" in response.data
+
+
+def test_periodo_com_tres_partes_retorna_400():
+    client = APIClient()
+    response = client.get(f"{URL}?periodo=2024-03-15")
+    assert response.status_code == 400
+    assert "periodo" in response.data
+
+
+def test_ano_nao_numerico_retorna_400():
+    client = APIClient()
+    response = client.get(f"{URL}?ano=abc")
+    assert response.status_code == 400
+    assert "ano" in response.data
+
+
+def test_mes_nao_numerico_retorna_400():
+    client = APIClient()
+    response = client.get(f"{URL}?mes=abc")
+    assert response.status_code == 400
+    assert "mes" in response.data
+
+
+def test_sem_filtro_retorna_todos_registros(tempo_em_memoria):
+    with patch.object(
+        TechnicalHoursTableView, "get_queryset", return_value=[tempo_em_memoria]
+    ):
+        client = APIClient()
+        response = client.get(URL)
+        assert response.status_code == 200
+        assert len(response.data) == 1
