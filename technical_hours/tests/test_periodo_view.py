@@ -108,7 +108,7 @@ def test_periodo_endpoint_formato_errado_retorna_400():
 
 def test_periodo_endpoint_com_barra_retorna_404():
     client = APIClient()
-    response = client.get(f"/api/horas-tecnicas/periodo/2024/03/")
+    response = client.get("/api/horas-tecnicas/periodo/2024/03/")
     assert response.status_code == 404
 
 
