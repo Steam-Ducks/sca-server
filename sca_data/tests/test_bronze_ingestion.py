@@ -88,7 +88,9 @@ class TestBuildDf:
     @patch("sca_data.db.bronze.ingestion.audit.log_exec")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.bronze.ingestion.requests.get")
-    def test_strips_parquet_extension_from_table_name(self, mock_get, mock_create, mock_log):
+    def test_strips_parquet_extension_from_table_name(
+        self, mock_get, mock_create, mock_log
+    ):
         mock_get.return_value.json.return_value = [{"id": 1}]
 
         _build_df("http://api.example.com", "programas.parquet", "test-run-id")
@@ -136,8 +138,12 @@ class TestMakeRequest:
         _make_request("http://api.example.com", "test-run-id")
 
         assert mock_build.call_count == 2
-        mock_build.assert_any_call("http://api.example.com", "programas.parquet", "test-run-id")
-        mock_build.assert_any_call("http://api.example.com", "materiais.parquet", "test-run-id")
+        mock_build.assert_any_call(
+            "http://api.example.com", "programas.parquet", "test-run-id"
+        )
+        mock_build.assert_any_call(
+            "http://api.example.com", "materiais.parquet", "test-run-id"
+        )
 
     @patch("sca_data.db.bronze.ingestion._build_df")
     @patch("sca_data.db.bronze.ingestion.requests.get")
@@ -168,4 +174,3 @@ class TestMakeRequest:
         _make_request("http://api.example.com", "test-run-id")
 
         mock_build.assert_not_called()
-        
