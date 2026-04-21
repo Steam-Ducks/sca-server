@@ -237,6 +237,8 @@ class GoldIndicadoresMateriais(models.Model):
     class Meta:
         app_label = "sca_data"
         db_table = 'gold"."indicadores_materiais'
+
+
 class AuditExecutionLog(models.Model):
     id = models.AutoField(primary_key=True)
     run_id = models.UUIDField()

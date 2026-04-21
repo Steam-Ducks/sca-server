@@ -39,7 +39,9 @@ def _run_materials_indicators(engine):
             conn.commit()
         logging.info("Table indicators_materiais wrote in schema 'gold'!")
     except Exception as e:
-        logging.error(f"It was not possible to build 'materials_indicators'. Error: {e}")
+        logging.error(
+            f"It was not possible to build 'materials_indicators'. Error: {e}"
+        )
 
 
 def _run_pipeline(engine):

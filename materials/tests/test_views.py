@@ -115,7 +115,7 @@ def test_materials_indicators_returns_200():
         "_build_materiais_queryset",
         return_value=_mock_materiais_qs(),
     ):
-        response = APIClient().get("/api/materiais/indicators/")
+        response = APIClient().get("/api/materials/indicators/")
         assert response.status_code == 200
 
 
@@ -126,7 +126,7 @@ def test_materials_indicators_retorna_campos_corretos():
     with patch.object(
         MaterialsIndicatorsView, "_build_materiais_queryset", return_value=mock_qs
     ):
-        response = APIClient().get("/api/materiais/indicators/")
+        response = APIClient().get("/api/materials/indicators/")
         assert response.data["custo_total"] == 4500.53
         assert response.data["total_itens"] == 3
         assert response.data["custo_medio"] == 1500.27
@@ -137,7 +137,7 @@ def test_materials_indicators_sem_dados_retorna_nulos():
     with patch.object(
         MaterialsIndicatorsView, "_build_materiais_queryset", return_value=mock_qs
     ):
-        response = APIClient().get("/api/materiais/indicators/")
+        response = APIClient().get("/api/materials/indicators/")
         assert response.data["custo_total"] is None
         assert response.data["total_itens"] == 0
         assert response.data["custo_medio"] is None
@@ -148,7 +148,7 @@ def test_materials_indicators_filtra_por_categoria():
     with patch.object(
         MaterialsIndicatorsView, "_build_materiais_queryset", return_value=mock_qs
     ):
-        response = APIClient().get("/api/materiais/indicators/?categoria=LED")
+        response = APIClient().get("/api/materials/indicators/?categoria=LED")
         assert response.status_code == 200
         assert response.data["total_itens"] == 2
 
@@ -158,6 +158,6 @@ def test_materials_indicators_filtra_por_programa():
     with patch.object(
         MaterialsIndicatorsView, "_build_materiais_queryset", return_value=mock_qs
     ):
-        response = APIClient().get("/api/materiais/indicators/?programa=Cloud")
+        response = APIClient().get("/api/materials/indicators/?programa=Cloud")
         assert response.status_code == 200
         assert response.data["total_itens"] == 1
