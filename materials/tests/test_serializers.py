@@ -1,6 +1,6 @@
 from django.utils import timezone
 
-from materials.serializers import MaterialsTableSerializer
+from materials.serializers import MaterialsIndicatorsSerializer, MaterialsTableSerializer
 from sca_data.models import (
     SilverFornecedor,
     SilverMaterial,
@@ -70,3 +70,21 @@ def test_materials_serializer_retorna_dados_corretos():
     assert serializer.data["valor_unitario"] == 150.00
     assert serializer.data["fornecedor"] == "Fornecedor Ltda"
     assert serializer.data["categoria"] == "Estrutural"
+
+
+def test_materials_indicators_serializer_retorna_campos_corretos():
+    data = {"custo_total": 4500.53, "total_itens": 3, "custo_medio": 1500.27}
+    serializer = MaterialsIndicatorsSerializer(data)
+
+    assert serializer.data["custo_total"] == 4500.53
+    assert serializer.data["total_itens"] == 3
+    assert serializer.data["custo_medio"] == 1500.27
+
+
+def test_materials_indicators_serializer_aceita_valores_nulos():
+    data = {"custo_total": None, "total_itens": 0, "custo_medio": None}
+    serializer = MaterialsIndicatorsSerializer(data)
+
+    assert serializer.data["custo_total"] is None
+    assert serializer.data["total_itens"] == 0
+    assert serializer.data["custo_medio"] is None
