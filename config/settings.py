@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "materials",
     "technical_hours",
     "consolidated.consolidated_dashboard",
+    "dashboard",
 ]
 
 MIDDLEWARE = [
@@ -82,6 +83,9 @@ CORS_ALLOWED_ORIGINS = [
     for o in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
     if o.strip()
 ]
+
+_cors_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
+CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins.split(",") if o.strip()]
 
 ROOT_URLCONF = "config.urls"
 
