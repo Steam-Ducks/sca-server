@@ -79,13 +79,8 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 
-CORS_ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in os.environ.get(
-        "CORS_ALLOWED_ORIGINS", "http://localhost:5173"
-    ).split(",")
-    if origin.strip()
-]
+_cors_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
+CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins.split(",") if o.strip()]
 
 ROOT_URLCONF = "config.urls"
 
