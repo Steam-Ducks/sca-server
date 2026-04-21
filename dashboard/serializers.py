@@ -8,4 +8,3 @@ class DashboardKPIsSerializer(serializers.Serializer):
     total_hours_cost = serializers.FloatField()
     total_projects = serializers.IntegerField()
     total_programs = serializers.IntegerField()
-    

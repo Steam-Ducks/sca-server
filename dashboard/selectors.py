@@ -106,8 +106,8 @@ def get_dashboard_kpis(params):
 
     return {
         "total_consolidated_cost": round(materials_cost + hours_cost, 2),
-        "total_materials_cost":    round(materials_cost, 2),
-        "total_hours_cost":        round(hours_cost, 2),
-        "total_projects":          total_projects,
-        "total_programs":          total_programs,
+        "total_materials_cost": round(materials_cost, 2),
+        "total_hours_cost": round(hours_cost, 2),
+        "total_projects": total_projects,
+        "total_programs": total_programs,
     }

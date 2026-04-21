@@ -6,6 +6,7 @@ from dashboard.selectors import build_filters, get_dashboard_kpis
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def _mock_cursor(
     materials_cost=450000.0,
     hours_cost=300000.0,
@@ -29,6 +30,7 @@ def _patch_cursor(cursor):
 
 
 # ── build_filters ─────────────────────────────────────────────────────────────
+
 
 def test_build_filters_no_params_returns_empty_clauses():
     mat, hrs, prj, values = build_filters({})
@@ -57,21 +59,21 @@ def test_build_filters_end_date():
 
 
 def test_build_filters_program():
-    mat, hrs, prj, values = build_filters({"program": "5"})
+    mat, hrs, prj, values = build_filters({"program": "MANSUP"})
 
-    assert "prog.id = %(program)s" in mat
-    assert "prog.id = %(program)s" in hrs
-    assert "prog.id = %(program)s" in prj
-    assert values["program"] == "5"
+    assert "prog.codigo_programa = %(program)s" in mat
+    assert "prog.codigo_programa = %(program)s" in hrs
+    assert "prog.codigo_programa = %(program)s" in prj
+    assert values["program"] == "MANSUP"
 
 
 def test_build_filters_project():
-    mat, hrs, prj, values = build_filters({"project": "12"})
+    mat, hrs, prj, values = build_filters({"project": "Sensor Pressão Industrial"})
 
-    assert "p.id = %(project)s" in mat
-    assert "p.id = %(project)s" in hrs
-    assert "p.id = %(project)s" in prj
-    assert values["project"] == "12"
+    assert "p.nome_projeto = %(project)s" in mat
+    assert "p.nome_projeto = %(project)s" in hrs
+    assert "p.nome_projeto = %(project)s" in prj
+    assert values["project"] == "Sensor Pressão Industrial"
 
 
 def test_build_filters_status():
@@ -86,10 +88,10 @@ def test_build_filters_status():
 def test_build_filters_all_params():
     params = {
         "start_date": "2024-01-01",
-        "end_date":   "2024-12-31",
-        "program":    "2",
-        "project":    "7",
-        "status":     "Concluído",
+        "end_date": "2024-12-31",
+        "program": "MANSUP",
+        "project": "Sensor Pressão Industrial",
+        "status": "Concluído",
     }
     mat, hrs, prj, values = build_filters(params)
 
@@ -100,7 +102,7 @@ def test_build_filters_all_params():
 
 
 def test_build_filters_clauses_start_with_where_when_filtered():
-    mat, hrs, prj, values = build_filters({"project": "1"})
+    mat, hrs, prj, values = build_filters({"project": "Sensor Pressão Industrial"})
 
     assert mat.startswith("WHERE ")
     assert hrs.startswith("WHERE ")
@@ -108,6 +110,7 @@ def test_build_filters_clauses_start_with_where_when_filtered():
 
 
 # ── get_dashboard_kpis ────────────────────────────────────────────────────────
+
 
 def test_get_dashboard_kpis_returns_five_fields():
     cursor = _mock_cursor()
@@ -190,11 +193,11 @@ def test_get_dashboard_kpis_passes_filters_to_queries():
     patcher, _ = _patch_cursor(cursor)
 
     with patcher:
-        get_dashboard_kpis({"program": "3", "status": "Em andamento"})
+        get_dashboard_kpis({"program": "MANSUP", "status": "Em andamento"})
 
     for call in cursor.execute.call_args_list:
         _, values = call[0]
-        assert values["program"] == "3"
+        assert values["program"] == "MANSUP"
         assert values["status"] == "Em andamento"
 
 
@@ -215,4 +218,3 @@ def test_get_dashboard_kpis_with_zeros():
     assert result["total_hours_cost"] == 0.0
     assert result["total_projects"] == 0
     assert result["total_programs"] == 0
-    

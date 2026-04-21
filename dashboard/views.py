@@ -15,8 +15,8 @@ class DashboardKPIsView(APIView):
     Query params (all optional):
         start_date — YYYY-MM-DD
         end_date   — YYYY-MM-DD
-        program    — program id
-        project    — project id
+        program    — codigo_programa (program name)
+        project    — nome_projeto (project name)
         status     — project status
     """
 
@@ -24,4 +24,3 @@ class DashboardKPIsView(APIView):
         kpis = get_dashboard_kpis(request.query_params)
         serializer = DashboardKPIsSerializer(kpis)
         return Response(serializer.data)
-    

@@ -15,4 +15,3 @@ def test_dashboard_kpis_url_path():
     url = reverse("dashboard-kpis")
 
     assert url == "/api/dashboard/kpis/"
-    
