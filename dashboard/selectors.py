@@ -9,8 +9,8 @@ def build_filters(params):
     Accepted filters:
         start_date — YYYY-MM-DD
         end_date   — YYYY-MM-DD
-        program    — program numeric ID
-        project    — project numeric ID
+        program    — program name (e.g. "MANSUP", "MAX 1.2 AC")
+        project    — project name (e.g. "Conversor DC-DC Isolado", "Placa Relé Inteligente")
         status     — project status (e.g. "Em andamento", "Concluído")
     """
     materials_where = []
