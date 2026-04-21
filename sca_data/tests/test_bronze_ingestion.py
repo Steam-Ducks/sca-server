@@ -73,48 +73,54 @@ class TestCreateTable:
 
 
 class TestBuildDf:
+    @patch("sca_data.db.bronze.ingestion.audit.log_exec")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.bronze.ingestion.requests.get")
-    def test_fetches_file_from_endpoint(self, mock_get, mock_create):
+    def test_fetches_file_from_endpoint(self, mock_get, mock_create, mock_log):
         mock_get.return_value.json.return_value = [{"id": 1, "nome": "Alpha"}]
 
-        _build_df("http://api.example.com", "programas.parquet")
+        _build_df("http://api.example.com", "programas.parquet", "test-run-id")
 
         mock_get.assert_called_once_with(
             "http://api.example.com/files/programas.parquet"
         )
 
+    @patch("sca_data.db.bronze.ingestion.audit.log_exec")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.bronze.ingestion.requests.get")
-    def test_strips_parquet_extension_from_table_name(self, mock_get, mock_create):
+    def test_strips_parquet_extension_from_table_name(
+        self, mock_get, mock_create, mock_log
+    ):
         mock_get.return_value.json.return_value = [{"id": 1}]
 
-        _build_df("http://api.example.com", "programas.parquet")
+        _build_df("http://api.example.com", "programas.parquet", "test-run-id")
 
         _, _, tb_name = mock_create.call_args[0]
         assert tb_name == "programas"
         assert ".parquet" not in tb_name
 
+    @patch("sca_data.db.bronze.ingestion.audit.log_exec")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.bronze.ingestion.requests.get")
-    def test_builds_dataframe_from_json_response(self, mock_get, mock_create):
+    def test_builds_dataframe_from_json_response(self, mock_get, mock_create, mock_log):
         mock_get.return_value.json.return_value = [
             {"id": 1, "nome": "Alpha"},
             {"id": 2, "nome": "Beta"},
         ]
 
-        _build_df("http://api.example.com", "programas.parquet")
+        _build_df("http://api.example.com", "programas.parquet", "test-run-id")
 
         df_arg = mock_create.call_args[0][0]
         assert isinstance(df_arg, pd.DataFrame)
         assert len(df_arg) == 2
 
+    @patch("sca_data.db.bronze.ingestion.audit.log_exec")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.bronze.ingestion.requests.get")
-    def test_exception_does_not_propagate(self, mock_get, mock_create):
+    def test_exception_does_not_propagate(self, mock_get, mock_create, mock_log):
         mock_get.side_effect = Exception("Network error")
 
-        _build_df("http://api.example.com", "programas.parquet")
+        _build_df("http://api.example.com", "programas.parquet", "test-run-id")
 
         mock_create.assert_not_called()
 
@@ -129,18 +135,22 @@ class TestMakeRequest:
             "materiais.parquet",
         ]
 
-        _make_request("http://api.example.com")
+        _make_request("http://api.example.com", "test-run-id")
 
         assert mock_build.call_count == 2
-        mock_build.assert_any_call("http://api.example.com", "programas.parquet")
-        mock_build.assert_any_call("http://api.example.com", "materiais.parquet")
+        mock_build.assert_any_call(
+            "http://api.example.com", "programas.parquet", "test-run-id"
+        )
+        mock_build.assert_any_call(
+            "http://api.example.com", "materiais.parquet", "test-run-id"
+        )
 
     @patch("sca_data.db.bronze.ingestion._build_df")
     @patch("sca_data.db.bronze.ingestion.requests.get")
     def test_non_200_status_does_not_call_build_df(self, mock_get, mock_build):
         mock_get.return_value.status_code = 500
 
-        _make_request("http://api.example.com")
+        _make_request("http://api.example.com", "test-run-id")
 
         mock_build.assert_not_called()
 
@@ -151,7 +161,7 @@ class TestMakeRequest:
 
         mock_get.side_effect = req_lib.exceptions.ConnectionError("timeout")
 
-        _make_request("http://api.example.com")
+        _make_request("http://api.example.com", "test-run-id")
 
         mock_build.assert_not_called()
 
@@ -161,6 +171,6 @@ class TestMakeRequest:
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = []
 
-        _make_request("http://api.example.com")
+        _make_request("http://api.example.com", "test-run-id")
 
         mock_build.assert_not_called()

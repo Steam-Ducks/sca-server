@@ -1,10 +1,11 @@
 import datetime
 import logging
-
+import uuid
 import pandas as pd
 from sqlalchemy import text
-
 from sca_data.db.connection import getOrCreate
+import sca_data.db.audit.audit as audit
+from sca_data.db.enums import OperationStatus, OperationType, LayerSchema
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ def _read_bronze(engine, tb_name: str) -> pd.DataFrame:
     return df
 
 
-def _write_silver(df: pd.DataFrame, engine, tb_name: str):
+def _write_silver(df: pd.DataFrame, engine, tb_name: str) -> int:
     logging.info(f"Writing {tb_name} ...")
 
     df["silver_ingested_at"] = datetime.datetime.now()
@@ -39,6 +40,7 @@ def _write_silver(df: pd.DataFrame, engine, tb_name: str):
     )
 
     logging.info(f"Table {tb_name} wrote in schema 'silver'!")
+    return len(df)
 
 
 def _to_date(series: pd.Series) -> pd.Series:
@@ -69,7 +71,8 @@ def _to_str(series: pd.Series, max_len: int = None) -> pd.Series:
     return pd.Series([_convert(v) for v in series], dtype=object)
 
 
-def _transform_programas(engine):
+def _transform_programas(engine, run_id: str, log):
+    started_at = datetime.datetime.now()
     try:
         df = _read_bronze(engine, "programas")
 
@@ -86,13 +89,16 @@ def _transform_programas(engine):
             }
         )
 
-        _write_silver(out, engine, "programas")
+        affected_rows = _write_silver(out, engine, "programas")
+        log("programas", OperationStatus.SUCCESS, started_at, affected_rows)
 
     except Exception as e:
         logging.error(f"It was not possible to transform 'programas'. Error: {e}")
+        log("programas", OperationStatus.FAILED, started_at, metadata={"error": str(e)})
 
 
-def _transform_materiais(engine):
+def _transform_materiais(engine, run_id: str, log):
+    started_at = datetime.datetime.now()
     try:
         df = _read_bronze(engine, "materiais")
 
@@ -108,13 +114,16 @@ def _transform_materiais(engine):
             }
         )
 
-        _write_silver(out, engine, "materiais")
+        affected_rows = _write_silver(out, engine, "materiais")
+        log("materiais", OperationStatus.SUCCESS, started_at, affected_rows)
 
     except Exception as e:
         logging.error(f"It was not possible to transform 'materiais'. Error: {e}")
+        log("materiais", OperationStatus.FAILED, started_at, metadata={"error": str(e)})
 
 
-def _transform_fornecedores(engine):
+def _transform_fornecedores(engine, run_id: str, log):
+    started_at = datetime.datetime.now()
     try:
         df = _read_bronze(engine, "fornecedores")
 
@@ -130,13 +139,21 @@ def _transform_fornecedores(engine):
             }
         )
 
-        _write_silver(out, engine, "fornecedores")
+        affected_rows = _write_silver(out, engine, "fornecedores")
+        log("fornecedores", OperationStatus.SUCCESS, started_at, affected_rows)
 
     except Exception as e:
         logging.error(f"It was not possible to transform 'fornecedores'. Error: {e}")
+        log(
+            "fornecedores",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
-def _transform_projetos(engine):
+def _transform_projetos(engine, run_id: str, log):
+    started_at = datetime.datetime.now()
     try:
         df = _read_bronze(engine, "projetos")
 
@@ -154,13 +171,16 @@ def _transform_projetos(engine):
             }
         )
 
-        _write_silver(out, engine, "projetos")
+        affected_rows = _write_silver(out, engine, "projetos")
+        log("projetos", OperationStatus.SUCCESS, started_at, affected_rows)
 
     except Exception as e:
         logging.error(f"It was not possible to transform 'projetos'. Error: {e}")
+        log("projetos", OperationStatus.FAILED, started_at, metadata={"error": str(e)})
 
 
-def _transform_tarefas_projeto(engine):
+def _transform_tarefas_projeto(engine, run_id: str, log):
+    started_at = datetime.datetime.now()
     try:
         df = _read_bronze(engine, "tarefas_projeto")
 
@@ -178,13 +198,21 @@ def _transform_tarefas_projeto(engine):
             }
         )
 
-        _write_silver(out, engine, "tarefas_projeto")
+        affected_rows = _write_silver(out, engine, "tarefas_projeto")
+        log("tarefas_projeto", OperationStatus.SUCCESS, started_at, affected_rows)
 
     except Exception as e:
         logging.error(f"It was not possible to transform 'tarefas_projeto'. Error: {e}")
+        log(
+            "tarefas_projeto",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
-def _transform_tempo_tarefas(engine):
+def _transform_tempo_tarefas(engine, run_id: str, log):
+    started_at = datetime.datetime.now()
     try:
         df = _read_bronze(engine, "tempo_tarefas")
 
@@ -198,13 +226,21 @@ def _transform_tempo_tarefas(engine):
             }
         )
 
-        _write_silver(out, engine, "tempo_tarefas")
+        affected_rows = _write_silver(out, engine, "tempo_tarefas")
+        log("tempo_tarefas", OperationStatus.SUCCESS, started_at, affected_rows)
 
     except Exception as e:
         logging.error(f"It was not possible to transform 'tempo_tarefas'. Error: {e}")
+        log(
+            "tempo_tarefas",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
-def _transform_solicitacoes_compra(engine):
+def _transform_solicitacoes_compra(engine, run_id: str, log):
+    started_at = datetime.datetime.now()
     try:
         df = _read_bronze(engine, "solicitacoes_compra")
 
@@ -221,15 +257,23 @@ def _transform_solicitacoes_compra(engine):
             }
         )
 
-        _write_silver(out, engine, "solicitacoes_compra")
+        affected_rows = _write_silver(out, engine, "solicitacoes_compra")
+        log("solicitacoes_compra", OperationStatus.SUCCESS, started_at, affected_rows)
 
     except Exception as e:
         logging.error(
             f"It was not possible to transform 'solicitacoes_compra'. Error: {e}"
         )
+        log(
+            "solicitacoes_compra",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
-def _transform_pedidos_compra(engine):
+def _transform_pedidos_compra(engine, run_id: str, log):
+    started_at = datetime.datetime.now()
     try:
         df = _read_bronze(engine, "pedidos_compra")
 
@@ -246,13 +290,21 @@ def _transform_pedidos_compra(engine):
             }
         )
 
-        _write_silver(out, engine, "pedidos_compra")
+        affected_rows = _write_silver(out, engine, "pedidos_compra")
+        log("pedidos_compra", OperationStatus.SUCCESS, started_at, affected_rows)
 
     except Exception as e:
         logging.error(f"It was not possible to transform 'pedidos_compra'. Error: {e}")
+        log(
+            "pedidos_compra",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
-def _transform_compras_projeto(engine):
+def _transform_compras_projeto(engine, run_id: str, log):
+    started_at = datetime.datetime.now()
     try:
         df = _read_bronze(engine, "compras_projeto")
 
@@ -265,13 +317,21 @@ def _transform_compras_projeto(engine):
             }
         )
 
-        _write_silver(out, engine, "compras_projeto")
+        affected_rows = _write_silver(out, engine, "compras_projeto")
+        log("compras_projeto", OperationStatus.SUCCESS, started_at, affected_rows)
 
     except Exception as e:
         logging.error(f"It was not possible to transform 'compras_projeto'. Error: {e}")
+        log(
+            "compras_projeto",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
-def _transform_empenho_materiais(engine):
+def _transform_empenho_materiais(engine, run_id: str, log):
+    started_at = datetime.datetime.now()
     try:
         df = _read_bronze(engine, "empenho_materiais")
 
@@ -285,15 +345,23 @@ def _transform_empenho_materiais(engine):
             }
         )
 
-        _write_silver(out, engine, "empenho_materiais")
+        affected_rows = _write_silver(out, engine, "empenho_materiais")
+        log("empenho_materiais", OperationStatus.SUCCESS, started_at, affected_rows)
 
     except Exception as e:
         logging.error(
             f"It was not possible to transform 'empenho_materiais'. Error: {e}"
         )
+        log(
+            "empenho_materiais",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
+        )
 
 
-def _transform_estoque_materiais_projeto(engine):
+def _transform_estoque_materiais_projeto(engine, run_id: str, log):
+    started_at = datetime.datetime.now()
     try:
         df = _read_bronze(engine, "estoque_materiais_projeto")
 
@@ -307,11 +375,23 @@ def _transform_estoque_materiais_projeto(engine):
             }
         )
 
-        _write_silver(out, engine, "estoque_materiais_projeto")
+        affected_rows = _write_silver(out, engine, "estoque_materiais_projeto")
+        log(
+            "estoque_materiais_projeto",
+            OperationStatus.SUCCESS,
+            started_at,
+            affected_rows,
+        )
 
     except Exception as e:
         logging.error(
             f"It was not possible to transform 'estoque_materiais_projeto'. Error: {e}"
+        )
+        log(
+            "estoque_materiais_projeto",
+            OperationStatus.FAILED,
+            started_at,
+            metadata={"error": str(e)},
         )
 
 
@@ -331,14 +411,35 @@ PIPELINE = [
 
 
 def _run_pipeline(engine):
+    run_id = str(uuid.uuid4())
     logging.info("=== Iniciando ETL Bronze → Silver ===")
+
+    def _log(
+        table_name: str,
+        status: OperationStatus,
+        started_at: datetime.datetime,
+        affected_rows: int = 0,
+        metadata: dict = None,
+    ):
+        audit.log_exec(
+            engine=engine,
+            run_id=run_id,
+            operation=OperationType.TRANSFORM,
+            table_schema=LayerSchema.SILVER,
+            status=status,
+            table_name=table_name,
+            affected_rows=affected_rows,
+            started_at=started_at,
+            metadata=metadata,
+        )
 
     for name, fn in PIPELINE:
         logging.info(f"--- Processando: {name} ---")
-        fn(engine)
+        fn(engine, run_id, _log)
 
     logging.info("=== ETL concluído ===")
 
 
 if __name__ == "__main__":
+    audit.create_audit(ENGINE)
     _run_pipeline(ENGINE)

@@ -1,6 +1,7 @@
 import django.db.models as dj_models
 
 from sca_data.models import (
+    AuditExecutionLog,
     SilverComprasProjeto,
     SilverEmpenhoMaterial,
     SilverEstoqueMateriaisProjeto,
@@ -261,4 +262,48 @@ class TestSilverEstoqueMateriaisProjeto:
     def test_localizacao_max_length(self):
         assert (
             _get_field(SilverEstoqueMateriaisProjeto, "localizacao").max_length == 100
+        )
+
+
+class TestAuditExecutionLog:
+    def test_db_table(self):
+        assert AuditExecutionLog._meta.db_table == 'audit"."execution_logs'
+
+    def test_managed_is_false(self):
+        assert AuditExecutionLog._meta.managed is False
+
+    def test_id_is_primary_key(self):
+        field = _get_field(AuditExecutionLog, "id")
+        assert field.primary_key is True
+        assert isinstance(field, dj_models.AutoField)
+
+    def test_run_id_is_uuidfield(self):
+        assert isinstance(_get_field(AuditExecutionLog, "run_id"), dj_models.UUIDField)
+
+    def test_operation_max_length(self):
+        assert _get_field(AuditExecutionLog, "operation").max_length == 20
+
+    def test_status_max_length(self):
+        assert _get_field(AuditExecutionLog, "status").max_length == 20
+
+    def test_optional_fields_allow_null(self):
+        for fname in (
+            "table_schema",
+            "table_name",
+            "affected_rows",
+            "finalized_at",
+            "operation_duration",
+            "operation_metadata",
+        ):
+            field = _get_field(AuditExecutionLog, fname)
+            assert field.null is True, f"{fname} should allow null"
+
+    def test_started_at_is_datetimefield(self):
+        assert isinstance(
+            _get_field(AuditExecutionLog, "started_at"), dj_models.DateTimeField
+        )
+
+    def test_operation_metadata_is_jsonfield(self):
+        assert isinstance(
+            _get_field(AuditExecutionLog, "operation_metadata"), dj_models.JSONField
         )
