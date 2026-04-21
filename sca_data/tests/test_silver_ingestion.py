@@ -32,6 +32,11 @@ def engine():
     return MagicMock()
 
 
+@pytest.fixture
+def log():
+    return MagicMock()
+
+
 class TestToDate:
     def test_valid_iso_string(self):
         s = pd.Series(["2024-01-15", "2024-06-30"])
@@ -203,7 +208,7 @@ def _make_engine_with_df(df: pd.DataFrame):
 class TestTransformProgramas:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_happy_path(self, mock_read, mock_write):
+    def test_happy_path(self, mock_read, mock_write, log):
         mock_read.return_value = pd.DataFrame(
             {
                 "id": [1],
@@ -217,7 +222,7 @@ class TestTransformProgramas:
             }
         )
 
-        _transform_programas(MagicMock())
+        _transform_programas(MagicMock(), "test-run-id", log)
 
         mock_write.assert_called_once()
         df_out = mock_write.call_args[0][0]
@@ -226,16 +231,16 @@ class TestTransformProgramas:
 
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_exception_does_not_propagate(self, mock_read, mock_write):
+    def test_exception_does_not_propagate(self, mock_read, mock_write, log):
         mock_read.side_effect = Exception("DB error")
-        _transform_programas(MagicMock())
+        _transform_programas(MagicMock(), "test-run-id", log)
         mock_write.assert_not_called()
 
 
 class TestTransformMateriais:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_happy_path(self, mock_read, mock_write):
+    def test_happy_path(self, mock_read, mock_write, log):
         mock_read.return_value = pd.DataFrame(
             {
                 "id": [2],
@@ -248,7 +253,7 @@ class TestTransformMateriais:
             }
         )
 
-        _transform_materiais(MagicMock())
+        _transform_materiais(MagicMock(), "test-run-id", log)
 
         df_out = mock_write.call_args[0][0]
         assert df_out["codigo_material"][0] == "MAT-001"
@@ -256,16 +261,16 @@ class TestTransformMateriais:
 
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_exception_does_not_propagate(self, mock_read, mock_write):
+    def test_exception_does_not_propagate(self, mock_read, mock_write, log):
         mock_read.side_effect = Exception("DB error")
-        _transform_materiais(MagicMock())
+        _transform_materiais(MagicMock(), "test-run-id", log)
         mock_write.assert_not_called()
 
 
 class TestTransformFornecedores:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_happy_path(self, mock_read, mock_write):
+    def test_happy_path(self, mock_read, mock_write, log):
         mock_read.return_value = pd.DataFrame(
             {
                 "id": [3],
@@ -278,7 +283,7 @@ class TestTransformFornecedores:
             }
         )
 
-        _transform_fornecedores(MagicMock())
+        _transform_fornecedores(MagicMock(), "test-run-id", log)
 
         df_out = mock_write.call_args[0][0]
         assert df_out["estado"][0] == "SP"
@@ -286,7 +291,7 @@ class TestTransformFornecedores:
 
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_estado_truncated_to_2_chars(self, mock_read, mock_write):
+    def test_estado_truncated_to_2_chars(self, mock_read, mock_write, log):
         mock_read.return_value = pd.DataFrame(
             {
                 "id": [3],
@@ -299,23 +304,23 @@ class TestTransformFornecedores:
             }
         )
 
-        _transform_fornecedores(MagicMock())
+        _transform_fornecedores(MagicMock(), "test-run-id", log)
 
         df_out = mock_write.call_args[0][0]
         assert df_out["estado"][0] == "SP"
 
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_exception_does_not_propagate(self, mock_read, mock_write):
+    def test_exception_does_not_propagate(self, mock_read, mock_write, log):
         mock_read.side_effect = Exception("DB error")
-        _transform_fornecedores(MagicMock())
+        _transform_fornecedores(MagicMock(), "test-run-id", log)
         mock_write.assert_not_called()
 
 
 class TestTransformProjetos:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_happy_path(self, mock_read, mock_write):
+    def test_happy_path(self, mock_read, mock_write, log):
         mock_read.return_value = pd.DataFrame(
             {
                 "id": [10],
@@ -330,7 +335,7 @@ class TestTransformProjetos:
             }
         )
 
-        _transform_projetos(MagicMock())
+        _transform_projetos(MagicMock(), "test-run-id", log)
 
         df_out = mock_write.call_args[0][0]
         assert df_out["programa_id"][0] == 1
@@ -338,16 +343,16 @@ class TestTransformProjetos:
 
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_exception_does_not_propagate(self, mock_read, mock_write):
+    def test_exception_does_not_propagate(self, mock_read, mock_write, log):
         mock_read.side_effect = Exception("DB error")
-        _transform_projetos(MagicMock())
+        _transform_projetos(MagicMock(), "test-run-id", log)
         mock_write.assert_not_called()
 
 
 class TestTransformTarefasProjeto:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_happy_path(self, mock_read, mock_write):
+    def test_happy_path(self, mock_read, mock_write, log):
         mock_read.return_value = pd.DataFrame(
             {
                 "id": [100],
@@ -362,7 +367,7 @@ class TestTransformTarefasProjeto:
             }
         )
 
-        _transform_tarefas_projeto(MagicMock())
+        _transform_tarefas_projeto(MagicMock(), "test-run-id", log)
 
         df_out = mock_write.call_args[0][0]
         assert df_out["estimativa_horas"][0] == 40
@@ -370,16 +375,16 @@ class TestTransformTarefasProjeto:
 
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_exception_does_not_propagate(self, mock_read, mock_write):
+    def test_exception_does_not_propagate(self, mock_read, mock_write, log):
         mock_read.side_effect = Exception("DB error")
-        _transform_tarefas_projeto(MagicMock())
+        _transform_tarefas_projeto(MagicMock(), "test-run-id", log)
         mock_write.assert_not_called()
 
 
 class TestTransformTempoTarefas:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_happy_path(self, mock_read, mock_write):
+    def test_happy_path(self, mock_read, mock_write, log):
         mock_read.return_value = pd.DataFrame(
             {
                 "id": [200],
@@ -390,7 +395,7 @@ class TestTransformTempoTarefas:
             }
         )
 
-        _transform_tempo_tarefas(MagicMock())
+        _transform_tempo_tarefas(MagicMock(), "test-run-id", log)
 
         df_out = mock_write.call_args[0][0]
         assert df_out["horas_trabalhadas"][0] == pytest.approx(8.5)
@@ -398,16 +403,16 @@ class TestTransformTempoTarefas:
 
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_exception_does_not_propagate(self, mock_read, mock_write):
+    def test_exception_does_not_propagate(self, mock_read, mock_write, log):
         mock_read.side_effect = Exception("DB error")
-        _transform_tempo_tarefas(MagicMock())
+        _transform_tempo_tarefas(MagicMock(), "test-run-id", log)
         mock_write.assert_not_called()
 
 
 class TestTransformSolicitacoesCompra:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_happy_path(self, mock_read, mock_write):
+    def test_happy_path(self, mock_read, mock_write, log):
         mock_read.return_value = pd.DataFrame(
             {
                 "id": [300],
@@ -421,7 +426,7 @@ class TestTransformSolicitacoesCompra:
             }
         )
 
-        _transform_solicitacoes_compra(MagicMock())
+        _transform_solicitacoes_compra(MagicMock(), "test-run-id", log)
 
         df_out = mock_write.call_args[0][0]
         assert df_out["numero_solicitacao"][0] == "SC-001"
@@ -429,16 +434,16 @@ class TestTransformSolicitacoesCompra:
 
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_exception_does_not_propagate(self, mock_read, mock_write):
+    def test_exception_does_not_propagate(self, mock_read, mock_write, log):
         mock_read.side_effect = Exception("DB error")
-        _transform_solicitacoes_compra(MagicMock())
+        _transform_solicitacoes_compra(MagicMock(), "test-run-id", log)
         mock_write.assert_not_called()
 
 
 class TestTransformPedidosCompra:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_happy_path(self, mock_read, mock_write):
+    def test_happy_path(self, mock_read, mock_write, log):
         mock_read.return_value = pd.DataFrame(
             {
                 "id": [400],
@@ -452,7 +457,7 @@ class TestTransformPedidosCompra:
             }
         )
 
-        _transform_pedidos_compra(MagicMock())
+        _transform_pedidos_compra(MagicMock(), "test-run-id", log)
 
         df_out = mock_write.call_args[0][0]
         assert df_out["valor_total"][0] == pytest.approx(7500.0)
@@ -460,16 +465,16 @@ class TestTransformPedidosCompra:
 
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_exception_does_not_propagate(self, mock_read, mock_write):
+    def test_exception_does_not_propagate(self, mock_read, mock_write, log):
         mock_read.side_effect = Exception("DB error")
-        _transform_pedidos_compra(MagicMock())
+        _transform_pedidos_compra(MagicMock(), "test-run-id", log)
         mock_write.assert_not_called()
 
 
 class TestTransformComprasProjeto:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_happy_path(self, mock_read, mock_write):
+    def test_happy_path(self, mock_read, mock_write, log):
         mock_read.return_value = pd.DataFrame(
             {
                 "id": [500],
@@ -479,7 +484,7 @@ class TestTransformComprasProjeto:
             }
         )
 
-        _transform_compras_projeto(MagicMock())
+        _transform_compras_projeto(MagicMock(), "test-run-id", log)
 
         df_out = mock_write.call_args[0][0]
         assert df_out["valor_alocado"][0] == pytest.approx(3000.0)
@@ -487,16 +492,16 @@ class TestTransformComprasProjeto:
 
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_exception_does_not_propagate(self, mock_read, mock_write):
+    def test_exception_does_not_propagate(self, mock_read, mock_write, log):
         mock_read.side_effect = Exception("DB error")
-        _transform_compras_projeto(MagicMock())
+        _transform_compras_projeto(MagicMock(), "test-run-id", log)
         mock_write.assert_not_called()
 
 
 class TestTransformEmpenhoMateriais:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_happy_path(self, mock_read, mock_write):
+    def test_happy_path(self, mock_read, mock_write, log):
         mock_read.return_value = pd.DataFrame(
             {
                 "id": [600],
@@ -507,7 +512,7 @@ class TestTransformEmpenhoMateriais:
             }
         )
 
-        _transform_empenho_materiais(MagicMock())
+        _transform_empenho_materiais(MagicMock(), "test-run-id", log)
 
         df_out = mock_write.call_args[0][0]
         assert df_out["quantidade_empenhada"][0] == 10
@@ -515,16 +520,16 @@ class TestTransformEmpenhoMateriais:
 
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_exception_does_not_propagate(self, mock_read, mock_write):
+    def test_exception_does_not_propagate(self, mock_read, mock_write, log):
         mock_read.side_effect = Exception("DB error")
-        _transform_empenho_materiais(MagicMock())
+        _transform_empenho_materiais(MagicMock(), "test-run-id", log)
         mock_write.assert_not_called()
 
 
 class TestTransformEstoqueMateriaisProjeto:
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_happy_path(self, mock_read, mock_write):
+    def test_happy_path(self, mock_read, mock_write, log):
         mock_read.return_value = pd.DataFrame(
             {
                 "id": [700],
@@ -535,7 +540,7 @@ class TestTransformEstoqueMateriaisProjeto:
             }
         )
 
-        _transform_estoque_materiais_projeto(MagicMock())
+        _transform_estoque_materiais_projeto(MagicMock(), "test-run-id", log)
 
         df_out = mock_write.call_args[0][0]
         assert df_out["quantidade"][0] == 50
@@ -543,9 +548,9 @@ class TestTransformEstoqueMateriaisProjeto:
 
     @patch("sca_data.db.silver.ingestion_silver._write_silver")
     @patch("sca_data.db.silver.ingestion_silver._read_bronze")
-    def test_exception_does_not_propagate(self, mock_read, mock_write):
+    def test_exception_does_not_propagate(self, mock_read, mock_write, log):
         mock_read.side_effect = Exception("DB error")
-        _transform_estoque_materiais_projeto(MagicMock())
+        _transform_estoque_materiais_projeto(MagicMock(), "test-run-id", log)
         mock_write.assert_not_called()
 
 
@@ -571,7 +576,8 @@ class TestPipeline:
         fake_pipeline = [("table_a", mock_fn_1), ("table_b", mock_fn_2)]
 
         with patch("sca_data.db.silver.ingestion_silver.PIPELINE", fake_pipeline):
-            _run_pipeline(engine)
+            with patch("sca_data.db.silver.ingestion_silver.audit.log_exec"):
+                _run_pipeline(engine)
 
-        mock_fn_1.assert_called_once_with(engine)
-        mock_fn_2.assert_called_once_with(engine)
+        mock_fn_1.assert_called_once()
+        mock_fn_2.assert_called_once()
