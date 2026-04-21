@@ -6,7 +6,10 @@ from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from materials.serializers import MaterialsIndicatorsSerializer, MaterialsTableSerializer
+from materials.serializers import (
+    MaterialsIndicatorsSerializer,
+    MaterialsTableSerializer,
+)
 from sca_data.models import (
     SilverMaterial,
     SilverPedidoCompra,
@@ -120,9 +123,11 @@ class MaterialsIndicatorsView(generics.GenericAPIView):
             custo_medio=Avg("custo_estimado"),
         )
 
-        serializer = self.get_serializer({
-            "custo_total": _to_brl(agg["custo_total"]),
-            "total_itens": agg["total_itens"],
-            "custo_medio": _to_brl(agg["custo_medio"]),
-        })
+        serializer = self.get_serializer(
+            {
+                "custo_total": _to_brl(agg["custo_total"]),
+                "total_itens": agg["total_itens"],
+                "custo_medio": _to_brl(agg["custo_medio"]),
+            }
+        )
         return Response(serializer.data)

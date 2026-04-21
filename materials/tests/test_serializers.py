@@ -1,6 +1,9 @@
 from django.utils import timezone
 
-from materials.serializers import MaterialsIndicatorsSerializer, MaterialsTableSerializer
+from materials.serializers import (
+    MaterialsIndicatorsSerializer,
+    MaterialsTableSerializer,
+)
 from sca_data.models import (
     SilverFornecedor,
     SilverMaterial,
