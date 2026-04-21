@@ -1,10 +1,9 @@
+import json
 import logging
+import datetime
 from sqlalchemy import text
-from sca_data.db.connection import getOrCreate
 
-def create_audit():
-
-    engine = getOrCreate()
+def create_audit(engine):
 
     query = ("""
         CREATE SCHEMA IF NOT EXISTS audit;
@@ -29,4 +28,62 @@ def create_audit():
 
     logging.info("Schema 'audit' verificado/criado.")
     logging.info("Tabela 'audit.execution_logs' verificado/criado.")
+
+
+def log_exec(
+    engine, 
+    run_id: str, 
+    operation: str, 
+    status: str,
+    table_schema: str, 
+    table_name: str, 
+    affected_rows: int,
+    started_at: datetime.datetime, 
+    metadata: dict = None):
+    finalized_at = datetime.datetime.now()
+    duration_s = int((finalized_at - started_at).total_seconds()
+)
+
+    with engine.begin() as conn:
+        conn.execute(
+            text("""
+                INSERT INTO audit.execution_logs (
+                    run_id, 
+                    operation, 
+                    status, 
+                    table_schema,
+                    table_name,
+                    affected_rows, 
+                    started_at, 
+                    finalized_at, 
+                    operation_duration, 
+                    operation_metadata
+                )
+                VALUES
+                    (
+                    :run_id, 
+                    :operation, 
+                    :status, 
+                    :table_schema, 
+                    :table_name,
+                    :affected_rows, 
+                    :started_at, 
+                    :finalized_at, 
+                    :duration, 
+                    :metadata
+                )
+            """),
+            {
+                "run_id":       run_id,
+                "operation":    operation,
+                "status":       status,
+                "table_schema": table_schema,
+                "table_name":   table_name,
+                "affected_rows": affected_rows,
+                "started_at":   started_at,
+                "finalized_at": finalized_at,
+                "duration":     duration_s,
+                "metadata":     json.dumps(metadata) if metadata else None,
+            }
+        )
 
