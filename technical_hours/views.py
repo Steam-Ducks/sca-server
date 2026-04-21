@@ -5,6 +5,7 @@ from sca_data.models import SilverTempoTarefa
 from technical_hours.serializers import TechnicalHoursTableSerializer
 
 
+
 class TechnicalHoursTableView(generics.ListAPIView):
     serializer_class = TechnicalHoursTableSerializer
 
