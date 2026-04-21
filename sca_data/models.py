@@ -224,3 +224,22 @@ class SilverEstoqueMateriaisProjeto(models.Model):
     class Meta:
         app_label = "sca_data"
         db_table = 'silver"."estoque_materiais_projeto'
+
+
+class AuditExecutionLog(models.Model):
+    id = models.AutoField(primary_key=True)
+    run_id = models.UUIDField()
+    operation = models.CharField(max_length=20)
+    status = models.CharField(max_length=20)
+    table_schema = models.CharField(max_length=100, null=True, blank=True)
+    table_name = models.CharField(max_length=100, null=True, blank=True)
+    affected_rows = models.IntegerField(null=True, blank=True)
+    started_at = models.DateTimeField()
+    finalized_at = models.DateTimeField(null=True, blank=True)
+    operation_duration = models.IntegerField(null=True, blank=True)
+    operation_metadata = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        app_label = "sca_data"
+        db_table = 'audit"."execution_logs'
+        managed = False
