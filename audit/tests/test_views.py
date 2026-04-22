@@ -18,7 +18,9 @@ def view():
 class TestAuditExecutionLogTableView:
     @patch("audit.views.AuditExecutionLog.objects")
     def test_returns_200(self, mock_objects, factory, view):
-        mock_objects.all.return_value.filter.return_value = mock_objects.all.return_value
+        mock_objects.all.return_value.filter.return_value = (
+            mock_objects.all.return_value
+        )
         mock_objects.all.return_value.order_by.return_value = []
 
         request = factory.get("/api/audit/")
@@ -83,7 +85,9 @@ class TestAuditExecutionLogTableView:
         qs.filter.return_value = qs
         qs.order_by.return_value = []
 
-        request = factory.get("/api/audit/", {"finalized_at_lte": "2024-01-31T23:59:59"})
+        request = factory.get(
+            "/api/audit/", {"finalized_at_lte": "2024-01-31T23:59:59"}
+        )
         view(request)
 
         assert qs.filter.called

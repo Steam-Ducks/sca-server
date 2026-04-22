@@ -15,9 +15,13 @@ def _make_log(**kwargs):
     log.table_name = kwargs.get("table_name", "programas")
     log.affected_rows = kwargs.get("affected_rows", 100)
     log.started_at = kwargs.get("started_at", datetime.datetime(2024, 1, 1, 10, 0, 0))
-    log.finalized_at = kwargs.get("finalized_at", datetime.datetime(2024, 1, 1, 10, 0, 5))
+    log.finalized_at = kwargs.get(
+        "finalized_at", datetime.datetime(2024, 1, 1, 10, 0, 5)
+    )
     log.operation_duration = kwargs.get("operation_duration", 5)
-    log.operation_metadata = kwargs.get("operation_metadata", {"endpoint": "http://api/files/programas.parquet"})
+    log.operation_metadata = kwargs.get(
+        "operation_metadata", {"endpoint": "http://api/files/programas.parquet"}
+    )
     return log
 
 
@@ -34,7 +38,10 @@ class TestAuditExecutionLogSerializer:
         assert serializer.data["run_id"] is None
 
     def test_operation_metadata_returned_when_present(self):
-        metadata = {"endpoint": "http://api/files/programas.parquet", "columns": ["id", "nome"]}
+        metadata = {
+            "endpoint": "http://api/files/programas.parquet",
+            "columns": ["id", "nome"],
+        }
         log = _make_log(operation_metadata=metadata)
         serializer = AuditExecutionLogSerializer(log)
         assert serializer.data["operation_metadata"] == metadata
