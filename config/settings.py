@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "materials",
     "technical_hours",
     "consolidated.consolidated_dashboard",
+    "audit",
 ]
 
 MIDDLEWARE = [
