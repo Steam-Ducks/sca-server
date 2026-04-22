@@ -226,6 +226,19 @@ class SilverEstoqueMateriaisProjeto(models.Model):
         db_table = 'silver"."estoque_materiais_projeto'
 
 
+class GoldIndicadoresMateriais(models.Model):
+    id = models.AutoField(primary_key=True)
+    categoria = models.CharField(max_length=100, null=True, blank=True)
+    custo_total = models.FloatField(null=True, blank=True)
+    total_itens = models.BigIntegerField(null=True, blank=True)
+    custo_medio = models.FloatField(null=True, blank=True)
+    gold_updated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        app_label = "sca_data"
+        db_table = 'gold"."indicadores_materiais'
+
+
 class AuditExecutionLog(models.Model):
     id = models.AutoField(primary_key=True)
     run_id = models.UUIDField()

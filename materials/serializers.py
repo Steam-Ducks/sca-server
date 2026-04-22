@@ -72,3 +72,9 @@ class MaterialsTableSerializer(serializers.ModelSerializer):
         if obj.solicitacao and obj.solicitacao.material:
             return obj.solicitacao.material.categoria
         return None
+
+
+class MaterialsIndicatorsSerializer(serializers.Serializer):
+    custo_total = serializers.FloatField(allow_null=True)
+    total_itens = serializers.IntegerField()
+    custo_medio = serializers.FloatField(allow_null=True)
