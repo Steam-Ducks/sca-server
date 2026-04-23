@@ -6,6 +6,7 @@ from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from materials.selectors import get_materials_queryset
 from materials.serializers import (
     MaterialsIndicatorsSerializer,
     MaterialsTableSerializer,
@@ -29,15 +30,7 @@ class MaterialsTableView(generics.ListAPIView):
     serializer_class = MaterialsTableSerializer
 
     def get_queryset(self):
-        return (
-            SilverPedidoCompra.objects.select_related(
-                "solicitacao__material",
-                "solicitacao__projeto__programa",
-                "fornecedor",
-            )
-            .filter(solicitacao__isnull=False)
-            .order_by("-valor_total")
-        )
+        return get_materials_queryset(self.request.query_params)
 
 
 class MaterialsIndicatorsView(generics.GenericAPIView):
