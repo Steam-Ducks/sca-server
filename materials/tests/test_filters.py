@@ -10,13 +10,13 @@ Cobertura dos critérios de aceite da US:
   +    — filtros por programa e projeto
   +    — validações de parâmetros inválidos
 """
+
 import datetime
 from unittest.mock import patch
 
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from materials.selectors import get_materials_queryset
 from materials.views import MaterialsTableView
 from sca_data.models import (
     SilverFornecedor,
@@ -144,9 +144,13 @@ def test_ct01_filtro_por_material_retorna_resultado_correto():
     def mock_queryset_cabo(params):
         material = params.get("material", "").lower()
         todos = [pedido_cabo, pedido_parafuso]
-        return [p for p in todos if material in p.solicitacao.material.descricao.lower()]
+        return [
+            p for p in todos if material in p.solicitacao.material.descricao.lower()
+        ]
 
-    with patch("materials.views.get_materials_queryset", side_effect=mock_queryset_cabo):
+    with patch(
+        "materials.views.get_materials_queryset", side_effect=mock_queryset_cabo
+    ):
         client = APIClient()
         response = client.get("/api/compras/", {"material": "cabo"})
         assert response.status_code == 200
@@ -156,6 +160,7 @@ def test_ct01_filtro_por_material_retorna_resultado_correto():
 
 def test_ct01_filtro_por_material_sem_resultado():
     """CT01: filtro por material que não existe retorna lista vazia."""
+
     def mock_vazio(params):
         return []
 
@@ -194,6 +199,7 @@ def test_ct02_filtro_por_fornecedor_retorna_resultado_correto():
 
 def test_ct02_filtro_por_fornecedor_sem_resultado():
     """CT02: fornecedor inexistente retorna lista vazia."""
+
     def mock_vazio(params):
         return []
 
@@ -218,9 +224,7 @@ def test_ct03_filtro_por_categoria_retorna_resultado_correto():
         categoria = params.get("categoria", "").lower()
         todos = [pedido_estrutural, pedido_eletrico]
         return [
-            p
-            for p in todos
-            if categoria == p.solicitacao.material.categoria.lower()
+            p for p in todos if categoria == p.solicitacao.material.categoria.lower()
         ]
 
     with patch(
@@ -236,6 +240,7 @@ def test_ct03_filtro_por_categoria_retorna_resultado_correto():
 
 def test_ct03_filtro_por_categoria_sem_resultado():
     """CT03: categoria inexistente retorna lista vazia."""
+
     def mock_vazio(params):
         return []
 
@@ -346,19 +351,29 @@ def test_ct04_combinacao_todos_os_filtros():
 
         if params.get("material"):
             m = params["material"].lower()
-            resultado = [p for p in resultado if m in p.solicitacao.material.descricao.lower()]
+            resultado = [
+                p for p in resultado if m in p.solicitacao.material.descricao.lower()
+            ]
         if params.get("fornecedor"):
             f = params["fornecedor"].lower()
             resultado = [p for p in resultado if f in p.fornecedor.razao_social.lower()]
         if params.get("categoria"):
             c = params["categoria"].lower()
-            resultado = [p for p in resultado if c == p.solicitacao.material.categoria.lower()]
+            resultado = [
+                p for p in resultado if c == p.solicitacao.material.categoria.lower()
+            ]
         if params.get("projeto"):
             pj = params["projeto"].lower()
-            resultado = [p for p in resultado if pj == p.solicitacao.projeto.nome_projeto.lower()]
+            resultado = [
+                p for p in resultado if pj == p.solicitacao.projeto.nome_projeto.lower()
+            ]
         if params.get("programa"):
             pg = params["programa"].lower()
-            resultado = [p for p in resultado if pg == p.solicitacao.projeto.programa.nome_programa.lower()]
+            resultado = [
+                p
+                for p in resultado
+                if pg == p.solicitacao.projeto.programa.nome_programa.lower()
+            ]
 
         return resultado
 
@@ -381,6 +396,7 @@ def test_ct04_combinacao_todos_os_filtros():
 
 def test_ct04_filtros_sem_interseccao_retorna_vazio():
     """CT04: filtros conflitantes não retornam resultado."""
+
     def mock_vazio(params):
         return []
 
@@ -476,9 +492,7 @@ def test_filtro_por_projeto():
         projeto = params.get("projeto", "").lower()
         todos = [pedido_alpha, pedido_beta]
         return [
-            p
-            for p in todos
-            if projeto == p.solicitacao.projeto.nome_projeto.lower()
+            p for p in todos if projeto == p.solicitacao.projeto.nome_projeto.lower()
         ]
 
     with patch("materials.views.get_materials_queryset", side_effect=mock_projeto):

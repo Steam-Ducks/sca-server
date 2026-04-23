@@ -94,9 +94,7 @@ def get_materials_queryset(params):
     # --- Programa ---
     programa = params.get("programa")
     if programa:
-        filters &= Q(
-            solicitacao__projeto__programa__nome_programa__iexact=programa
-        )
+        filters &= Q(solicitacao__projeto__programa__nome_programa__iexact=programa)
 
     # --- Projeto ---
     projeto = params.get("projeto")
