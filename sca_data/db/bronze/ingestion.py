@@ -8,7 +8,6 @@ from sca_data.db.connection import getOrCreate
 import sca_data.db.audit.audit as audit
 from sca_data.db.enums import OperationStatus, OperationType, LayerSchema
 
-
 logger = logging.getLogger(__name__)
 
 

@@ -3,7 +3,6 @@ from unittest.mock import MagicMock, patch
 
 from dashboard.selectors import build_filters, get_dashboard_kpis
 
-
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
