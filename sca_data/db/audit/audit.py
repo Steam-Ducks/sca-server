@@ -47,7 +47,8 @@ def log_exec(
 
     with engine.begin() as conn:
         conn.execute(
-            text("""
+            text(
+                """
                 INSERT INTO audit.execution_logs (
                     run_id, 
                     operation, 
@@ -73,7 +74,8 @@ def log_exec(
                     :duration, 
                     :metadata
                 )
-            """),
+            """
+            ),
             {
                 "run_id": run_id,
                 "operation": operation,
