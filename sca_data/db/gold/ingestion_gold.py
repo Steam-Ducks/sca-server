@@ -30,6 +30,27 @@ _SQL_MATERIALS_INDICATORS = """
     GROUP BY m.categoria;
 """
 
+_SQL_COSTS = """
+    TRUNCATE TABLE gold.costs;
+
+    INSERT INTO gold.costs
+        (data, nome_programa, gerente_programa, nome_projeto, responsavel_projeto, custo, gold_updated_at)
+    SELECT
+        pc.data_pedido      AS data,
+        po.nome_programa,
+        po.gerente_programa,
+        p.nome_projeto,
+        p.responsavel       AS responsavel_projeto,
+        SUM(pc.valor_total) AS custo,
+        NOW()               AS gold_updated_at
+    FROM silver.compras_projeto cp
+    LEFT JOIN silver.pedidos_compra pc ON pc.id = cp.pedido_compra_id
+    LEFT JOIN silver.projetos       p  ON cp.projeto_id  = p.id
+    LEFT JOIN silver.programas      po ON p.programa_id  = po.id
+    GROUP BY 1, 2, 3, 4, 5
+    ORDER BY 1;
+"""
+
 
 def _run_materials_indicators(engine):
     try:
@@ -44,9 +65,21 @@ def _run_materials_indicators(engine):
         )
 
 
+def _run_costs(engine):
+    try:
+        logging.info("--- Processing: costs ---")
+        with engine.connect() as conn:
+            conn.execute(text(_SQL_COSTS))
+            conn.commit()
+        logging.info("Table costs rote in schema 'gold'!")
+    except Exception as e:
+        logging.error(f"It was not possible to build costs. Error: {e}")
+
+
 def _run_pipeline(engine):
     logging.info("=== Starting ETL Silver → Gold ===")
     _run_materials_indicators(engine)
+    _run_costs(engine)
     logging.info("=== ETL Gold completed ===")
 
 
