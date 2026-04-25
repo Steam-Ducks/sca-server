@@ -143,7 +143,10 @@ class TestRunPipeline:
         assert "Starting" in messages or "starting" in messages.lower()
         assert "Gold" in messages or "gold" in messages.lower()
 
-    @patch("sca_data.db.gold.ingestion_gold._run_costs", side_effect=RuntimeError("costs failed"))
+    @patch(
+        "sca_data.db.gold.ingestion_gold._run_costs",
+        side_effect=RuntimeError("costs failed"),
+    )
     @patch("sca_data.db.gold.ingestion_gold._run_materials_indicators")
     def test_pipeline_propagates_unexpected_error(self, _mock_m, _mock_c):
 
