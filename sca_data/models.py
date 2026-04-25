@@ -239,6 +239,20 @@ class GoldIndicadoresMateriais(models.Model):
         db_table = 'gold"."indicadores_materiais'
 
 
+class GoldCosts(models.Model):
+    data = models.DateTimeField(null=True, blank=True)
+    nome_programa = models.CharField(max_length=100, null=True, blank=True)
+    gerente_programa = models.CharField(max_length=100, null=True, blank=True)
+    nome_projeto = models.CharField(max_length=100, null=True, blank=True)
+    responsavel_projeto = models.CharField(max_length=100, null=True, blank=True)
+    custo = models.FloatField(null=True, blank=True)
+    gold_updated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        app_label = "sca_data"
+        db_table = 'gold"."costs'
+
+
 class AuditExecutionLog(models.Model):
     id = models.AutoField(primary_key=True)
     run_id = models.UUIDField()
