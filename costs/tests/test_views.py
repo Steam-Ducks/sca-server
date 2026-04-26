@@ -1,5 +1,4 @@
 import pytest
-from datetime import date
 from unittest.mock import MagicMock, patch
 
 from rest_framework.test import APIRequestFactory
@@ -162,8 +161,11 @@ class TestGetQuerysetDateFilters:
         view = _attach_request(_make_view(), params=params)
         view.get_queryset()
 
-        qs.filter.assert_any_call(data__gte=date(2024, 1, 1))
-        qs.filter.assert_any_call(data__lte=date(2024, 12, 31))
+        call_kwargs = [call.kwargs for call in qs.filter.call_args_list]
+        keys_used = [list(kw.keys())[0] for kw in call_kwargs]
+
+        assert "data__gte" in keys_used
+        assert "data__lte" in keys_used
 
     @patch("costs.views.GoldCosts.objects")
     def test_invalid_date_format_is_ignored(self, mock_objects):

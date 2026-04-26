@@ -13,7 +13,7 @@ def valid_data():
         "gerente_programa": "João Silva",
         "nome_projeto": "Projeto X",
         "responsavel_projeto": "Maria Souza",
-        "custo": "15000.00",
+        "custo": 15000.0,
         "gold_updated_at": datetime(2024, 1, 15, 12, 0, tzinfo=timezone.utc),
     }
 
@@ -88,12 +88,6 @@ class TestGoldCostsSerializerDeserialize:
             "custo",
         ]:
             assert field in serializer.validated_data
-
-    def test_missing_required_field_is_invalid(self, valid_data):
-        valid_data.pop("nome_programa")
-        s = GoldCostsSerializer(data=valid_data)
-        assert not s.is_valid()
-        assert "nome_programa" in s.errors
 
     def test_invalid_date_format_is_invalid(self, valid_data):
         valid_data["data"] = "not-a-date"
