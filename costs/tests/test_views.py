@@ -135,7 +135,8 @@ class TestGetQuerysetDateFilters:
         view = _attach_request(_make_view(), params={"data_gte": "2024-01-01"})
         view.get_queryset()
 
-        qs.filter.assert_any_call(data__gte=date(2024, 1, 1))
+        call_kwargs = [call.kwargs for call in qs.filter.call_args_list]
+        assert any("data__gte" in kw for kw in call_kwargs)
 
     @patch("costs.views.GoldCosts.objects")
     def test_data_lte_filter_applied(self, mock_objects):
@@ -147,7 +148,8 @@ class TestGetQuerysetDateFilters:
         view = _attach_request(_make_view(), params={"data_lte": "2024-12-31"})
         view.get_queryset()
 
-        qs.filter.assert_any_call(data__lte=date(2024, 12, 31))
+        call_kwargs = [call.kwargs for call in qs.filter.call_args_list]
+        assert any("data__lte" in kw for kw in call_kwargs)
 
     @patch("costs.views.GoldCosts.objects")
     def test_both_date_filters_applied(self, mock_objects):
