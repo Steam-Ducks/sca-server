@@ -3,6 +3,7 @@ from datetime import date
 from unittest.mock import MagicMock, patch
 
 from rest_framework.test import APIRequestFactory
+from rest_framework.request import Request
 
 from costs.views import GoldCostsTableView
 from costs.serializers import GoldCostsSerializer
@@ -25,7 +26,7 @@ def _make_view():
 
 def _attach_request(view, params: dict = None):
     request = _make_request(params)
-    view.request = request
+    view.request = Request(request)
     return view
 
 
