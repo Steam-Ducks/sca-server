@@ -226,7 +226,13 @@ def test_composition_returns_all_five_fields(mock_selector):
 
     response = client.get("/api/main-dashboard/composition/")
 
-    for field in ("custo_materiais", "custo_horas", "custo_total", "pct_materiais", "pct_horas"):
+    for field in (
+        "custo_materiais",
+        "custo_horas",
+        "custo_total",
+        "pct_materiais",
+        "pct_horas",
+    ):
         assert field in response.data
 
 

@@ -1,6 +1,10 @@
 from django.urls import path
 
-from main_dashboard.views import CostCompositionView, MainDashboardView, SummaryTableView
+from main_dashboard.views import (
+    CostCompositionView,
+    MainDashboardView,
+    SummaryTableView,
+)
 
 urlpatterns = [
     path("main-dashboard/", MainDashboardView.as_view(), name="main-dashboard"),
