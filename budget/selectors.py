@@ -129,7 +129,9 @@ def get_budget_snapshot(params):
     rows = []
     for projeto in qs.order_by("nome_projeto"):
         budget = round((projeto.budget_materiais or 0) + (projeto.budget_horas or 0), 2)
-        custo_real = round((projeto.custo_materiais or 0) + (projeto.custo_horas or 0), 2)
+        custo_real = round(
+            (projeto.custo_materiais or 0) + (projeto.custo_horas or 0), 2
+        )
         desvio_percent = round(custo_real / budget * 100, 1) if budget > 0 else 0.0
 
         if desvio_percent >= 90:

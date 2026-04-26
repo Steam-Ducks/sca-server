@@ -63,4 +63,3 @@ class BudgetProjectSerializer(serializers.ModelSerializer):
         if obj.data_inicio:
             return obj.data_inicio.strftime("%Y-%m")
         return "Sem periodo"
-

@@ -31,4 +31,3 @@ def test_budget_project_serializer_returns_expected_fields():
     assert data["desvioPercent"] == 50
     assert data["saude"] == "Saudável"
     assert data["periodo"] == "2026-01"
-

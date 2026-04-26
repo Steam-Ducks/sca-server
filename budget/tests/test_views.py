@@ -46,4 +46,3 @@ def test_budget_snapshot_returns_payload():
     assert response.data["data"][0]["projeto"] == "Projeto A"
     assert response.data["data"][0]["desvioPercent"] == 50
     assert response.data["data"][0]["saude"] == "Saudável"
-
