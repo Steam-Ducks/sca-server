@@ -213,9 +213,9 @@ class ConsolidatedDashboardView(generics.ListAPIView):
         return Response(
             {
                 "data": serializer.data,
-                "last_updated_at": last_updated_at.isoformat()
-                if last_updated_at
-                else None,
+                "last_updated_at": (
+                    last_updated_at.isoformat() if last_updated_at else None
+                ),
             }
         )
 
@@ -257,8 +257,8 @@ class ConsolidatedDashboardPeriodoView(ConsolidatedDashboardView):
         return Response(
             {
                 "data": serializer.data,
-                "last_updated_at": last_updated_at.isoformat()
-                if last_updated_at
-                else None,
+                "last_updated_at": (
+                    last_updated_at.isoformat() if last_updated_at else None
+                ),
             }
         )

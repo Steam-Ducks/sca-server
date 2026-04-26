@@ -122,9 +122,7 @@ def test_consolidated_lista_vazia_retorna_200():
 def test_consolidated_retorna_multiplos_projetos():
     p1 = _make_projeto(id=1, nome_projeto="Migracao AWS")
     p2 = _make_projeto(id=2, nome_projeto="Portal Web", nome_programa="Desenvolvimento")
-    with patch.object(
-        ConsolidatedDashboardView, "get_queryset", return_value=[p1, p2]
-    ):
+    with patch.object(ConsolidatedDashboardView, "get_queryset", return_value=[p1, p2]):
         with patch.object(
             ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
         ):
@@ -395,9 +393,9 @@ def test_get_last_updated_at_retorna_maior_timestamp(rf):
         "pedido_compra_ingested_at": None,
     }
 
-    with patch("consolidated.consolidated_dashboard.views.SilverProjeto.objects", mock_qs):
+    with patch(
+        "consolidated.consolidated_dashboard.views.SilverProjeto.objects", mock_qs
+    ):
         result = view._get_last_updated_at()
 
-    assert result == datetime.datetime(
-        2026, 4, 26, 9, 45, tzinfo=datetime.timezone.utc
-    )
+    assert result == datetime.datetime(2026, 4, 26, 9, 45, tzinfo=datetime.timezone.utc)
