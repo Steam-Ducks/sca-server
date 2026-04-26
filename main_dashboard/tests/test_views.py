@@ -2,6 +2,14 @@ import pytest
 from unittest.mock import patch
 from rest_framework.test import APIClient
 
+COMPOSITION_MOCK = {
+    "custo_materiais": 450000.0,
+    "custo_horas": 300000.0,
+    "custo_total": 750000.0,
+    "pct_materiais": 60.0,
+    "pct_horas": 40.0,
+}
+
 
 # ── Existing test ─────────────────────────────────────────────────────────────
 
@@ -154,3 +162,111 @@ def test_summary_table_preserves_selector_order(mock_selector):
 
     assert response.data[0]["programa"] == "Maior Custo"
     assert response.data[1]["programa"] == "Menor Custo"
+
+
+# ── CostCompositionView ───────────────────────────────────────────────────────
+
+# ── CT01: percentage composition ─────────────────────────────────────────────
+
+
+@pytest.mark.django_db
+@patch("main_dashboard.views.get_cost_composition")
+def test_composition_returns_percentage_fields(mock_selector):
+    client = APIClient()
+    mock_selector.return_value = COMPOSITION_MOCK
+
+    response = client.get("/api/main-dashboard/composition/")
+
+    assert response.status_code == 200
+    assert response.data["pct_materiais"] == 60.0
+    assert response.data["pct_horas"] == 40.0
+
+
+@pytest.mark.django_db
+@patch("main_dashboard.views.get_cost_composition")
+def test_composition_percentages_are_present_in_response(mock_selector):
+    client = APIClient()
+    mock_selector.return_value = {
+        "custo_materiais": 250.0,
+        "custo_horas": 750.0,
+        "custo_total": 1000.0,
+        "pct_materiais": 25.0,
+        "pct_horas": 75.0,
+    }
+
+    response = client.get("/api/main-dashboard/composition/")
+
+    assert "pct_materiais" in response.data
+    assert "pct_horas" in response.data
+    assert response.data["pct_materiais"] == 25.0
+    assert response.data["pct_horas"] == 75.0
+
+
+# ── CT02: absolute values ─────────────────────────────────────────────────────
+
+
+@pytest.mark.django_db
+@patch("main_dashboard.views.get_cost_composition")
+def test_composition_returns_absolute_cost_fields(mock_selector):
+    client = APIClient()
+    mock_selector.return_value = COMPOSITION_MOCK
+
+    response = client.get("/api/main-dashboard/composition/")
+
+    assert response.data["custo_materiais"] == 450000.0
+    assert response.data["custo_horas"] == 300000.0
+    assert response.data["custo_total"] == 750000.0
+
+
+@pytest.mark.django_db
+@patch("main_dashboard.views.get_cost_composition")
+def test_composition_returns_all_five_fields(mock_selector):
+    client = APIClient()
+    mock_selector.return_value = COMPOSITION_MOCK
+
+    response = client.get("/api/main-dashboard/composition/")
+
+    for field in ("custo_materiais", "custo_horas", "custo_total", "pct_materiais", "pct_horas"):
+        assert field in response.data
+
+
+# ── CT03: filter passing ──────────────────────────────────────────────────────
+
+
+@pytest.mark.django_db
+@patch("main_dashboard.views.get_cost_composition")
+def test_composition_passes_filters_to_selector(mock_selector):
+    client = APIClient()
+    mock_selector.return_value = COMPOSITION_MOCK
+
+    client.get(
+        "/api/main-dashboard/composition/"
+        "?start_date=2026-01-01&end_date=2026-06-30"
+        "&programa=Programa+X&projeto=Projeto+Y"
+    )
+
+    mock_selector.assert_called_once()
+    params = mock_selector.call_args[0][0]
+    assert params["start_date"] == "2026-01-01"
+    assert params["end_date"] == "2026-06-30"
+    assert params["programa"] == "Programa X"
+    assert params["projeto"] == "Projeto Y"
+
+
+@pytest.mark.django_db
+@patch("main_dashboard.views.get_cost_composition")
+def test_composition_with_no_filters_still_returns_200(mock_selector):
+    client = APIClient()
+    mock_selector.return_value = {
+        "custo_materiais": 0.0,
+        "custo_horas": 0.0,
+        "custo_total": 0.0,
+        "pct_materiais": 0.0,
+        "pct_horas": 0.0,
+    }
+
+    response = client.get("/api/main-dashboard/composition/")
+
+    assert response.status_code == 200
+    assert response.data["pct_materiais"] == 0.0
+    assert response.data["pct_horas"] == 0.0

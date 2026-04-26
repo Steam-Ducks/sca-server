@@ -19,3 +19,11 @@ class ProgramSummarySerializer(serializers.Serializer):
     custo_materiais = serializers.FloatField()
     custo_horas = serializers.FloatField()
     custo_total = serializers.FloatField()
+
+
+class CostCompositionSerializer(serializers.Serializer):
+    custo_materiais = serializers.FloatField()
+    custo_horas = serializers.FloatField()
+    custo_total = serializers.FloatField()
+    pct_materiais = serializers.FloatField()
+    pct_horas = serializers.FloatField()
