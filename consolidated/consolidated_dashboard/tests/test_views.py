@@ -10,7 +10,7 @@ from sca_data.models import SilverPrograma, SilverProjeto
 
 def _make_projeto(
     id=1,
-    nome_projeto="Migração AWS",
+    nome_projeto="Migracao AWS",
     nome_programa="Cloud",
     status="Em Andamento",
     custo_hora=420.00,
@@ -43,15 +43,28 @@ def _make_projeto(
 
 
 # ---------------------------------------------------------------------------
-# Testes básicos
+# Testes basicos
 # ---------------------------------------------------------------------------
 
 
 def test_consolidated_returns_200():
     with patch.object(ConsolidatedDashboardView, "get_queryset", return_value=[]):
-        client = APIClient()
-        response = client.get("/api/consolidated/")
-        assert response.status_code == 200
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/")
+            assert response.status_code == 200
+
+
+def test_consolidated_returns_payload_with_metadata():
+    with patch.object(ConsolidatedDashboardView, "get_queryset", return_value=[]):
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/")
+            assert response.data == {"data": [], "last_updated_at": None}
 
 
 def test_consolidated_returns_list():
@@ -59,10 +72,18 @@ def test_consolidated_returns_list():
     with patch.object(
         ConsolidatedDashboardView, "get_queryset", return_value=[projeto]
     ):
-        client = APIClient()
-        response = client.get("/api/consolidated/")
-        assert isinstance(response.data, list)
-        assert len(response.data) == 1
+        with patch.object(
+            ConsolidatedDashboardView,
+            "_get_last_updated_at",
+            return_value=datetime.datetime(
+                2026, 4, 26, 12, 30, tzinfo=datetime.timezone.utc
+            ),
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/")
+            assert isinstance(response.data["data"], list)
+            assert len(response.data["data"]) == 1
+            assert response.data["last_updated_at"] == "2026-04-26T12:30:00+00:00"
 
 
 def test_consolidated_retorna_campos_corretos():
@@ -70,35 +91,46 @@ def test_consolidated_retorna_campos_corretos():
     with patch.object(
         ConsolidatedDashboardView, "get_queryset", return_value=[projeto]
     ):
-        client = APIClient()
-        response = client.get("/api/consolidated/")
-        item = response.data[0]
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/")
+            item = response.data["data"][0]
 
-        assert item["nome_projeto"] == "Migração AWS"
-        assert item["programa"] == "Cloud"
-        assert item["status"] == "Em Andamento"
-        assert item["custo_materiais"] == 1500.00
-        assert item["custo_horas"] == 16800.00
-        assert item["custo_total"] == 18300.00
-        assert item["qtd_materiais"] == 10
-        assert item["total_horas"] == 40.00
+            assert item["nome_projeto"] == "Migracao AWS"
+            assert item["programa"] == "Cloud"
+            assert item["status"] == "Em Andamento"
+            assert item["custo_materiais"] == 1500.00
+            assert item["custo_horas"] == 16800.00
+            assert item["custo_total"] == 18300.00
+            assert item["qtd_materiais"] == 10
+            assert item["total_horas"] == 40.00
 
 
 def test_consolidated_lista_vazia_retorna_200():
     with patch.object(ConsolidatedDashboardView, "get_queryset", return_value=[]):
-        client = APIClient()
-        response = client.get("/api/consolidated/")
-        assert response.status_code == 200
-        assert response.data == []
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/")
+            assert response.status_code == 200
+            assert response.data == {"data": [], "last_updated_at": None}
 
 
 def test_consolidated_retorna_multiplos_projetos():
-    p1 = _make_projeto(id=1, nome_projeto="Migração AWS")
+    p1 = _make_projeto(id=1, nome_projeto="Migracao AWS")
     p2 = _make_projeto(id=2, nome_projeto="Portal Web", nome_programa="Desenvolvimento")
-    with patch.object(ConsolidatedDashboardView, "get_queryset", return_value=[p1, p2]):
-        client = APIClient()
-        response = client.get("/api/consolidated/")
-        assert len(response.data) == 2
+    with patch.object(
+        ConsolidatedDashboardView, "get_queryset", return_value=[p1, p2]
+    ):
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/")
+            assert len(response.data["data"]) == 2
 
 
 def test_consolidated_custo_total_e_soma_de_materiais_e_horas():
@@ -106,9 +138,12 @@ def test_consolidated_custo_total_e_soma_de_materiais_e_horas():
     with patch.object(
         ConsolidatedDashboardView, "get_queryset", return_value=[projeto]
     ):
-        client = APIClient()
-        response = client.get("/api/consolidated/")
-        assert response.data[0]["custo_total"] == 8000.00
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/")
+            assert response.data["data"][0]["custo_total"] == 8000.00
 
 
 def test_consolidated_custo_total_quando_materiais_none():
@@ -116,9 +151,12 @@ def test_consolidated_custo_total_quando_materiais_none():
     with patch.object(
         ConsolidatedDashboardView, "get_queryset", return_value=[projeto]
     ):
-        client = APIClient()
-        response = client.get("/api/consolidated/")
-        assert response.data[0]["custo_total"] == 3000.00
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/")
+            assert response.data["data"][0]["custo_total"] == 3000.00
 
 
 def test_consolidated_custo_total_quando_horas_none():
@@ -126,9 +164,12 @@ def test_consolidated_custo_total_quando_horas_none():
     with patch.object(
         ConsolidatedDashboardView, "get_queryset", return_value=[projeto]
     ):
-        client = APIClient()
-        response = client.get("/api/consolidated/")
-        assert response.data[0]["custo_total"] == 5000.00
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/")
+            assert response.data["data"][0]["custo_total"] == 5000.00
 
 
 # ---------------------------------------------------------------------------
@@ -138,9 +179,12 @@ def test_consolidated_custo_total_quando_horas_none():
 
 def test_filter_periodo_retorna_200():
     with patch.object(ConsolidatedDashboardView, "get_queryset", return_value=[]):
-        client = APIClient()
-        response = client.get("/api/consolidated/?periodo=2024-03")
-        assert response.status_code == 200
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/?periodo=2024-03")
+            assert response.status_code == 200
 
 
 def test_filter_periodo_invalido_retorna_400():
@@ -165,25 +209,34 @@ def test_filter_periodo_formato_errado_retorna_400():
 
 def test_filter_data_inicio_retorna_200():
     with patch.object(ConsolidatedDashboardView, "get_queryset", return_value=[]):
-        client = APIClient()
-        response = client.get("/api/consolidated/?data_inicio=2024-01-01")
-        assert response.status_code == 200
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/?data_inicio=2024-01-01")
+            assert response.status_code == 200
 
 
 def test_filter_data_fim_retorna_200():
     with patch.object(ConsolidatedDashboardView, "get_queryset", return_value=[]):
-        client = APIClient()
-        response = client.get("/api/consolidated/?data_fim=2024-12-31")
-        assert response.status_code == 200
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/?data_fim=2024-12-31")
+            assert response.status_code == 200
 
 
 def test_filter_data_inicio_e_fim_retorna_200():
     with patch.object(ConsolidatedDashboardView, "get_queryset", return_value=[]):
-        client = APIClient()
-        response = client.get(
-            "/api/consolidated/?data_inicio=2024-03-01&data_fim=2024-03-31"
-        )
-        assert response.status_code == 200
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get(
+                "/api/consolidated/?data_inicio=2024-03-01&data_fim=2024-03-31"
+            )
+            assert response.status_code == 200
 
 
 def test_filter_data_inicio_maior_que_data_fim_retorna_400():
@@ -217,36 +270,48 @@ def test_filter_data_fim_formato_invalido_retorna_400():
 
 def test_filter_programa_retorna_200():
     with patch.object(ConsolidatedDashboardView, "get_queryset", return_value=[]):
-        client = APIClient()
-        response = client.get("/api/consolidated/?programa=Cloud")
-        assert response.status_code == 200
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/?programa=Cloud")
+            assert response.status_code == 200
 
 
 def test_filter_projeto_retorna_200():
     with patch.object(ConsolidatedDashboardView, "get_queryset", return_value=[]):
-        client = APIClient()
-        response = client.get("/api/consolidated/?projeto=Migração AWS")
-        assert response.status_code == 200
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/?projeto=Migracao AWS")
+            assert response.status_code == 200
 
 
 def test_filter_status_retorna_200():
     with patch.object(ConsolidatedDashboardView, "get_queryset", return_value=[]):
-        client = APIClient()
-        response = client.get("/api/consolidated/?status=Em Andamento")
-        assert response.status_code == 200
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get("/api/consolidated/?status=Em Andamento")
+            assert response.status_code == 200
 
 
 def test_filtros_combinados_retorna_200():
     with patch.object(ConsolidatedDashboardView, "get_queryset", return_value=[]):
-        client = APIClient()
-        response = client.get(
-            "/api/consolidated/?periodo=2024-03&programa=Cloud&status=Em Andamento"
-        )
-        assert response.status_code == 200
+        with patch.object(
+            ConsolidatedDashboardView, "_get_last_updated_at", return_value=None
+        ):
+            client = APIClient()
+            response = client.get(
+                "/api/consolidated/?periodo=2024-03&programa=Cloud&status=Em Andamento"
+            )
+            assert response.status_code == 200
 
 
 # ---------------------------------------------------------------------------
-# Verificação do ORM (unit — sem HTTP)
+# Verificacao do ORM (unit - sem HTTP)
 # ---------------------------------------------------------------------------
 
 
@@ -270,13 +335,10 @@ def test_get_queryset_aplica_filtro_data_inicio(rf):
         view.get_queryset()
 
     str(mock_qs.annotate.call_args_list)
-    assert (
-        "data_inicio" in str(datetime.date(2024, 3, 1)) or True
-    )  # ORM aplica via Q filter
+    assert "data_inicio" in str(datetime.date(2024, 3, 1)) or True
 
 
 def test_get_queryset_aplica_filtro_periodo_dezembro(rf):
-    """Edge case: dezembro deve expandir para 31/12, não 01/01 do ano seguinte."""
     from rest_framework.request import Request
 
     request = rf.get("/api/consolidated/", {"periodo": "2024-12"})
@@ -304,3 +366,38 @@ def test_get_queryset_sem_filtro_retorna_todos(rf):
     data_inicio, data_fim = view._get_date_range()
     assert data_inicio is None
     assert data_fim is None
+
+
+def test_get_last_updated_at_retorna_maior_timestamp(rf):
+    from rest_framework.request import Request
+
+    request = rf.get("/api/consolidated/")
+    drf_request = Request(request)
+
+    view = ConsolidatedDashboardView()
+    view.request = drf_request
+    view.kwargs = {}
+
+    mock_qs = MagicMock()
+    mock_qs.filter.return_value = mock_qs
+    mock_qs.select_related.return_value = mock_qs
+    mock_qs.aggregate.return_value = {
+        "projeto_ingested_at": datetime.datetime(
+            2026, 4, 25, 10, 0, tzinfo=datetime.timezone.utc
+        ),
+        "programa_ingested_at": None,
+        "tarefa_ingested_at": datetime.datetime(
+            2026, 4, 26, 9, 45, tzinfo=datetime.timezone.utc
+        ),
+        "tempo_ingested_at": None,
+        "solicitacao_ingested_at": None,
+        "compra_projeto_ingested_at": None,
+        "pedido_compra_ingested_at": None,
+    }
+
+    with patch("consolidated.consolidated_dashboard.views.SilverProjeto.objects", mock_qs):
+        result = view._get_last_updated_at()
+
+    assert result == datetime.datetime(
+        2026, 4, 26, 9, 45, tzinfo=datetime.timezone.utc
+    )
