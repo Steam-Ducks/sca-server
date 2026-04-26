@@ -1,7 +1,8 @@
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from main_dashboard.selectors import get_projects_by_period
-from main_dashboard.serializers import MainDashboardSerializer
+from rest_framework.views import APIView
+
+from main_dashboard.selectors import get_program_summary, get_projects_by_period
+from main_dashboard.serializers import MainDashboardSerializer, ProgramSummarySerializer
 
 
 class MainDashboardView(APIView):
@@ -13,4 +14,24 @@ class MainDashboardView(APIView):
 
         serializer = MainDashboardSerializer(qs, many=True)
 
+        return Response(serializer.data)
+
+
+class SummaryTableView(APIView):
+    """
+    GET /api/main-dashboard/summary/
+
+    Returns cost aggregates grouped by program for the main dashboard
+    summary table.
+
+    Query params (all optional):
+        start_date — YYYY-MM-DD
+        end_date   — YYYY-MM-DD
+        programa   — program name
+        projeto    — project name
+    """
+
+    def get(self, request):
+        rows = get_program_summary(request.query_params)
+        serializer = ProgramSummarySerializer(rows, many=True)
         return Response(serializer.data)
