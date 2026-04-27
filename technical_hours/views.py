@@ -1,8 +1,9 @@
 import datetime
 
-from django.db.models import ExpressionWrapper, F, FloatField
+from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 
 from sca_data.models import SilverTempoTarefa
 from technical_hours.serializers import TechnicalHoursTableSerializer
@@ -110,6 +111,44 @@ class TechnicalHoursTableView(generics.ListAPIView):
                 ),
             )
             .order_by("-custo_total")
+        )
+
+
+class TechnicalHoursKpiView(TechnicalHoursTableView):
+    """
+    Indicadores agregados de horas técnicas.
+
+    Rota: GET /api/horas-tecnicas/kpis/
+
+    Aceita os mesmos query params de TechnicalHoursTableView:
+    periodo, data_inicio, data_fim, ano, mes.
+
+    Retorna
+    -------
+    custo_total  : soma do custo total de horas
+    total_horas  : soma de horas trabalhadas
+    custo_medio  : custo_total / total_horas
+    registros    : número de registros
+    """
+
+    def get(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        agg = qs.aggregate(
+            total_horas=Sum("horas_trabalhadas"),
+            soma_custo=Sum("custo_total"),
+            registros=Count("id"),
+        )
+        total_horas = float(agg["total_horas"] or 0)
+        custo_total = float(agg["soma_custo"] or 0)
+        return Response(
+            {
+                "custo_total": round(custo_total, 2),
+                "total_horas": round(total_horas, 2),
+                "custo_medio": (
+                    round(custo_total / total_horas, 2) if total_horas else 0
+                ),
+                "registros": agg["registros"] or 0,
+            }
         )
 
 
