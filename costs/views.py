@@ -1,5 +1,6 @@
 from rest_framework import generics
 from django.utils.dateparse import parse_date
+from django.utils.timezone import make_aware
 
 from costs.serializers import GoldCostsSerializer
 from sca_data.models import GoldCosts
@@ -29,11 +30,11 @@ class GoldCostsTableView(generics.ListAPIView):
         data_lte = params.get("data_lte")
 
         if data_gte and (dt := parse_date(data_gte)):
-            start = datetime.combine(dt, time.min)
+            start = make_aware(datetime.combine(dt, time.min))
             queryset = queryset.filter(data__gte=start)
 
         if data_lte and (dt := parse_date(data_lte)):
-            end = datetime.combine(dt, time.max)
+            end = make_aware(datetime.combine(dt, time.max))
             queryset = queryset.filter(data__lte=end)
 
         return queryset.order_by("data")

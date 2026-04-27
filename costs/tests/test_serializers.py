@@ -1,6 +1,5 @@
 import pytest
 from datetime import date, datetime, timezone
-from rest_framework.exceptions import ValidationError
 
 from costs.serializers import GoldCostsSerializer
 
@@ -71,31 +70,3 @@ class TestGoldCostsSerializerSerialize:
         data = GoldCostsSerializer(instance).data
 
         assert data["id"] == 42
-
-
-class TestGoldCostsSerializerDeserialize:
-    def test_valid_data_is_valid(self, serializer):
-        assert serializer.is_valid(), serializer.errors
-
-    def test_validated_data_contains_all_fields(self, serializer):
-        serializer.is_valid()
-        for field in [
-            "data",
-            "nome_programa",
-            "gerente_programa",
-            "nome_projeto",
-            "responsavel_projeto",
-            "custo",
-        ]:
-            assert field in serializer.validated_data
-
-    def test_invalid_date_format_is_invalid(self, valid_data):
-        valid_data["data"] = "not-a-date"
-        s = GoldCostsSerializer(data=valid_data)
-        assert not s.is_valid()
-        assert "data" in s.errors
-
-    def validate_custo(self, value):
-        if value < 0:
-            raise ValidationError("Custo não pode ser negativo.")
-        return value

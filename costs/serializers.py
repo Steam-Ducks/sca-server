@@ -1,19 +1,19 @@
 from rest_framework import serializers
 from sca_data.models import GoldCosts
-from datetime import datetime, time
 
 
 class GoldCostsSerializer(serializers.ModelSerializer):
-    data = serializers.DateField()
+    data = serializers.SerializerMethodField()
 
     class Meta:
         model = GoldCosts
         fields = "__all__"
 
-    def to_internal_value(self, data):
-        value = super().to_internal_value(data)
+    def get_data(self, obj):
+        if not obj.data:
+            return None
 
-        if "data" in value:
-            value["data"] = datetime.combine(value["data"], time.min)
+        if hasattr(obj.data, "date"):
+            return obj.data.date().isoformat()
 
-        return value
+        return obj.data.isoformat() if hasattr(obj.data, "isoformat") else obj.data
