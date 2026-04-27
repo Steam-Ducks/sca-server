@@ -126,6 +126,26 @@ def test_kpi_aceita_filtro_ano_mes():
         assert response.status_code == 200
 
 
+def test_kpi_aceita_filtro_programa():
+    with patch.object(TechnicalHoursKpiView, "get_queryset", return_value=_mock_qs()):
+        response = APIClient().get(f"{URL}?programa=Cloud")
+        assert response.status_code == 200
+
+
+def test_kpi_aceita_filtro_projeto():
+    with patch.object(TechnicalHoursKpiView, "get_queryset", return_value=_mock_qs()):
+        response = APIClient().get(f"{URL}?projeto=Migracao AWS")
+        assert response.status_code == 200
+
+
+def test_kpi_aceita_filtros_combinados_programa_e_projeto():
+    with patch.object(TechnicalHoursKpiView, "get_queryset", return_value=_mock_qs()):
+        response = APIClient().get(
+            f"{URL}?programa=Cloud&projeto=Migracao AWS&periodo=2024-03"
+        )
+        assert response.status_code == 200
+
+
 def test_kpi_periodo_invalido_retorna_400():
     response = APIClient().get(f"{URL}?periodo=invalido")
     assert response.status_code == 400
