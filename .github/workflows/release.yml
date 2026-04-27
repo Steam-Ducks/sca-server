@@ -1,11 +1,13 @@
-name: Scheduled Release to Main
+name: Scheduled Merge to Main
 
 on:
   schedule:
-    # 05/04/2026 - 03/05/2026 - 31/05/2026 (at 12:00 UTC)
-    - cron: "0 12 5 4 *"   # abril 5
-    - cron: "0 12 3 5 *"   # maio 3
-    - cron: "0 12 31 5 *"  # maio 31
+    # 05/04/2026 - 12:00 UTC
+    - cron: "0 12 5 4 *"
+    # 03/05/2026 - 12:00 UTC
+    - cron: "0 12 3 5 *"
+    # 31/05/2026 - 12:00 UTC
+    - cron: "0 12 31 5 *"
   workflow_dispatch:
 
 jobs:
