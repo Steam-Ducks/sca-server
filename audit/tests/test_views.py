@@ -146,8 +146,13 @@ class TestAuditExecutionLogTableView:
         view(request)
 
         calls_as_text = [str(call) for call in qs.filter.call_args_list]
-        assert any("operation_metadata__programa__iexact" in call for call in calls_as_text)
-        assert any("operation_metadata__nome_programa__iexact" in call for call in calls_as_text)
+        assert any(
+            "operation_metadata__programa__iexact" in call for call in calls_as_text
+        )
+        assert any(
+            "operation_metadata__nome_programa__iexact" in call
+            for call in calls_as_text
+        )
 
     @patch("audit.views.AuditExecutionLog.objects")
     def test_filters_by_projeto_from_operation_metadata(
@@ -162,8 +167,12 @@ class TestAuditExecutionLogTableView:
         view(request)
 
         calls_as_text = [str(call) for call in qs.filter.call_args_list]
-        assert any("operation_metadata__projeto__iexact" in call for call in calls_as_text)
-        assert any("operation_metadata__nome_projeto__iexact" in call for call in calls_as_text)
+        assert any(
+            "operation_metadata__projeto__iexact" in call for call in calls_as_text
+        )
+        assert any(
+            "operation_metadata__nome_projeto__iexact" in call for call in calls_as_text
+        )
 
     @patch("audit.views.AuditExecutionLog.objects")
     def test_filters_by_periodo(self, mock_objects, factory, view):
