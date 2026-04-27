@@ -14,6 +14,6 @@ class GoldCostsSerializer(serializers.ModelSerializer):
             return None
 
         if hasattr(obj.data, "date"):
-            return obj.data.date()
+            return obj.data.date().isoformat()
 
-        return obj.data
+        return obj.data.isoformat() if hasattr(obj.data, "isoformat") else obj.data
