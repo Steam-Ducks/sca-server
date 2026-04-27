@@ -131,8 +131,7 @@ def get_top_materials_by_financial_impact(params, limit=10):
     base_qs = get_materials_queryset(params)
 
     return (
-        base_qs
-        .values("solicitacao__material__descricao")
+        base_qs.values("solicitacao__material__descricao")
         .annotate(
             material=F("solicitacao__material__descricao"),
             total_cost=Sum("valor_total"),

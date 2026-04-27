@@ -79,6 +79,7 @@ class MaterialsIndicatorsSerializer(serializers.Serializer):
     total_itens = serializers.IntegerField()
     custo_medio = serializers.FloatField(allow_null=True)
 
+
 class TopMaterialsSerializer(serializers.Serializer):
     material = serializers.CharField()
     total_cost = serializers.SerializerMethodField()
