@@ -20,6 +20,8 @@ class TechnicalHoursTableView(generics.ListAPIView):
     data_fim    : YYYY-MM-DD — bound superior inclusivo
     ano         : int        — filtra pelo ano
     mes         : int        — filtra pelo mês
+    programa    : str        — filtra pelo nome do programa
+    projeto     : str        — filtra pelo nome do projeto
 
     Prioridade: data_inicio / data_fim > periodo > ano / mes
     """
@@ -96,10 +98,25 @@ class TechnicalHoursTableView(generics.ListAPIView):
 
         return self._filters_from_ano_mes(params.get("ano"), params.get("mes"))
 
+    def _apply_dimension_filters(self, queryset):
+        params = self.request.query_params
+
+        programa = params.get("programa")
+        if programa:
+            queryset = queryset.filter(
+                tarefa__projeto__programa__nome_programa__iexact=programa
+            )
+
+        projeto = params.get("projeto")
+        if projeto:
+            queryset = queryset.filter(tarefa__projeto__nome_projeto__iexact=projeto)
+
+        return queryset
+
     def get_queryset(self):
         filters = self._build_period_filters()
 
-        return (
+        queryset = (
             SilverTempoTarefa.objects.select_related("tarefa__projeto__programa")
             .filter(tarefa__isnull=False)
             .filter(**filters)
@@ -110,8 +127,9 @@ class TechnicalHoursTableView(generics.ListAPIView):
                     output_field=FloatField(),
                 ),
             )
-            .order_by("-custo_total")
         )
+        queryset = self._apply_dimension_filters(queryset)
+        return queryset.order_by("-custo_total")
 
 
 class TechnicalHoursKpiView(TechnicalHoursTableView):
@@ -121,7 +139,7 @@ class TechnicalHoursKpiView(TechnicalHoursTableView):
     Rota: GET /api/horas-tecnicas/kpis/
 
     Aceita os mesmos query params de TechnicalHoursTableView:
-    periodo, data_inicio, data_fim, ano, mes.
+    periodo, data_inicio, data_fim, ano, mes, programa, projeto.
 
     Retorna
     -------

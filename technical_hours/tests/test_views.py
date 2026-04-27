@@ -1,8 +1,9 @@
 import datetime
 from decimal import Decimal
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from django.utils import timezone
+from rest_framework.request import Request
 from rest_framework.test import APIClient
 
 from sca_data.models import (
@@ -192,3 +193,65 @@ def test_sem_filtro_retorna_todos_registros(tempo_em_memoria):
         response = client.get(URL)
         assert response.status_code == 200
         assert len(response.data) == 1
+
+
+def test_get_queryset_aplica_filtro_por_programa(rf):
+    request = rf.get(URL, {"programa": "Cloud"})
+
+    view = TechnicalHoursTableView()
+    view.request = Request(request)
+
+    mock_qs = MagicMock()
+    mock_qs.select_related.return_value = mock_qs
+    mock_qs.filter.return_value = mock_qs
+    mock_qs.annotate.return_value = mock_qs
+    mock_qs.order_by.return_value = mock_qs
+
+    with patch("technical_hours.views.SilverTempoTarefa.objects", mock_qs):
+        result = view.get_queryset()
+
+    assert result == mock_qs
+    mock_qs.filter.assert_any_call(
+        tarefa__projeto__programa__nome_programa__iexact="Cloud"
+    )
+
+
+def test_get_queryset_aplica_filtro_por_projeto(rf):
+    request = rf.get(URL, {"projeto": "Migracao AWS"})
+
+    view = TechnicalHoursTableView()
+    view.request = Request(request)
+
+    mock_qs = MagicMock()
+    mock_qs.select_related.return_value = mock_qs
+    mock_qs.filter.return_value = mock_qs
+    mock_qs.annotate.return_value = mock_qs
+    mock_qs.order_by.return_value = mock_qs
+
+    with patch("technical_hours.views.SilverTempoTarefa.objects", mock_qs):
+        result = view.get_queryset()
+
+    assert result == mock_qs
+    mock_qs.filter.assert_any_call(tarefa__projeto__nome_projeto__iexact="Migracao AWS")
+
+
+def test_get_queryset_aplica_filtros_combinados_de_programa_e_projeto(rf):
+    request = rf.get(URL, {"programa": "Cloud", "projeto": "Migracao AWS"})
+
+    view = TechnicalHoursTableView()
+    view.request = Request(request)
+
+    mock_qs = MagicMock()
+    mock_qs.select_related.return_value = mock_qs
+    mock_qs.filter.return_value = mock_qs
+    mock_qs.annotate.return_value = mock_qs
+    mock_qs.order_by.return_value = mock_qs
+
+    with patch("technical_hours.views.SilverTempoTarefa.objects", mock_qs):
+        result = view.get_queryset()
+
+    assert result == mock_qs
+    mock_qs.filter.assert_any_call(
+        tarefa__projeto__programa__nome_programa__iexact="Cloud"
+    )
+    mock_qs.filter.assert_any_call(tarefa__projeto__nome_projeto__iexact="Migracao AWS")
