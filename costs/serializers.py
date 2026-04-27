@@ -10,6 +10,10 @@ class GoldCostsSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def get_data(self, obj):
-        if obj.data:
+        if not obj.data:
+            return None
+
+        if hasattr(obj.data, "date"):
             return obj.data.date()
-        return None
+
+        return obj.data
