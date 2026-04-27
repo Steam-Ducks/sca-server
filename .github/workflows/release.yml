@@ -147,7 +147,7 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Configure git
         run: |
@@ -159,3 +159,4 @@ jobs:
           git fetch origin develop
           git merge origin/develop --no-edit
           git push origin main
+          
