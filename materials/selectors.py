@@ -2,7 +2,7 @@ import datetime
 
 from django.db.models import Q
 from rest_framework.exceptions import ValidationError as DRFValidationError
-
+from django.db.models import Sum, F
 from sca_data.models import SilverPedidoCompra
 
 
@@ -124,4 +124,19 @@ def get_materials_queryset(params):
         )
         .filter(filters)
         .order_by("-valor_total")
+    )
+
+
+def get_top_materials_by_financial_impact(params, limit=10):
+    base_qs = get_materials_queryset(params)
+
+    return (
+        base_qs
+        .values("solicitacao__material__descricao")
+        .annotate(
+            material=F("solicitacao__material__descricao"),
+            total_cost=Sum("valor_total"),
+        )
+        .values("material", "total_cost")
+        .order_by("-total_cost")[:limit]
     )
