@@ -6,6 +6,7 @@ from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from materials.selectors import get_materials_queryset
 from materials.serializers import (
     MaterialsIndicatorsSerializer,
     MaterialsTableSerializer,
@@ -34,19 +35,16 @@ class MaterialsTableView(generics.ListAPIView):
     periodo     : YYYY-MM    — mês completo
     data_inicio : YYYY-MM-DD — bound inferior inclusivo
     data_fim    : YYYY-MM-DD — bound superior inclusivo
+    programa    : str        — nome do programa (case-insensitive)
+    projeto     : str        — nome do projeto  (case-insensitive)
+    material    : str        — descrição do material (contém)
+    fornecedor  : str        — razão social do fornecedor (contém)
+    categoria   : str        — categoria do material (case-insensitive)
 
-    Prioridade: data_inicio / data_fim > periodo
+    Prioridade de datas: data_inicio / data_fim > periodo
     """
 
     serializer_class = MaterialsTableSerializer
-
-    def _parse_date(self, raw: str, param_name: str) -> datetime.date:
-        try:
-            return datetime.date.fromisoformat(raw)
-        except ValueError:
-            raise ValidationError(
-                {param_name: f"Data inválida '{raw}'. Use o formato YYYY-MM-DD."}
-            )
 
     def _parse_periodo(self, raw: str) -> tuple:
         """YYYY-MM → (primeiro_dia, último_dia) do mês."""
@@ -69,50 +67,8 @@ class MaterialsTableView(generics.ListAPIView):
 
         return primeiro_dia, ultimo_dia
 
-    def _filters_from_date_range(self, raw_inicio, raw_fim) -> dict:
-        filters = {}
-        if raw_inicio:
-            filters["data_pedido__gte"] = self._parse_date(raw_inicio, "data_inicio")
-        if raw_fim:
-            filters["data_pedido__lte"] = self._parse_date(raw_fim, "data_fim")
-        if (
-            raw_inicio
-            and raw_fim
-            and filters["data_pedido__gte"] > filters["data_pedido__lte"]
-        ):
-            raise ValidationError(
-                {"data_inicio": "data_inicio não pode ser posterior a data_fim."}
-            )
-        return filters
-
-    def _build_period_filters(self) -> dict:
-        params = self.request.query_params
-        raw_inicio = params.get("data_inicio")
-        raw_fim = params.get("data_fim")
-        raw_periodo = params.get("periodo")
-
-        if raw_inicio or raw_fim:
-            return self._filters_from_date_range(raw_inicio, raw_fim)
-
-        if raw_periodo:
-            primeiro_dia, ultimo_dia = self._parse_periodo(raw_periodo)
-            return {"data_pedido__gte": primeiro_dia, "data_pedido__lte": ultimo_dia}
-
-        return {}
-
     def get_queryset(self):
-        filters = self._build_period_filters()
-
-        return (
-            SilverPedidoCompra.objects.select_related(
-                "solicitacao__material",
-                "solicitacao__projeto__programa",
-                "fornecedor",
-            )
-            .filter(solicitacao__isnull=False)
-            .filter(**filters)
-            .order_by("-valor_total")
-        )
+        return get_materials_queryset(self.request.query_params)
 
 
 class MaterialsTablePeriodoView(MaterialsTableView):
@@ -126,13 +82,15 @@ class MaterialsTablePeriodoView(MaterialsTableView):
     GET /api/compras/periodo/2024-03/
     """
 
-    def _build_period_filters(self) -> dict:
+    def get_queryset(self):
         raw_periodo = self.kwargs.get("periodo", "")
         primeiro_dia, ultimo_dia = self._parse_periodo(raw_periodo)
-        return {
-            "data_pedido__gte": primeiro_dia,
-            "data_pedido__lte": ultimo_dia,
+        params = {
+            **self.request.query_params,
+            "data_inicio": str(primeiro_dia),
+            "data_fim": str(ultimo_dia),
         }
+        return get_materials_queryset(params)
 
 
 class MaterialsIndicatorsView(generics.GenericAPIView):
