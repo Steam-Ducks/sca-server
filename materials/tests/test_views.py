@@ -161,3 +161,74 @@ def test_materials_indicators_filtra_por_programa():
         response = APIClient().get("/api/materials/indicators/?programa=Cloud")
         assert response.status_code == 200
         assert response.data["total_itens"] == 1
+
+
+# ─── Filtros por período na view base ────────────────────────────────────────
+
+
+def test_filtro_por_periodo_yyyy_mm_retorna_200():
+    pedido = _criar_pedido_em_memoria()
+    with patch.object(MaterialsTableView, "get_queryset", return_value=[pedido]):
+        response = APIClient().get("/api/compras/?periodo=2024-03")
+        assert response.status_code == 200
+        assert len(response.data) == 1
+
+
+def test_filtro_por_data_inicio_retorna_200():
+    pedido = _criar_pedido_em_memoria()
+    with patch.object(MaterialsTableView, "get_queryset", return_value=[pedido]):
+        response = APIClient().get("/api/compras/?data_inicio=2024-03-01")
+        assert response.status_code == 200
+        assert len(response.data) == 1
+
+
+def test_filtro_por_data_fim_retorna_200():
+    pedido = _criar_pedido_em_memoria()
+    with patch.object(MaterialsTableView, "get_queryset", return_value=[pedido]):
+        response = APIClient().get("/api/compras/?data_fim=2024-03-31")
+        assert response.status_code == 200
+        assert len(response.data) == 1
+
+
+def test_filtro_por_data_inicio_e_fim_retorna_200():
+    pedido = _criar_pedido_em_memoria()
+    with patch.object(MaterialsTableView, "get_queryset", return_value=[pedido]):
+        response = APIClient().get(
+            "/api/compras/?data_inicio=2024-03-01&data_fim=2024-03-31"
+        )
+        assert response.status_code == 200
+        assert len(response.data) == 1
+
+
+def test_periodo_invalido_retorna_400():
+    response = APIClient().get("/api/compras/?periodo=invalido")
+    assert response.status_code == 400
+    assert "periodo" in response.data
+
+
+def test_periodo_com_mes_invalido_retorna_400():
+    response = APIClient().get("/api/compras/?periodo=2024-13")
+    assert response.status_code == 400
+    assert "periodo" in response.data
+
+
+def test_data_inicio_invalida_retorna_400():
+    response = APIClient().get("/api/compras/?data_inicio=nao-e-data")
+    assert response.status_code == 400
+    assert "data_inicio" in response.data
+
+
+def test_data_inicio_posterior_a_data_fim_retorna_400():
+    response = APIClient().get(
+        "/api/compras/?data_inicio=2024-03-31&data_fim=2024-03-01"
+    )
+    assert response.status_code == 400
+    assert "data_inicio" in response.data
+
+
+def test_sem_filtro_retorna_todos_registros():
+    pedido = _criar_pedido_em_memoria()
+    with patch.object(MaterialsTableView, "get_queryset", return_value=[pedido]):
+        response = APIClient().get("/api/compras/")
+        assert response.status_code == 200
+        assert len(response.data) == 1
