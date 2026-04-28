@@ -197,17 +197,13 @@ def test_get_date_range_inicio_posterior_ao_fim_levanta_erro():
 
 def test_get_date_range_data_inicio_tem_prioridade_sobre_periodo():
     """data_inicio/data_fim deve ser usado em vez de periodo."""
-    inicio, fim = _get_date_range(
-        {"data_inicio": "2024-03-15", "periodo": "2024-01"}
-    )
+    inicio, fim = _get_date_range({"data_inicio": "2024-03-15", "periodo": "2024-01"})
     assert inicio == datetime.date(2024, 3, 15)
     assert fim is None  # periodo foi ignorado, não define data_fim
 
 
 def test_get_date_range_data_fim_tem_prioridade_sobre_periodo():
-    inicio, fim = _get_date_range(
-        {"data_fim": "2024-03-31", "periodo": "2024-01"}
-    )
+    inicio, fim = _get_date_range({"data_fim": "2024-03-31", "periodo": "2024-01"})
     assert inicio is None
     assert fim == datetime.date(2024, 3, 31)
 
@@ -246,7 +242,9 @@ def test_get_materials_queryset_ordena_por_valor_total_desc(mock_objects):
 
 
 @patch("materials.selectors.SilverPedidoCompra.objects")
-def test_get_materials_queryset_select_related_inclui_todos_relacionamentos(mock_objects):
+def test_get_materials_queryset_select_related_inclui_todos_relacionamentos(
+    mock_objects,
+):
     mock_qs = _mock_pedido_objects()
     mock_objects.select_related.return_value = mock_qs
 

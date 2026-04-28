@@ -193,7 +193,9 @@ def test_filtro_por_data_fim_retorna_200():
 def test_filtro_por_data_inicio_e_fim_retorna_200():
     pedido = _criar_pedido_em_memoria()
     with patch.object(MaterialsTableView, "get_queryset", return_value=[pedido]):
-        response = APIClient().get("/api/compras/?data_inicio=2024-03-01&data_fim=2024-03-31")
+        response = APIClient().get(
+            "/api/compras/?data_inicio=2024-03-01&data_fim=2024-03-31"
+        )
         assert response.status_code == 200
         assert len(response.data) == 1
 
@@ -217,7 +219,9 @@ def test_data_inicio_invalida_retorna_400():
 
 
 def test_data_inicio_posterior_a_data_fim_retorna_400():
-    response = APIClient().get("/api/compras/?data_inicio=2024-03-31&data_fim=2024-03-01")
+    response = APIClient().get(
+        "/api/compras/?data_inicio=2024-03-31&data_fim=2024-03-01"
+    )
     assert response.status_code == 400
     assert "data_inicio" in response.data
 
