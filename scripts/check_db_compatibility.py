@@ -9,10 +9,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 import django  # noqa: E402
+
 django.setup()
 
-from django.db import connection  # noqa: E402
 from django.apps import apps  # noqa: E402
+from django.db import connection  # noqa: E402
 from django.db.migrations.executor import MigrationExecutor  # noqa: E402
 
 
@@ -20,9 +21,11 @@ def ok(msg):
     print(f"  ✅ {msg}")
     return {"status": "ok", "message": msg}
 
+
 def warn(msg):
     print(f"  ⚠️  {msg}")
     return {"status": "warn", "message": msg}
+
 
 def fail(msg):
     print(f"  ❌ {msg}")
@@ -89,14 +92,14 @@ def check_model_table_consistency():
         existing_tables |= {row[0] for row in cursor.fetchall()}
 
     for model in apps.get_models():
+        if not model._meta.managed:
+            continue
         table_name = model._meta.db_table
         checked += 1
 
-        normalized = table_name.replace('"', '')
-        found = (
-            table_name in existing_tables or
-            normalized in existing_tables or
-            any(t.endswith('.' + normalized.split('.')[-1]) for t in existing_tables)
+        normalized = table_name.replace('"', "")
+        found = table_name in existing_tables or normalized in existing_tables or any(
+            t.endswith("." + normalized.split(".")[-1]) for t in existing_tables
         )
 
         if not found:
@@ -109,17 +112,20 @@ def check_model_table_consistency():
             if hasattr(field, "column") and not field.many_to_many
         }
 
-        parts = normalized.split('.')
+        parts = normalized.split(".")
         if len(parts) == 2:
             schema, tbl = parts
         else:
-            schema, tbl = 'public', parts[0]
+            schema, tbl = "public", parts[0]
 
         with connection.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT column_name FROM information_schema.columns
                 WHERE table_name = %s AND table_schema = %s
-            """, [tbl, schema])
+            """,
+                [tbl, schema],
+            )
             db_columns = {row[0] for row in cursor.fetchall()}
 
         missing = model_columns - db_columns
@@ -136,6 +142,7 @@ def check_psycopg_driver():
     print("\n[5/5] Verificando driver psycopg...")
     try:
         import psycopg
+
         version = psycopg.__version__
         major = int(version.split(".")[0])
         if major >= 3:
@@ -155,11 +162,11 @@ def main():
     results = {"timestamp": datetime.now().isoformat(), "checks": {}}
 
     checks = [
-        ("connection",         check_connection),
-        ("postgres_version",   check_postgres_version),
+        ("connection", check_connection),
+        ("postgres_version", check_postgres_version),
         ("pending_migrations", check_pending_migrations),
-        ("model_consistency",  check_model_table_consistency),
-        ("psycopg_driver",     check_psycopg_driver),
+        ("model_consistency", check_model_table_consistency),
+        ("psycopg_driver", check_psycopg_driver),
     ]
 
     has_failure = False
