@@ -98,8 +98,10 @@ def check_model_table_consistency():
         checked += 1
 
         normalized = table_name.replace('"', "")
-        found = table_name in existing_tables or normalized in existing_tables or any(
-            t.endswith("." + normalized.split(".")[-1]) for t in existing_tables
+        found = (
+            table_name in existing_tables
+            or normalized in existing_tables
+            or any(t.endswith("." + normalized.split(".")[-1]) for t in existing_tables)
         )
 
         if not found:
