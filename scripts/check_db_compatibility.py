@@ -3,16 +3,17 @@ import os
 import sys
 from datetime import datetime
 
-import sys
-sys.path.insert(0, "/app")
+# Insere o root do projeto no path para que 'config.settings' seja encontrado
+# tanto no Docker (/app) quanto no CI (caminho do runner)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
-import django
+import django  # noqa: E402
 django.setup()
 
-from django.db import connection
-from django.apps import apps
-from django.db.migrations.executor import MigrationExecutor
+from django.db import connection  # noqa: E402
+from django.apps import apps  # noqa: E402
+from django.db.migrations.executor import MigrationExecutor  # noqa: E402
 
 
 def ok(msg):
@@ -74,7 +75,6 @@ def check_model_table_consistency():
     checked = 0
 
     with connection.cursor() as cursor:
-        # Busca tabelas em todos os schemas, não só public
         cursor.execute("""
             SELECT table_schema || '.' || table_name
             FROM information_schema.tables
@@ -82,7 +82,6 @@ def check_model_table_consistency():
             AND table_schema NOT IN ('pg_catalog', 'information_schema')
         """)
         existing_tables = {row[0] for row in cursor.fetchall()}
-        # Adiciona também sem prefixo de schema para tabelas do public
         cursor.execute("""
             SELECT table_name FROM information_schema.tables
             WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
@@ -90,12 +89,10 @@ def check_model_table_consistency():
         existing_tables |= {row[0] for row in cursor.fetchall()}
 
     for model in apps.get_models():
-        table_name = model._meta.db_table  # ex: 'silver"."programas' ou 'auth_user'
+        table_name = model._meta.db_table
         checked += 1
 
-        # Normaliza o nome da tabela para busca
-        normalized = table_name.replace('"', '')  # remove aspas
-        # Tenta encontrar como schema.table ou só table
+        normalized = table_name.replace('"', '')
         found = (
             table_name in existing_tables or
             normalized in existing_tables or
@@ -106,14 +103,12 @@ def check_model_table_consistency():
             issues.append(f"Tabela ausente: '{table_name}' (model: {model.__name__})")
             continue
 
-        # Busca colunas — ignora ManyToMany (não são colunas diretas)
         model_columns = {
             field.column
             for field in model._meta.get_fields()
             if hasattr(field, "column") and not field.many_to_many
         }
 
-        # Descobre o schema real da tabela
         parts = normalized.split('.')
         if len(parts) == 2:
             schema, tbl = parts
@@ -135,6 +130,7 @@ def check_model_table_consistency():
         return ok(f"{checked} models verificados — todos consistentes com o banco")
     else:
         return fail(f"{len(issues)} inconsistência(s): {issues}")
+
 
 def check_psycopg_driver():
     print("\n[5/5] Verificando driver psycopg...")
@@ -191,7 +187,7 @@ def main():
 
     with open("db_compatibility_report.json", "w") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
-    print(f"\n📄 Relatório salvo em: db_compatibility_report.json")
+    print("\n📄 Relatório salvo em: db_compatibility_report.json")
 
     if has_failure:
         print("\n❌ Compatibilidade: FALHOU")
