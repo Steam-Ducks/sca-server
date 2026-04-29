@@ -124,7 +124,6 @@ DATABASES = {
         "PORT": os.environ.get("DB_PORT"),
         "OPTIONS": {},
     }
-}
 
 if db_ssl_mode:
     DATABASES["default"]["OPTIONS"]["sslmode"] = db_ssl_mode
