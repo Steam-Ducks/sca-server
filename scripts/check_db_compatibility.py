@@ -78,17 +78,21 @@ def check_model_table_consistency():
     checked = 0
 
     with connection.cursor() as cursor:
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT table_schema || '.' || table_name
             FROM information_schema.tables
             WHERE table_type = 'BASE TABLE'
             AND table_schema NOT IN ('pg_catalog', 'information_schema')
-        """)
+        """
+        )
         existing_tables = {row[0] for row in cursor.fetchall()}
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT table_name FROM information_schema.tables
             WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-        """)
+        """
+        )
         existing_tables |= {row[0] for row in cursor.fetchall()}
 
     for model in apps.get_models():
@@ -191,7 +195,9 @@ def main():
     }
 
     print("\n" + "=" * 55)
-    print(f"  RESUMO: {passed}/{len(checks)} OK  |  {warned} avisos  |  {failed} falhas")
+    print(
+        f"  RESUMO: {passed}/{len(checks)} OK  |  {warned} avisos  |  {failed} falhas"
+    )
     print("=" * 55)
 
     with open("db_compatibility_report.json", "w") as f:
