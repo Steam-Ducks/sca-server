@@ -1,0 +1,126 @@
+name: DB Versioning
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+
+  migration-lint:
+    name: Migration Lint
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sca_test
+          POSTGRES_USER: sca_user
+          POSTGRES_PASSWORD: sca_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: sca_test
+      DB_USER: sca_user
+      DB_PASSWORD: sca_password
+      SECRET_KEY: ci-secret-key-not-for-production
+      DEBUG: "True"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check for missing migrations
+        run: |
+          python manage.py makemigrations --check --dry-run
+          echo "✅ Nenhuma migração pendente"
+
+      - name: Apply all migrations
+        run: |
+          python manage.py migrate --noinput
+          echo "✅ Migrações aplicadas com sucesso"
+
+      - name: Export migration list
+        run: python manage.py showmigrations --list > migration_report.txt
+
+      - name: Upload migration report
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-report
+          path: migration_report.txt
+          retention-days: 30
+
+  schema-snapshot:
+    name: Schema Snapshot
+    runs-on: ubuntu-latest
+    needs: migration-lint
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sca_test
+          POSTGRES_USER: sca_user
+          POSTGRES_PASSWORD: sca_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_NAME: sca_test
+      DB_USER: sca_user
+      DB_PASSWORD: sca_password
+      SECRET_KEY: ci-secret-key-not-for-production
+      DEBUG: "True"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Apply migrations
+        run: python manage.py migrate --noinput
+
+      - name: Export schema snapshot
+        run: python scripts/export_schema_snapshot.py
+
+      - name: Upload schema snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-snapshot-${{ github.sha }}
+          path: schema_snapshot.json
+          retention-days: 90
