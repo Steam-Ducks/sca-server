@@ -61,9 +61,12 @@ INSTALLED_APPS = [
     "consolidated.consolidated_dashboard",
     "audit",
     "dashboard",
+<<<<<<< HEAD
     "main_dashboard",
     "budget",
     "costs",
+=======
+>>>>>>> 73c4e0f (feat (SCA-270): Total cost per project, top 10)
 ]
 
 MIDDLEWARE = [
