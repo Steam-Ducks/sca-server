@@ -22,20 +22,23 @@ def _read_bronze(engine, tb_name: str) -> pd.DataFrame:
     return df
 
 
+def _ensure_schema(engine):
+    with engine.connect() as conn:
+        conn.execute(text("CREATE SCHEMA IF NOT EXISTS silver"))
+        conn.commit()
+    logging.info("Schema 'silver' verificado/criado.")
+
+
 def _write_silver(df: pd.DataFrame, engine, tb_name: str) -> int:
     logging.info(f"Writing {tb_name} ...")
 
     df["silver_ingested_at"] = datetime.datetime.now()
 
-    with engine.connect() as conn:
-        conn.execute(text(f'TRUNCATE TABLE silver."{tb_name}" CASCADE'))
-        conn.commit()
-
     df.to_sql(
         tb_name,
         engine,
         schema="silver",
-        if_exists="append",
+        if_exists="replace",
         index=False,
     )
 
@@ -442,4 +445,5 @@ def _run_pipeline(engine):
 
 if __name__ == "__main__":
     audit.create_audit(ENGINE)
+    _ensure_schema(ENGINE)
     _run_pipeline(ENGINE)

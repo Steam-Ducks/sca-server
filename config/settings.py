@@ -62,6 +62,8 @@ INSTALLED_APPS = [
     "audit",
     "dashboard",
     "main_dashboard",
+    "budget",
+    "costs",
 ]
 
 MIDDLEWARE = [
