@@ -124,6 +124,8 @@ class TopProjectsView(APIView):
     """
 
     def get(self, request):
-        rows = get_top_projects_by_cost(_normalize_dashboard_filters(request.query_params))
+        rows = get_top_projects_by_cost(
+            _normalize_dashboard_filters(request.query_params)
+        )
         serializer = TopProjectSerializer(rows, many=True)
         return Response(serializer.data)
