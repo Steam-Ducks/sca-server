@@ -117,8 +117,8 @@ def test_summary_table_passes_all_filters_to_selector(mock_selector):
     params = mock_selector.call_args[0][0]
     assert params["start_date"] == "2026-01-01"
     assert params["end_date"] == "2026-12-31"
-    assert params["programa"] == "Programa A"
-    assert params["projeto"] == "Projeto X"
+    assert params["program"] == "Programa A"
+    assert params["project"] == "Projeto X"
 
 
 @pytest.mark.django_db
@@ -132,7 +132,7 @@ def test_summary_table_with_no_filters_calls_selector_with_empty_params(mock_sel
     mock_selector.assert_called_once()
     params = mock_selector.call_args[0][0]
     assert params.get("start_date") is None
-    assert params.get("programa") is None
+    assert params.get("program") is None
 
 
 # ── CT03: sorting (default server-side order preserved in response) ───────────
@@ -256,8 +256,8 @@ def test_composition_passes_filters_to_selector(mock_selector):
     params = mock_selector.call_args[0][0]
     assert params["start_date"] == "2026-01-01"
     assert params["end_date"] == "2026-06-30"
-    assert params["programa"] == "Programa X"
-    assert params["projeto"] == "Projeto Y"
+    assert params["program"] == "Programa X"
+    assert params["project"] == "Projeto Y"
 
 
 @pytest.mark.django_db

@@ -227,6 +227,7 @@ def test_get_dashboard_kpis_with_zeros():
 
 # ── get_projects_by_period ────────────────────────────────────────────────────
 
+
 @patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_projects_by_period_no_dates_calls_filter_with_empty_q(mock_objects):
     mock_objects.filter.return_value = []
@@ -278,6 +279,7 @@ def test_get_projects_by_period_returns_queryset(mock_objects):
 
 
 # ── _build_cost_filters — date branches ──────────────────────────────────────
+
 
 @patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_program_summary_with_start_date_applies_compras_filter(mock_objects):
@@ -351,7 +353,9 @@ def test_get_cost_composition_with_both_dates(mock_objects):
     mock_objects.select_related.return_value = mock_qs
     mock_qs.aggregate.return_value = {"custo_materiais": 300.0, "custo_horas": 700.0}
 
-    result = get_cost_composition({"start_date": "2024-01-01", "end_date": "2024-12-31"})
+    result = get_cost_composition(
+        {"start_date": "2024-01-01", "end_date": "2024-12-31"}
+    )
 
     assert result["custo_total"] == 1000.0
     assert result["pct_materiais"] == 30.0

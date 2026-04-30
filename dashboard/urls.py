@@ -6,6 +6,7 @@ from dashboard.views import (
     DashboardKPIsView,
     MainDashboardView,
     SummaryTableView,
+    TopProjectsView,
 )
 
 urlpatterns = [
@@ -16,5 +17,10 @@ urlpatterns = [
         "dashboard/composition/",
         CostCompositionView.as_view(),
         name="dashboard-composition",
+    ),
+    path(
+        "dashboard/top-projects/",
+        TopProjectsView.as_view(),
+        name="dashboard-top-projects",
     ),
 ]

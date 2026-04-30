@@ -32,3 +32,8 @@ class CostCompositionSerializer(serializers.Serializer):
     custo_total = serializers.FloatField()
     pct_materiais = serializers.FloatField()
     pct_horas = serializers.FloatField()
+
+
+class TopProjectSerializer(serializers.Serializer):
+    project_name = serializers.CharField()
+    total_cost = serializers.FloatField()

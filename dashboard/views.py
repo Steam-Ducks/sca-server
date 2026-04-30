@@ -7,13 +7,26 @@ from dashboard.selectors import (
     get_dashboard_kpis,
     get_program_summary,
     get_projects_by_period,
+    get_top_projects_by_cost,
 )
 from dashboard.serializers import (
     CostCompositionSerializer,
     DashboardKPIsSerializer,
     MainDashboardSerializer,
     ProgramSummarySerializer,
+    TopProjectSerializer,
 )
+
+
+def _normalize_dashboard_filters(query_params):
+    """Normalize frontend query params to selector params."""
+    return {
+        "start_date": query_params.get("start_date"),
+        "end_date": query_params.get("end_date"),
+        "program": query_params.get("program") or query_params.get("programa"),
+        "project": query_params.get("project") or query_params.get("projeto"),
+        "status": query_params.get("status"),
+    }
 
 
 class DashboardKPIsView(APIView):
@@ -31,7 +44,7 @@ class DashboardKPIsView(APIView):
     """
 
     def get(self, request):
-        kpis = get_dashboard_kpis(request.query_params)
+        kpis = get_dashboard_kpis(_normalize_dashboard_filters(request.query_params))
         serializer = DashboardKPIsSerializer(kpis)
         return Response(serializer.data)
 
@@ -70,7 +83,7 @@ class SummaryTableView(APIView):
     """
 
     def get(self, request):
-        rows = get_program_summary(request.query_params)
+        rows = get_program_summary(_normalize_dashboard_filters(request.query_params))
         serializer = ProgramSummarySerializer(rows, many=True)
         return Response(serializer.data)
 
@@ -90,6 +103,27 @@ class CostCompositionView(APIView):
     """
 
     def get(self, request):
-        data = get_cost_composition(request.query_params)
+        data = get_cost_composition(_normalize_dashboard_filters(request.query_params))
         serializer = CostCompositionSerializer(data)
+        return Response(serializer.data)
+
+
+class TopProjectsView(APIView):
+    """
+    GET /api/dashboard/top-projects/
+
+    Returns the top 10 projects ranked by total consolidated cost
+    (materials + technical hours).
+
+    Query params (all optional):
+        start_date — YYYY-MM-DD
+        end_date   — YYYY-MM-DD
+        program    — program name (case-insensitive)
+        project    — project name (case-insensitive)
+        status     — project status (case-insensitive)
+    """
+
+    def get(self, request):
+        rows = get_top_projects_by_cost(_normalize_dashboard_filters(request.query_params))
+        serializer = TopProjectSerializer(rows, many=True)
         return Response(serializer.data)
