@@ -6,6 +6,7 @@ import pytest
 
 with patch("sca_data.db.connection.getOrCreate", return_value=MagicMock()):
     from sca_data.db.gold.ingestion_gold import (
+        _run_budget_snapshot,
         _run_costs,
         _run_materials_indicators,
         _run_pipeline,
@@ -116,26 +117,83 @@ class TestRunCosts:
         conn.commit.assert_not_called()
 
 
+class TestRunBudgetSnapshot:
+
+    def test_executes_sql_and_commits(self):
+        engine, conn = _make_engine()
+
+        _run_budget_snapshot(engine)
+
+        conn.execute.assert_called_once()
+        conn.commit.assert_called_once()
+
+    def test_sql_contains_truncate_and_insert(self):
+        engine, conn = _make_engine()
+
+        _run_budget_snapshot(engine)
+
+        sql_arg = str(conn.execute.call_args[0][0])
+        assert "TRUNCATE" in sql_arg.upper()
+        assert "INSERT" in sql_arg.upper()
+        assert "budget_snapshot" in sql_arg
+
+    def test_sql_contains_saude_financeira_logic(self):
+        engine, conn = _make_engine()
+
+        _run_budget_snapshot(engine)
+
+        sql_arg = str(conn.execute.call_args[0][0])
+        assert "saude_financeira" in sql_arg.lower() or "Crítico" in sql_arg
+
+    def test_logs_success(self, caplog):
+        engine, _ = _make_engine()
+
+        with caplog.at_level(logging.INFO):
+            _run_budget_snapshot(engine)
+
+        assert any("budget_snapshot" in m for m in caplog.messages)
+
+    def test_catches_exception_and_logs_error(self, caplog):
+        engine, _ = _make_engine(raise_on_execute=RuntimeError("budget error"))
+
+        with caplog.at_level(logging.ERROR):
+            _run_budget_snapshot(engine)
+
+        assert any("budget_snapshot" in m for m in caplog.messages)
+        assert any("budget error" in m for m in caplog.messages)
+
+    def test_does_not_commit_on_error(self):
+        engine, conn = _make_engine(raise_on_execute=RuntimeError("oops"))
+
+        _run_budget_snapshot(engine)
+
+        conn.commit.assert_not_called()
+
+
 class TestRunPipeline:
 
+    @patch("sca_data.db.gold.ingestion_gold._run_budget_snapshot")
     @patch("sca_data.db.gold.ingestion_gold._run_costs")
     @patch("sca_data.db.gold.ingestion_gold._run_materials_indicators")
-    def test_calls_both_steps_in_order(self, mock_materials, mock_costs):
+    def test_calls_all_steps_in_order(self, mock_materials, mock_costs, mock_budget):
         engine = MagicMock()
         manager = MagicMock()
         manager.attach_mock(mock_materials, "materials")
         manager.attach_mock(mock_costs, "costs")
+        manager.attach_mock(mock_budget, "budget")
 
         _run_pipeline(engine)
 
         assert manager.mock_calls == [
             call.materials(engine),
             call.costs(engine),
+            call.budget(engine),
         ]
 
+    @patch("sca_data.db.gold.ingestion_gold._run_budget_snapshot")
     @patch("sca_data.db.gold.ingestion_gold._run_costs")
     @patch("sca_data.db.gold.ingestion_gold._run_materials_indicators")
-    def test_logs_start_and_end(self, _mock_m, _mock_c, caplog):
+    def test_logs_start_and_end(self, _mock_m, _mock_c, _mock_b, caplog):
         with caplog.at_level(logging.INFO):
             _run_pipeline(MagicMock())
 

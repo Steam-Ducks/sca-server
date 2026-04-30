@@ -1,8 +1,9 @@
 import datetime
 
-from django.db.models import ExpressionWrapper, F, FloatField
+from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 
 from sca_data.models import SilverTempoTarefa
 from technical_hours.serializers import TechnicalHoursTableSerializer
@@ -19,6 +20,8 @@ class TechnicalHoursTableView(generics.ListAPIView):
     data_fim    : YYYY-MM-DD — bound superior inclusivo
     ano         : int        — filtra pelo ano
     mes         : int        — filtra pelo mês
+    programa    : str        — filtra pelo nome do programa
+    projeto     : str        — filtra pelo nome do projeto
 
     Prioridade: data_inicio / data_fim > periodo > ano / mes
     """
@@ -95,10 +98,25 @@ class TechnicalHoursTableView(generics.ListAPIView):
 
         return self._filters_from_ano_mes(params.get("ano"), params.get("mes"))
 
+    def _apply_dimension_filters(self, queryset):
+        params = self.request.query_params
+
+        programa = params.get("programa")
+        if programa:
+            queryset = queryset.filter(
+                tarefa__projeto__programa__nome_programa__iexact=programa
+            )
+
+        projeto = params.get("projeto")
+        if projeto:
+            queryset = queryset.filter(tarefa__projeto__nome_projeto__iexact=projeto)
+
+        return queryset
+
     def get_queryset(self):
         filters = self._build_period_filters()
 
-        return (
+        queryset = (
             SilverTempoTarefa.objects.select_related("tarefa__projeto__programa")
             .filter(tarefa__isnull=False)
             .filter(**filters)
@@ -109,7 +127,46 @@ class TechnicalHoursTableView(generics.ListAPIView):
                     output_field=FloatField(),
                 ),
             )
-            .order_by("-custo_total")
+        )
+        queryset = self._apply_dimension_filters(queryset)
+        return queryset.order_by("-custo_total")
+
+
+class TechnicalHoursKpiView(TechnicalHoursTableView):
+    """
+    Indicadores agregados de horas técnicas.
+
+    Rota: GET /api/horas-tecnicas/kpis/
+
+    Aceita os mesmos query params de TechnicalHoursTableView:
+    periodo, data_inicio, data_fim, ano, mes, programa, projeto.
+
+    Retorna
+    -------
+    custo_total  : soma do custo total de horas
+    total_horas  : soma de horas trabalhadas
+    custo_medio  : custo_total / total_horas
+    registros    : número de registros
+    """
+
+    def get(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        agg = qs.aggregate(
+            total_horas=Sum("horas_trabalhadas"),
+            soma_custo=Sum("custo_total"),
+            registros=Count("id"),
+        )
+        total_horas = float(agg["total_horas"] or 0)
+        custo_total = float(agg["soma_custo"] or 0)
+        return Response(
+            {
+                "custo_total": round(custo_total, 2),
+                "total_horas": round(total_horas, 2),
+                "custo_medio": (
+                    round(custo_total / total_horas, 2) if total_horas else 0
+                ),
+                "registros": agg["registros"] or 0,
+            }
         )
 
 

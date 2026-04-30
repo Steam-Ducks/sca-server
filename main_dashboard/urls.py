@@ -6,6 +6,8 @@ from main_dashboard.views import (
     SummaryTableView,
 )
 
+from materials.views import CostByProjectView
+
 urlpatterns = [
     path("main-dashboard/", MainDashboardView.as_view(), name="main-dashboard"),
     path(
@@ -18,4 +20,5 @@ urlpatterns = [
         CostCompositionView.as_view(),
         name="main-dashboard-composition",
     ),
+    path("cost-by-project/", CostByProjectView.as_view()),
 ]

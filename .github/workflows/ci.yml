@@ -1,4 +1,4 @@
-name: CI
+name: CI - Feature Branch
 
 on:
   pull_request:

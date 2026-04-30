@@ -2,8 +2,10 @@ import datetime
 
 from django.db.models import Q
 from rest_framework.exceptions import ValidationError as DRFValidationError
-
+from django.db.models import Sum, F
 from sca_data.models import SilverPedidoCompra
+from django.db.models import DecimalField
+from django.db.models.functions import Cast
 
 
 def _parse_date(raw: str, param_name: str) -> datetime.date:
@@ -125,3 +127,41 @@ def get_materials_queryset(params):
         .filter(filters)
         .order_by("-valor_total")
     )
+
+
+# Retorna os materiais com maior impacto financeiro (top N por custo total)
+def get_top_materials_by_financial_impact(params, limit=10):
+    base_qs = get_materials_queryset(params)
+
+    return (
+        base_qs.values("solicitacao__material__descricao")
+        .annotate(
+            material=F("solicitacao__material__descricao"),
+            total_cost=Sum("valor_total"),
+        )
+        .values("material", "total_cost")
+        .order_by("-total_cost")[:limit]
+    )
+
+
+# Calcula o custo total de materiais por projeto (ranking do maior para o menor)
+def get_cost_by_project(params, limit=None):
+    base_qs = get_materials_queryset(params)
+
+    qs = (
+        base_qs.values("solicitacao__projeto__nome_projeto")
+        .annotate(
+            projeto=F("solicitacao__projeto__nome_projeto"),
+            total_cost=Cast(
+                Sum("valor_total"),
+                DecimalField(max_digits=12, decimal_places=2),
+            ),
+        )
+        .values("projeto", "total_cost")
+        .order_by("-total_cost")
+    )
+
+    if limit:
+        qs = qs[:limit]
+
+    return qs

@@ -253,6 +253,29 @@ class GoldCosts(models.Model):
         db_table = 'gold"."costs'
 
 
+class GoldBudgetSnapshot(models.Model):
+    id = models.AutoField(primary_key=True)
+    projeto_id = models.BigIntegerField(null=True, blank=True)
+    nome_projeto = models.CharField(max_length=100, null=True, blank=True)
+    nome_programa = models.CharField(max_length=100, null=True, blank=True)
+    gerente_programa = models.CharField(max_length=100, null=True, blank=True)
+    responsavel_projeto = models.CharField(max_length=100, null=True, blank=True)
+    budget = models.FloatField(null=True, blank=True)
+    custo_materiais = models.FloatField(null=True, blank=True)
+    custo_horas = models.FloatField(null=True, blank=True)
+    custo_real = models.FloatField(null=True, blank=True)
+    desvio_percent = models.FloatField(null=True, blank=True)
+    saude_financeira = models.CharField(max_length=20, null=True, blank=True)
+    projecao_estouro = models.FloatField(null=True, blank=True)
+    periodo = models.CharField(max_length=7, null=True, blank=True)
+    status = models.CharField(max_length=50, null=True, blank=True)
+    gold_updated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        app_label = "sca_data"
+        db_table = 'gold"."budget_snapshot'
+
+
 class AuditExecutionLog(models.Model):
     id = models.AutoField(primary_key=True)
     run_id = models.UUIDField()

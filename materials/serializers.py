@@ -78,3 +78,12 @@ class MaterialsIndicatorsSerializer(serializers.Serializer):
     custo_total = serializers.FloatField(allow_null=True)
     total_itens = serializers.IntegerField()
     custo_medio = serializers.FloatField(allow_null=True)
+
+
+class TopMaterialsSerializer(serializers.Serializer):
+    material = serializers.CharField()
+    total_cost = serializers.SerializerMethodField()
+
+    def get_total_cost(self, obj):
+        value = obj.get("total_cost") or 0
+        return round(float(value), 2)

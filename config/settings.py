@@ -61,8 +61,8 @@ INSTALLED_APPS = [
     "consolidated.consolidated_dashboard",
     "audit",
     "dashboard",
-    "costs",
     "budget",
+    "costs",
 ]
 
 MIDDLEWARE = [
@@ -91,7 +91,6 @@ _cors_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
 CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins.split(",") if o.strip()]
 
 ROOT_URLCONF = "config.urls"
-
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",

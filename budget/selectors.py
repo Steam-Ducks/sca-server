@@ -13,6 +13,7 @@ from django.db.models import (
 from django.db.models.functions import Coalesce
 
 from sca_data.models import (
+    GoldBudgetSnapshot,
     SilverComprasProjeto,
     SilverProjeto,
     SilverSolicitacaoCompra,
@@ -149,6 +150,10 @@ def get_budget_snapshot(params):
         )
         rows.append(projeto)
 
+    saude_filter = params.get("saude")
+    if saude_filter:
+        rows = [r for r in rows if r.saude_financeira == saude_filter]
+
     return rows
 
 
@@ -179,3 +184,23 @@ def get_budget_last_updated_at(params):
 
     timestamps = [value for value in aggregated.values() if value is not None]
     return max(timestamps) if timestamps else None
+
+
+def get_budget_snapshot_gold(params):
+    qs = GoldBudgetSnapshot.objects.all()
+    if params.get("programa"):
+        qs = qs.filter(nome_programa__iexact=params["programa"])
+    if params.get("projeto"):
+        qs = qs.filter(nome_projeto__iexact=params["projeto"])
+    if params.get("status"):
+        qs = qs.filter(status__iexact=params["status"])
+    if params.get("periodo"):
+        qs = qs.filter(periodo=params["periodo"])
+    if params.get("saude"):
+        qs = qs.filter(saude_financeira__iexact=params["saude"])
+    return qs.order_by("nome_projeto")
+
+
+def get_budget_last_updated_at_gold():
+    result = GoldBudgetSnapshot.objects.aggregate(latest=Max("gold_updated_at"))
+    return result["latest"]
