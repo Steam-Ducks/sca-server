@@ -4,7 +4,10 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.db.models import Avg, Count, Exists, OuterRef, Q, Sum
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
+from rest_framework.views import APIView
 from rest_framework.response import Response
+from materials.selectors import get_cost_by_project
+
 
 from materials.selectors import get_materials_queryset
 from materials.serializers import (
@@ -184,3 +187,13 @@ class MaterialsIndicatorsView(generics.GenericAPIView):
             }
         )
         return Response(serializer.data)
+
+
+class CostByProjectView(APIView):
+    """
+    Retorna o custo total de materiais por projeto (ranking).
+    """
+
+    def get(self, request):
+        data = get_cost_by_project(request.query_params)
+        return Response(data)
