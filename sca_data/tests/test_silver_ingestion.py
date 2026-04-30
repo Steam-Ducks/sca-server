@@ -195,7 +195,7 @@ class TestWriteSilver:
         mock_to_sql.assert_called_once()
         _, kwargs = mock_to_sql.call_args
         assert kwargs["schema"] == "silver"
-        assert kwargs["if_exists"] == "append"
+        assert kwargs["if_exists"] == "replace"
         assert kwargs["index"] is False
 
 
