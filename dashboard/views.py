@@ -8,6 +8,7 @@ from dashboard.selectors import (
     get_program_summary,
     get_projects_by_period,
     get_top_projects_by_cost,
+    get_cost_evolution,
 )
 from dashboard.serializers import (
     CostCompositionSerializer,
@@ -15,6 +16,7 @@ from dashboard.serializers import (
     MainDashboardSerializer,
     ProgramSummarySerializer,
     TopProjectSerializer,
+    CostEvolutionSerializer,
 )
 
 
@@ -128,4 +130,25 @@ class TopProjectsView(APIView):
             _normalize_dashboard_filters(request.query_params)
         )
         serializer = TopProjectSerializer(rows, many=True)
+        return Response(serializer.data)
+
+
+class CostEvolutionView(APIView):
+    """
+    GET /api/dashboard/cost-evolution/
+
+    Returns consolidated cost grouped by month (YYYY-MM), ordered
+    chronologically. Used for the time-series chart on the main dashboard.
+
+    Query params (all optional):
+        start_date — YYYY-MM-DD
+        end_date   — YYYY-MM-DD
+        program    — program name (case-insensitive)
+        project    — project name (case-insensitive)
+        status     — project status (case-insensitive)
+    """
+
+    def get(self, request):
+        rows = get_cost_evolution(request.query_params)
+        serializer = CostEvolutionSerializer(rows, many=True)
         return Response(serializer.data)

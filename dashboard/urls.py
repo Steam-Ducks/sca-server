@@ -3,6 +3,7 @@ from django.urls import path
 
 from dashboard.views import (
     CostCompositionView,
+    CostEvolutionView,
     DashboardKPIsView,
     MainDashboardView,
     SummaryTableView,
@@ -22,5 +23,10 @@ urlpatterns = [
         "dashboard/top-projects/",
         TopProjectsView.as_view(),
         name="dashboard-top-projects",
+    ),
+    path(
+        "dashboard/cost-evolution/",
+        CostEvolutionView.as_view(),
+        name="dashboard-cost-evolution",
     ),
 ]

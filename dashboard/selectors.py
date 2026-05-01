@@ -383,3 +383,107 @@ def get_top_projects_by_cost(params):
         }
         for row in rows
     ]
+
+
+# ── Cost Evolution Over Time ──────────────────────────────────────────────────
+
+
+def get_cost_evolution(params):
+    """
+    Returns consolidated cost grouped by month (YYYY-MM), ordered chronologically.
+
+    Uses UNION ALL between materials (pedidos_compra.data_pedido) and
+    technical hours (tempo_tarefas.data) to avoid cartesian product.
+
+    Accepted params (all optional):
+        start_date — YYYY-MM-DD  lower date bound (inclusive)
+        end_date   — YYYY-MM-DD  upper date bound (inclusive)
+        program    — program name (case-insensitive)
+        project    — project name (case-insensitive)
+        status     — project status (case-insensitive)
+
+    Returns a list of dicts ordered by period ascending:
+        [{"period": "YYYY-MM", "materials_cost": float,
+          "hours_cost": float, "total_cost": float}]
+    """
+    values = {}
+    mat_and = []
+    hrs_and = []
+
+    if params.get("start_date"):
+        mat_and.append("pc.data_pedido >= %(start_date)s")
+        hrs_and.append("tt.data >= %(start_date)s")
+        values["start_date"] = params["start_date"]
+
+    if params.get("end_date"):
+        mat_and.append("pc.data_pedido <= %(end_date)s")
+        hrs_and.append("tt.data <= %(end_date)s")
+        values["end_date"] = params["end_date"]
+
+    if params.get("program"):
+        mat_and.append("prog.nome_programa ILIKE %(program)s")
+        hrs_and.append("prog.nome_programa ILIKE %(program)s")
+        values["program"] = params["program"]
+
+    if params.get("project"):
+        mat_and.append("p.nome_projeto ILIKE %(project)s")
+        hrs_and.append("p.nome_projeto ILIKE %(project)s")
+        values["project"] = params["project"]
+
+    if params.get("status"):
+        mat_and.append("p.status ILIKE %(status)s")
+        hrs_and.append("p.status ILIKE %(status)s")
+        values["status"] = params["status"]
+
+    def _and(clauses):
+        return ("AND " + " AND ".join(clauses)) if clauses else ""
+
+    sql = f"""
+        SELECT
+            periodo,
+            COALESCE(SUM(custo_materiais), 0) AS custo_materiais,
+            COALESCE(SUM(custo_horas), 0)     AS custo_horas,
+            COALESCE(SUM(custo_materiais), 0)
+            + COALESCE(SUM(custo_horas), 0)   AS custo_total
+        FROM (
+            SELECT
+                TO_CHAR(pc.data_pedido, 'YYYY-MM') AS periodo,
+                cp.valor_alocado                   AS custo_materiais,
+                0                                  AS custo_horas
+            FROM silver.compras_projeto cp
+            JOIN silver.pedidos_compra  pc   ON pc.id    = cp.pedido_compra_id
+            JOIN silver.projetos        p    ON p.id     = cp.projeto_id
+            LEFT JOIN silver.programas  prog ON prog.id  = p.programa_id
+            WHERE pc.data_pedido IS NOT NULL
+              {_and(mat_and)}
+
+            UNION ALL
+
+            SELECT
+                TO_CHAR(tt.data, 'YYYY-MM')         AS periodo,
+                0                                   AS custo_materiais,
+                tt.horas_trabalhadas * p.custo_hora AS custo_horas
+            FROM silver.tempo_tarefas   tt
+            JOIN silver.tarefas_projeto tp   ON tp.id   = tt.tarefa_id
+            JOIN silver.projetos        p    ON p.id    = tp.projeto_id
+            LEFT JOIN silver.programas  prog ON prog.id = p.programa_id
+            WHERE tt.data IS NOT NULL
+              {_and(hrs_and)}
+        ) combined
+        GROUP BY periodo
+        ORDER BY periodo ASC
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute(sql, values)
+        rows = cursor.fetchall()
+
+    return [
+        {
+            "period": row[0],
+            "materials_cost": round(float(row[1]), 2),
+            "hours_cost": round(float(row[2]), 2),
+            "total_cost": round(float(row[3]), 2),
+        }
+        for row in rows
+    ]

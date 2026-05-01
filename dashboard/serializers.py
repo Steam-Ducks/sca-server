@@ -37,3 +37,10 @@ class CostCompositionSerializer(serializers.Serializer):
 class TopProjectSerializer(serializers.Serializer):
     project_name = serializers.CharField()
     total_cost = serializers.FloatField()
+
+
+class CostEvolutionSerializer(serializers.Serializer):
+    period = serializers.CharField()
+    materials_cost = serializers.FloatField()
+    hours_cost = serializers.FloatField()
+    total_cost = serializers.FloatField()
