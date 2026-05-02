@@ -4,12 +4,14 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.db.models import Avg, Count, Exists, OuterRef, Q, Sum
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from materials.selectors import get_cost_by_project
+from rest_framework.views import APIView
 
-
-from materials.selectors import get_materials_queryset
+from materials.selectors import (
+    _parse_periodo,
+    get_cost_by_project,
+    get_materials_queryset,
+)
 from materials.serializers import (
     MaterialsIndicatorsSerializer,
     MaterialsTableSerializer,
@@ -30,70 +32,20 @@ def _to_brl(value):
 
 
 class MaterialsTableView(generics.ListAPIView):
-    """
-    Tabela de pedidos de compra com materiais.
-
-    Query params
-    ------------
-    periodo     : YYYY-MM    — mês completo
-    data_inicio : YYYY-MM-DD — bound inferior inclusivo
-    data_fim    : YYYY-MM-DD — bound superior inclusivo
-    programa    : str        — nome do programa (case-insensitive)
-    projeto     : str        — nome do projeto  (case-insensitive)
-    material    : str        — descrição do material (contém)
-    fornecedor  : str        — razão social do fornecedor (contém)
-    categoria   : str        — categoria do material (case-insensitive)
-
-    Prioridade de datas: data_inicio / data_fim > periodo
-    """
-
     serializer_class = MaterialsTableSerializer
-
-    def _parse_periodo(self, raw: str) -> tuple:
-        """YYYY-MM → (primeiro_dia, último_dia) do mês."""
-        try:
-            if len(raw) != 7 or raw[4] != "-":
-                raise ValueError
-            year, month = int(raw[:4]), int(raw[5:7])
-            if not (1 <= month <= 12):
-                raise ValueError
-        except (ValueError, IndexError):
-            raise ValidationError(
-                {"periodo": f"Período inválido '{raw}'. Use o formato YYYY-MM."}
-            )
-
-        primeiro_dia = datetime.date(year, month, 1)
-        if month == 12:
-            ultimo_dia = datetime.date(year + 1, 1, 1) - datetime.timedelta(days=1)
-        else:
-            ultimo_dia = datetime.date(year, month + 1, 1) - datetime.timedelta(days=1)
-
-        return primeiro_dia, ultimo_dia
 
     def get_queryset(self):
         return get_materials_queryset(self.request.query_params)
 
 
 class MaterialsTablePeriodoView(MaterialsTableView):
-    """
-    Endpoint dedicado para filtro por período no dashboard de materiais.
+    """GET /api/compras/periodo/<YYYY-MM>/"""
 
-    Rota: GET /api/compras/periodo/<YYYY-MM>/
-
-    Exemplos
-    --------
-    GET /api/compras/periodo/2024-03/
-    """
+    def _parse_periodo(self, raw: str) -> tuple:
+        return _parse_periodo(raw)
 
     def get_queryset(self):
-        raw_periodo = self.kwargs.get("periodo", "")
-        primeiro_dia, ultimo_dia = self._parse_periodo(raw_periodo)
-        params = {
-            **self.request.query_params,
-            "data_inicio": str(primeiro_dia),
-            "data_fim": str(ultimo_dia),
-        }
-        return get_materials_queryset(params)
+        return get_materials_queryset({"periodo": self.kwargs.get("periodo", "")})
 
 
 class MaterialsIndicatorsView(generics.GenericAPIView):

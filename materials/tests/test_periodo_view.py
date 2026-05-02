@@ -118,7 +118,7 @@ def test_periodo_endpoint_retorna_campos_corretos():
         assert item["valor_total"] == 1500.00
         assert item["fornecedor"] == "Fornecedor Ltda"
         assert item["categoria"] == "Estrutural"
-        assert item["periodo"] == datetime.date(2024, 3, 15)
+        assert item["periodo"] == "2024-03"
 
 
 def test_periodo_endpoint_multiplos_registros():
