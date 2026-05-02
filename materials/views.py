@@ -4,12 +4,10 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.db.models import Avg, Count, Exists, OuterRef, Q, Sum
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from materials.selectors import get_cost_by_project
-
-
-from materials.selectors import get_materials_queryset
 from materials.serializers import (
     MaterialsIndicatorsSerializer,
     MaterialsTableSerializer,
