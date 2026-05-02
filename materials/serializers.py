@@ -61,8 +61,7 @@ class MaterialsTableSerializer(serializers.ModelSerializer):
         return None
 
     def get_periodo(self, obj):
-        date = getattr(obj, "data_pedido", None)
-        return date.strftime("%Y-%m") if date else None
+        return getattr(obj, "data_pedido", None)
 
     def get_fornecedor(self, obj):
         if obj.fornecedor:
