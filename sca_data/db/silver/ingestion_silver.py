@@ -47,7 +47,7 @@ def _write_silver(df: pd.DataFrame, engine, tb_name: str) -> int:
 
 
 def _to_date(series: pd.Series) -> pd.Series:
-    return pd.to_datetime(series, errors="coerce").dt.date
+    return pd.to_datetime(series, errors="coerce", format="%Y-%m-%d").dt.date
 
 
 def _to_int(series: pd.Series) -> pd.Series:
