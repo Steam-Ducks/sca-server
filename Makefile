@@ -53,7 +53,7 @@ ingest-gold: ## Roda ingestão silver → gold dentro do container em execução
 	docker exec backend_app python -m sca_data.db.gold.ingestion_gold
 
 setup-docker: ## Setup completo dentro do Docker (após 'make up')
-	docker exec backend_app python -m sca_data.db.bronze.ingestion
 	docker exec backend_app python manage.py migrate
+	docker exec backend_app python -m sca_data.db.bronze.ingestion
 	docker exec backend_app python -m sca_data.db.silver.ingestion_silver
 	docker exec backend_app python -m sca_data.db.gold.ingestion_gold

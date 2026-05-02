@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 from rest_framework.test import APIClient
 
-
 KPIS_MOCK = {
     "total_consolidated_cost": 750000.00,
     "total_materials_cost": 450000.00,
