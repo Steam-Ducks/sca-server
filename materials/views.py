@@ -7,7 +7,11 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from materials.selectors import get_cost_by_project, get_materials_queryset
+from materials.selectors import (
+    _parse_periodo,
+    get_cost_by_project,
+    get_materials_queryset,
+)
 from materials.serializers import (
     MaterialsIndicatorsSerializer,
     MaterialsTableSerializer,
@@ -36,6 +40,9 @@ class MaterialsTableView(generics.ListAPIView):
 
 class MaterialsTablePeriodoView(MaterialsTableView):
     """GET /api/compras/periodo/<YYYY-MM>/"""
+
+    def _parse_periodo(self, raw: str) -> tuple:
+        return _parse_periodo(raw)
 
     def get_queryset(self):
         return get_materials_queryset({"periodo": self.kwargs.get("periodo", "")})
