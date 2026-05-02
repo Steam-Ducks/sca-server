@@ -6,7 +6,10 @@ from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from materials.serializers import MaterialsIndicatorsSerializer, MaterialsTableSerializer
+from materials.serializers import (
+    MaterialsIndicatorsSerializer,
+    MaterialsTableSerializer,
+)
 from sca_data.models import (
     SilverMaterial,
     SilverPedidoCompra,
