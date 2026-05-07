@@ -2,7 +2,7 @@ PYTHON  = python
 MANAGE  = $(PYTHON) manage.py
 
 .PHONY: help setup ingest-bronze migrate transform-silver \
-        test test-cov up up-full down ingest-docker
+        test test-cov up down ingest-docker
 
 # ─── AJUDA ──────────────────────────────────────────────────────────────────
 
@@ -38,9 +38,6 @@ test-cov: ## Roda testes com relatório de cobertura
 
 up: ## Sobe backend + postgres + prometheus + grafana
 	docker-compose up --build
-
-up-full: ## Sobe stack completa incluindo ELK (requer acesso à rede Elastic)
-	docker-compose --profile observability up --build
 
 down: ## Para e remove os containers
 	docker-compose down

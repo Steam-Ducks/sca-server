@@ -42,4 +42,4 @@ COPY . .
 
 # Em produção, use Gunicorn em vez do runserver (mais estável e leve)
 # Certifique-se de ter 'gunicorn' no seu requirements.txt
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "scars.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "60", "config.wsgi:application"]
