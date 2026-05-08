@@ -332,7 +332,7 @@ def _get_db_stats():
             """)
             cols = [d[0] for d in cursor.description]
             stats["table_sizes"] = [dict(zip(cols, row)) for row in cursor.fetchall()]
-    except Exception as e:
+    except Exception:
         stats["table_sizes"] = []
 
     try:
