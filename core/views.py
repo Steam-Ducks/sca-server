@@ -297,7 +297,8 @@ def _get_db_stats():
 
     try:
         with connection.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT
                     count(*)                                              AS total,
                     count(*) FILTER (WHERE state = 'active')             AS active,
@@ -305,7 +306,8 @@ def _get_db_stats():
                     count(*) FILTER (WHERE wait_event_type = 'Lock')     AS waiting_lock
                 FROM pg_stat_activity
                 WHERE datname = current_database()
-            """)
+            """
+            )
             row = cursor.fetchone()
             stats["connections"] = {
                 "total": row[0],
@@ -318,7 +320,8 @@ def _get_db_stats():
 
     try:
         with connection.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT
                     schemaname,
                     tablename,
@@ -329,15 +332,17 @@ def _get_db_stats():
                 WHERE schemaname IN ('silver', 'gold', 'public')
                 ORDER BY total_bytes DESC
                 LIMIT 15
-            """)
+            """
+            )
             cols = [d[0] for d in cursor.description]
             stats["table_sizes"] = [dict(zip(cols, row)) for row in cursor.fetchall()]
-    except Exception as e:
+    except Exception:
         stats["table_sizes"] = []
 
     try:
         with connection.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT
                     LEFT(query, 120)                       AS query_snippet,
                     calls,
@@ -350,7 +355,8 @@ def _get_db_stats():
                   AND query NOT LIKE '%pg_stat%'
                 ORDER BY mean_exec_time DESC
                 LIMIT 10
-            """)
+            """
+            )
             cols = [d[0] for d in cursor.description]
             stats["slow_queries"] = [dict(zip(cols, row)) for row in cursor.fetchall()]
     except Exception:
