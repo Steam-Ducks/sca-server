@@ -1,4 +1,5 @@
 import datetime
+import pytest
 from unittest.mock import patch
 
 from django.utils import timezone
@@ -114,8 +115,8 @@ def test_periodo_endpoint_retorna_campos_corretos():
         assert item["projeto"] == "Projeto Alpha"
         assert item["programa"] == "Programa Alpha"
         assert item["quantidade"] == 10
-        assert item["valor_unitario"] == 150.00
-        assert item["valor_total"] == 1500.00
+        assert item["valor_unitario"] == pytest.approx(150.00)
+        assert item["valor_total"] == pytest.approx(1500.00)
         assert item["fornecedor"] == "Fornecedor Ltda"
         assert item["categoria"] == "Estrutural"
         assert item["periodo"] == datetime.date(2024, 3, 15)

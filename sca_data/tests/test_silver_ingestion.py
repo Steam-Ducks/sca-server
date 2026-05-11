@@ -101,13 +101,13 @@ class TestToFloat:
     def test_valid_floats(self):
         s = pd.Series(["1.5", "2.75"])
         result = _to_float(s)
-        assert result[0] == 1.5
-        assert result[1] == 2.75
+        assert result[0] == pytest.approx(1.5)
+        assert result[1] == pytest.approx(2.75)
 
     def test_integer_strings(self):
         s = pd.Series(["100", "0"])
         result = _to_float(s)
-        assert result[0] == 100.0
+        assert result[0] == pytest.approx(100.0)
 
     def test_invalid_becomes_nan(self):
         s = pd.Series(["abc", None])

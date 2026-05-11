@@ -39,15 +39,14 @@ class TestSilverPrograma:
         assert _get_field(SilverPrograma, "status").max_length == 50
 
     def test_optional_fields_allow_null(self):
-        for fname in (
-            "gerente_programa",
-            "gerente_tecnico",
-            "data_inicio",
-            "data_fim_prevista",
-            "status",
-        ):
+        for fname in ("data_inicio", "data_fim_prevista"):
             field = _get_field(SilverPrograma, fname)
             assert field.null is True, f"{fname} should allow null"
+
+    def test_optional_string_fields_allow_blank(self):
+        for fname in ("gerente_programa", "gerente_tecnico", "status"):
+            field = _get_field(SilverPrograma, fname)
+            assert field.blank is True, f"{fname} should allow blank"
 
     def test_silver_ingested_at_is_datetimefield(self):
         assert isinstance(
@@ -288,8 +287,6 @@ class TestAuditExecutionLog:
 
     def test_optional_fields_allow_null(self):
         for fname in (
-            "table_schema",
-            "table_name",
             "affected_rows",
             "finalized_at",
             "operation_duration",
@@ -297,6 +294,11 @@ class TestAuditExecutionLog:
         ):
             field = _get_field(AuditExecutionLog, fname)
             assert field.null is True, f"{fname} should allow null"
+
+    def test_optional_string_fields_allow_blank(self):
+        for fname in ("table_schema", "table_name"):
+            field = _get_field(AuditExecutionLog, fname)
+            assert field.blank is True, f"{fname} should allow blank"
 
     def test_started_at_is_datetimefield(self):
         assert isinstance(

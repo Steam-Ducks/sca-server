@@ -1,3 +1,4 @@
+import pytest
 from unittest.mock import MagicMock, patch
 
 from rest_framework.test import APIClient
@@ -44,8 +45,8 @@ def test_kpi_calcula_valores_corretamente():
         return_value=_mock_qs(total_horas=40.0, soma_custo=16800.0, registros=1),
     ):
         response = APIClient().get(URL)
-        assert response.data["total_horas"] == 40.0
-        assert response.data["custo_total"] == 16800.0
+        assert response.data["total_horas"] == pytest.approx(40.0)
+        assert response.data["custo_total"] == pytest.approx(16800.0)
         assert response.data["registros"] == 1
 
 
@@ -60,7 +61,7 @@ def test_kpi_calcula_custo_medio():
         return_value=_mock_qs(total_horas=40.0, soma_custo=16800.0),
     ):
         response = APIClient().get(URL)
-        assert response.data["custo_medio"] == 420.0
+        assert response.data["custo_medio"] == pytest.approx(420.0)
 
 
 def test_kpi_arredonda_para_duas_casas():
@@ -71,7 +72,7 @@ def test_kpi_arredonda_para_duas_casas():
         return_value=_mock_qs(total_horas=3.0, soma_custo=10.0),
     ):
         response = APIClient().get(URL)
-        assert response.data["custo_medio"] == 3.33
+        assert response.data["custo_medio"] == pytest.approx(3.33)
 
 
 # ── Casos extremos ───────────────────────────────────────────────────────────
@@ -85,9 +86,9 @@ def test_kpi_sem_dados_retorna_zeros():
     ):
         response = APIClient().get(URL)
         assert response.status_code == 200
-        assert response.data["custo_total"] == 0.0
-        assert response.data["total_horas"] == 0.0
-        assert response.data["custo_medio"] == 0.0
+        assert response.data["custo_total"] == pytest.approx(0.0)
+        assert response.data["total_horas"] == pytest.approx(0.0)
+        assert response.data["custo_medio"] == pytest.approx(0.0)
         assert response.data["registros"] == 0
 
 
@@ -99,7 +100,7 @@ def test_kpi_custo_medio_zero_quando_sem_horas():
         return_value=_mock_qs(total_horas=0.0, soma_custo=0.0),
     ):
         response = APIClient().get(URL)
-        assert response.data["custo_medio"] == 0.0
+        assert response.data["custo_medio"] == pytest.approx(0.0)
 
 
 # ── CT03: filtros respeitados pelo endpoint ──────────────────────────────────

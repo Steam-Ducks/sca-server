@@ -10,10 +10,10 @@ ENV PYTHONUNBUFFERED=1
 # Instala dependências de compilação (apenas para o build)
 RUN apk add --no-cache \
     gcc \
+    libffi-dev \
     musl-dev \
     postgresql-dev \
-    python3-dev \
-    libffi-dev
+    python3-dev
 
 # Instala as dependências do Python no diretório de usuário para facilitar a cópia
 COPY requirements.txt .
@@ -30,7 +30,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 # Instala utilit?rios de runtime do PostgreSQL e HTTP usados no compose
-RUN apk add --no-cache libpq postgresql-client curl
+RUN apk add --no-cache \
+    curl \
+    libpq \
+    postgresql-client
 
 # Copia apenas as bibliotecas instaladas no estágio anterior
 COPY --from=builder /root/.local /root/.local

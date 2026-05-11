@@ -45,9 +45,9 @@ def test_get_program_summary_returns_expected_shape(mock_objects):
     row = result[0]
     assert row["programa"] == "Programa A"
     assert row["qtd_projetos"] == 2
-    assert row["custo_materiais"] == 1000.0
-    assert row["custo_horas"] == 500.0
-    assert row["custo_total"] == 1500.0
+    assert row["custo_materiais"] == pytest.approx(1000.0)
+    assert row["custo_horas"] == pytest.approx(500.0)
+    assert row["custo_total"] == pytest.approx(1500.0)
 
 
 @pytest.mark.django_db
@@ -68,7 +68,7 @@ def test_get_program_summary_custo_total_is_sum_of_parts(mock_objects):
 
     result = get_program_summary({})
 
-    assert result[0]["custo_total"] == round(3333.33 + 1666.67, 2)
+    assert result[0]["custo_total"] == pytest.approx(round(3333.33 + 1666.67, 2))
 
 
 @pytest.mark.django_db
@@ -194,8 +194,8 @@ def test_get_cost_composition_calculates_percentages(mock_objects):
 
     result = get_cost_composition({})
 
-    assert result["pct_materiais"] == 60.0
-    assert result["pct_horas"] == 40.0
+    assert result["pct_materiais"] == pytest.approx(60.0)
+    assert result["pct_horas"] == pytest.approx(40.0)
 
 
 @pytest.mark.django_db
@@ -205,7 +205,7 @@ def test_get_cost_composition_percentages_sum_to_100(mock_objects):
 
     result = get_cost_composition({})
 
-    assert round(result["pct_materiais"] + result["pct_horas"], 1) == 100.0
+    assert round(result["pct_materiais"] + result["pct_horas"], 1) == pytest.approx(100.0)
 
 
 @pytest.mark.django_db
@@ -215,8 +215,8 @@ def test_get_cost_composition_zero_total_returns_zero_percentages(mock_objects):
 
     result = get_cost_composition({})
 
-    assert result["pct_materiais"] == 0.0
-    assert result["pct_horas"] == 0.0
+    assert result["pct_materiais"] == pytest.approx(0.0)
+    assert result["pct_horas"] == pytest.approx(0.0)
 
 
 # ── CT02: absolute values ─────────────────────────────────────────────────────
@@ -229,9 +229,9 @@ def test_get_cost_composition_returns_absolute_values(mock_objects):
 
     result = get_cost_composition({})
 
-    assert result["custo_materiais"] == 450000.0
-    assert result["custo_horas"] == 300000.0
-    assert result["custo_total"] == 750000.0
+    assert result["custo_materiais"] == pytest.approx(450000.0)
+    assert result["custo_horas"] == pytest.approx(300000.0)
+    assert result["custo_total"] == pytest.approx(750000.0)
 
 
 @pytest.mark.django_db
@@ -241,9 +241,9 @@ def test_get_cost_composition_rounds_to_two_decimals(mock_objects):
 
     result = get_cost_composition({})
 
-    assert result["custo_materiais"] == 333.33
-    assert result["custo_horas"] == 166.67
-    assert result["custo_total"] == round(333.33 + 166.67, 2)
+    assert result["custo_materiais"] == pytest.approx(333.33)
+    assert result["custo_horas"] == pytest.approx(166.67)
+    assert result["custo_total"] == pytest.approx(round(333.33 + 166.67, 2))
 
 
 # ── CT03: filter application ──────────────────────────────────────────────────

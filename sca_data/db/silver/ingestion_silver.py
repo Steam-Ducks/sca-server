@@ -3,7 +3,7 @@ import logging
 import uuid
 import pandas as pd
 from sqlalchemy import text
-from sca_data.db.connection import getOrCreate
+from sca_data.db.connection import get_or_create
 import sca_data.db.audit.audit as audit
 from sca_data.db.enums import OperationStatus, OperationType, LayerSchema
 
@@ -13,7 +13,7 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s | %(name)s | %(levelname)s | %(message)s"
 )
 
-ENGINE = getOrCreate()
+ENGINE = get_or_create()
 
 
 def _read_bronze(engine, tb_name: str) -> pd.DataFrame:

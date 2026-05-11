@@ -54,9 +54,9 @@ def test_summary_table_returns_200_with_correct_fields(mock_selector):
     row = response.data[0]
     assert row["programa"] == "Programa A"
     assert row["qtd_projetos"] == 3
-    assert row["custo_materiais"] == 10000.0
-    assert row["custo_horas"] == 5000.0
-    assert row["custo_total"] == 15000.0
+    assert row["custo_materiais"] == pytest.approx(10000.0)
+    assert row["custo_horas"] == pytest.approx(5000.0)
+    assert row["custo_total"] == pytest.approx(15000.0)
 
 
 @pytest.mark.django_db
@@ -179,8 +179,8 @@ def test_composition_returns_percentage_fields(mock_selector):
     response = client.get("/api/dashboard/composition/")
 
     assert response.status_code == 200
-    assert response.data["pct_materiais"] == 60.0
-    assert response.data["pct_horas"] == 40.0
+    assert response.data["pct_materiais"] == pytest.approx(60.0)
+    assert response.data["pct_horas"] == pytest.approx(40.0)
 
 
 @pytest.mark.django_db
@@ -199,8 +199,8 @@ def test_composition_percentages_are_present_in_response(mock_selector):
 
     assert "pct_materiais" in response.data
     assert "pct_horas" in response.data
-    assert response.data["pct_materiais"] == 25.0
-    assert response.data["pct_horas"] == 75.0
+    assert response.data["pct_materiais"] == pytest.approx(25.0)
+    assert response.data["pct_horas"] == pytest.approx(75.0)
 
 
 # ── CT02: absolute values ─────────────────────────────────────────────────────
@@ -214,9 +214,9 @@ def test_composition_returns_absolute_cost_fields(mock_selector):
 
     response = client.get("/api/dashboard/composition/")
 
-    assert response.data["custo_materiais"] == 450000.0
-    assert response.data["custo_horas"] == 300000.0
-    assert response.data["custo_total"] == 750000.0
+    assert response.data["custo_materiais"] == pytest.approx(450000.0)
+    assert response.data["custo_horas"] == pytest.approx(300000.0)
+    assert response.data["custo_total"] == pytest.approx(750000.0)
 
 
 @pytest.mark.django_db
@@ -275,5 +275,5 @@ def test_composition_with_no_filters_still_returns_200(mock_selector):
     response = client.get("/api/dashboard/composition/")
 
     assert response.status_code == 200
-    assert response.data["pct_materiais"] == 0.0
-    assert response.data["pct_horas"] == 0.0
+    assert response.data["pct_materiais"] == pytest.approx(0.0)
+    assert response.data["pct_horas"] == pytest.approx(0.0)

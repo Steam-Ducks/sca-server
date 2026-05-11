@@ -72,20 +72,20 @@ class AuditExecutionLogTableView(generics.ListAPIView):
                 | Q(operation_metadata__nome_projeto__iexact=projeto)
             )
 
-        if data_inicio or data_fim:
-            if data_inicio:
-                queryset = queryset.filter(
-                    started_at__date__gte=self._parse_date(data_inicio, "data_inicio")
-                )
-            if data_fim:
-                queryset = queryset.filter(
-                    started_at__date__lte=self._parse_date(data_fim, "data_fim")
-                )
-        elif periodo:
+        if periodo and not data_inicio and not data_fim:
             primeiro_dia, ultimo_dia = self._parse_periodo(periodo)
             queryset = queryset.filter(
                 started_at__date__gte=primeiro_dia,
                 started_at__date__lte=ultimo_dia,
+            )
+
+        if data_inicio:
+            queryset = queryset.filter(
+                started_at__date__gte=self._parse_date(data_inicio, "data_inicio")
+            )
+        if data_fim:
+            queryset = queryset.filter(
+                started_at__date__lte=self._parse_date(data_fim, "data_fim")
             )
 
         if started_at_gte:

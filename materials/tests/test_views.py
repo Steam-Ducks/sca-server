@@ -1,3 +1,4 @@
+import pytest
 from unittest.mock import MagicMock, patch
 
 from django.utils import timezone
@@ -89,8 +90,8 @@ def test_materials_table_retorna_campos_corretos():
         assert item["projeto"] == "Projeto Alpha"
         assert item["programa"] == "Programa Alpha"
         assert item["quantidade"] == 10
-        assert item["valor_unitario"] == 150.00
-        assert item["valor_total"] == 1500.00
+        assert item["valor_unitario"] == pytest.approx(150.00)
+        assert item["valor_total"] == pytest.approx(1500.00)
         assert item["fornecedor"] == "Fornecedor Ltda"
         assert item["categoria"] == "Estrutural"
 
@@ -127,9 +128,9 @@ def test_materials_indicators_retorna_campos_corretos():
         MaterialsIndicatorsView, "_build_materiais_queryset", return_value=mock_qs
     ):
         response = APIClient().get("/api/materials/indicators/")
-        assert response.data["custo_total"] == 4500.53
+        assert response.data["custo_total"] == pytest.approx(4500.53)
         assert response.data["total_itens"] == 3
-        assert response.data["custo_medio"] == 1500.27
+        assert response.data["custo_medio"] == pytest.approx(1500.27)
 
 
 def test_materials_indicators_sem_dados_retorna_nulos():
