@@ -169,7 +169,9 @@ def test_get_dashboard_kpis_rounds_to_two_decimals():
 
     assert result["total_materials_cost"] == pytest.approx(round(100000.555, 2))
     assert result["total_hours_cost"] == pytest.approx(round(200000.444, 2))
-    assert result["total_consolidated_cost"] == pytest.approx(round(100000.555 + 200000.444, 2))
+    assert result["total_consolidated_cost"] == pytest.approx(
+        round(100000.555 + 200000.444, 2)
+    )
 
 
 def test_get_dashboard_kpis_executes_four_queries():

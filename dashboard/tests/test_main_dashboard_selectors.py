@@ -205,7 +205,9 @@ def test_get_cost_composition_percentages_sum_to_100(mock_objects):
 
     result = get_cost_composition({})
 
-    assert round(result["pct_materiais"] + result["pct_horas"], 1) == pytest.approx(100.0)
+    assert round(result["pct_materiais"] + result["pct_horas"], 1) == pytest.approx(
+        100.0
+    )
 
 
 @pytest.mark.django_db
