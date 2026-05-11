@@ -23,6 +23,9 @@ env/
 *.log
 logs/
 log/
+db_compatibility_report.json
+schema_snapshot.json
+db_compatibility_report.json
 
 # Manter estrutura da pasta de logs
 !logs/.gitkeep

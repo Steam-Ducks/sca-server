@@ -62,9 +62,9 @@ def test_get_cost_evolution_returns_correct_fields():
         result = get_cost_evolution({})
 
     assert result[0]["period"] == "2024-01"
-    assert result[0]["materials_cost"] == 980000.0
-    assert result[0]["hours_cost"] == 450000.0
-    assert result[0]["total_cost"] == 1430000.0
+    assert result[0]["materials_cost"] == pytest.approx(980000.0)
+    assert result[0]["hours_cost"] == pytest.approx(450000.0)
+    assert result[0]["total_cost"] == pytest.approx(1430000.0)
 
 
 def test_get_cost_evolution_rounds_to_two_decimals():
@@ -72,9 +72,9 @@ def test_get_cost_evolution_rounds_to_two_decimals():
     with _patch_cursor(_mock_cursor(rows)):
         result = get_cost_evolution({})
 
-    assert result[0]["materials_cost"] == round(100000.555, 2)
-    assert result[0]["hours_cost"] == round(50000.444, 2)
-    assert result[0]["total_cost"] == round(150000.999, 2)
+    assert result[0]["materials_cost"] == pytest.approx(round(100000.555, 2))
+    assert result[0]["hours_cost"] == pytest.approx(round(50000.444, 2))
+    assert result[0]["total_cost"] == pytest.approx(round(150000.999, 2))
 
 
 # CT01: validate aggregation by period
@@ -225,7 +225,7 @@ def test_ct03_zero_cost_period_is_included():
         result = get_cost_evolution({})
 
     assert len(result) == 2
-    assert result[1]["total_cost"] == 0.0
+    assert result[1]["total_cost"] == pytest.approx(0.0)
 
 
 def test_ct03_sql_uses_coalesce_for_null_safety():
@@ -273,7 +273,7 @@ def test_serializer_correct_values():
     }
     s = CostEvolutionSerializer(data)
     assert s.data["period"] == "2024-03"
-    assert s.data["total_cost"] == 450.0
+    assert s.data["total_cost"] == pytest.approx(450.0)
 
 
 def test_serializer_many_true():

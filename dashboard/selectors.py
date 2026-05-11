@@ -5,6 +5,14 @@ from django.db.models.functions import Coalesce
 
 from sca_data.models import SilverProjeto
 
+SQL_AND = " AND "
+MAT_START_DATE = "pc.data_pedido >= %(start_date)s"
+PROG_CODIGO_PROGRAMA = "prog.codigo_programa = %(program)s"
+PROJ_NOME_PROJETO = "p.nome_projeto = %(project)s"
+PROJ_STATUS = "p.status = %(status)s"
+PROG_NOME_PROGRAMA = "prog.nome_programa ILIKE %(program)s"
+PROJ_NOME_PROJETO_ILIKE = "p.nome_projeto ILIKE %(project)s"
+PROJ_STATUS_ILIKE = "p.status ILIKE %(status)s"
 
 # ── KPI Cards ─────────────────────────────────────────────────────────────────
 
@@ -26,7 +34,7 @@ def build_filters(params):
     values = {}
 
     if params.get("start_date"):
-        materials_where.append("pc.data_pedido >= %(start_date)s")
+        materials_where.append(MAT_START_DATE)
         hours_where.append("tt.data >= %(start_date)s")
         values["start_date"] = params["start_date"]
 
@@ -36,25 +44,25 @@ def build_filters(params):
         values["end_date"] = params["end_date"]
 
     if params.get("program"):
-        materials_where.append("prog.codigo_programa = %(program)s")
-        hours_where.append("prog.codigo_programa = %(program)s")
-        projects_where.append("prog.codigo_programa = %(program)s")
+        materials_where.append(PROG_CODIGO_PROGRAMA)
+        hours_where.append(PROG_CODIGO_PROGRAMA)
+        projects_where.append(PROG_CODIGO_PROGRAMA)
         values["program"] = params["program"]
 
     if params.get("project"):
-        materials_where.append("p.nome_projeto = %(project)s")
-        hours_where.append("p.nome_projeto = %(project)s")
-        projects_where.append("p.nome_projeto = %(project)s")
+        materials_where.append(PROJ_NOME_PROJETO)
+        hours_where.append(PROJ_NOME_PROJETO)
+        projects_where.append(PROJ_NOME_PROJETO)
         values["project"] = params["project"]
 
     if params.get("status"):
-        materials_where.append("p.status = %(status)s")
-        hours_where.append("p.status = %(status)s")
-        projects_where.append("p.status = %(status)s")
+        materials_where.append(PROJ_STATUS)
+        hours_where.append(PROJ_STATUS)
+        projects_where.append(PROJ_STATUS)
         values["status"] = params["status"]
 
     def _join(clauses):
-        return ("WHERE " + " AND ".join(clauses)) if clauses else ""
+        return ("WHERE " + SQL_AND.join(clauses)) if clauses else ""
 
     return _join(materials_where), _join(hours_where), _join(projects_where), values
 
@@ -320,7 +328,7 @@ def get_top_projects_by_cost(params):
     hrs_sub_and = []
 
     if params.get("start_date"):
-        mat_sub_and.append("pc.data_pedido >= %(start_date)s")
+        mat_sub_and.append(MAT_START_DATE)
         hrs_sub_and.append("tt.data >= %(start_date)s")
         values["start_date"] = params["start_date"]
 
@@ -330,22 +338,22 @@ def get_top_projects_by_cost(params):
         values["end_date"] = params["end_date"]
 
     if params.get("program"):
-        outer_where.append("prog.nome_programa ILIKE %(program)s")
+        outer_where.append(PROG_NOME_PROGRAMA)
         values["program"] = params["program"]
 
     if params.get("project"):
-        outer_where.append("p.nome_projeto ILIKE %(project)s")
+        outer_where.append(PROJ_NOME_PROJETO_ILIKE)
         values["project"] = params["project"]
 
     if params.get("status"):
-        outer_where.append("p.status ILIKE %(status)s")
+        outer_where.append(PROJ_STATUS_ILIKE)
         values["status"] = params["status"]
 
     def _and(clauses):
-        return ("AND " + " AND ".join(clauses)) if clauses else ""
+        return ("AND " + SQL_AND.join(clauses)) if clauses else ""
 
     def _where(clauses):
-        return ("WHERE " + " AND ".join(clauses)) if clauses else ""
+        return ("WHERE " + SQL_AND.join(clauses)) if clauses else ""
 
     sql = f"""
         SELECT
@@ -411,7 +419,7 @@ def get_cost_evolution(params):
     hrs_and = []
 
     if params.get("start_date"):
-        mat_and.append("pc.data_pedido >= %(start_date)s")
+        mat_and.append(MAT_START_DATE)
         hrs_and.append("tt.data >= %(start_date)s")
         values["start_date"] = params["start_date"]
 
@@ -421,22 +429,22 @@ def get_cost_evolution(params):
         values["end_date"] = params["end_date"]
 
     if params.get("program"):
-        mat_and.append("prog.nome_programa ILIKE %(program)s")
-        hrs_and.append("prog.nome_programa ILIKE %(program)s")
+        mat_and.append(PROG_NOME_PROGRAMA)
+        hrs_and.append(PROG_NOME_PROGRAMA)
         values["program"] = params["program"]
 
     if params.get("project"):
-        mat_and.append("p.nome_projeto ILIKE %(project)s")
-        hrs_and.append("p.nome_projeto ILIKE %(project)s")
+        mat_and.append(PROJ_NOME_PROJETO_ILIKE)
+        hrs_and.append(PROJ_NOME_PROJETO_ILIKE)
         values["project"] = params["project"]
 
     if params.get("status"):
-        mat_and.append("p.status ILIKE %(status)s")
-        hrs_and.append("p.status ILIKE %(status)s")
+        mat_and.append(PROJ_STATUS_ILIKE)
+        hrs_and.append(PROJ_STATUS_ILIKE)
         values["status"] = params["status"]
 
     def _and(clauses):
-        return ("AND " + " AND ".join(clauses)) if clauses else ""
+        return ("AND " + SQL_AND.join(clauses)) if clauses else ""
 
     sql = f"""
         SELECT

@@ -5,11 +5,11 @@ class SilverPrograma(models.Model):
     id = models.BigIntegerField(primary_key=True)
     codigo_programa = models.CharField(max_length=100)
     nome_programa = models.CharField(max_length=100)
-    gerente_programa = models.CharField(max_length=100, null=True, blank=True)
-    gerente_tecnico = models.CharField(max_length=100, null=True, blank=True)
+    gerente_programa = models.CharField(max_length=100, blank=True, default="")
+    gerente_tecnico = models.CharField(max_length=100, blank=True, default="")
     data_inicio = models.DateField(null=True, blank=True)
     data_fim_prevista = models.DateField(null=True, blank=True)
-    status = models.CharField(max_length=50, null=True, blank=True)
+    status = models.CharField(max_length=50, blank=True, default="")
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
@@ -20,11 +20,11 @@ class SilverPrograma(models.Model):
 class SilverMaterial(models.Model):
     id = models.BigIntegerField(primary_key=True)
     codigo_material = models.CharField(max_length=50)
-    descricao = models.CharField(max_length=100, null=True, blank=True)
-    categoria = models.CharField(max_length=100, null=True, blank=True)
-    fabricante = models.CharField(max_length=100, null=True, blank=True)
+    descricao = models.CharField(max_length=100, blank=True, default="")
+    categoria = models.CharField(max_length=100, blank=True, default="")
+    fabricante = models.CharField(max_length=100, blank=True, default="")
     custo_estimado = models.FloatField(null=True, blank=True)
-    status = models.CharField(max_length=50, null=True, blank=True)
+    status = models.CharField(max_length=50, blank=True, default="")
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
@@ -35,11 +35,11 @@ class SilverMaterial(models.Model):
 class SilverFornecedor(models.Model):
     id = models.BigIntegerField(primary_key=True)
     codigo_fornecedor = models.CharField(max_length=50)
-    razao_social = models.CharField(max_length=100, null=True, blank=True)
-    cidade = models.CharField(max_length=100, null=True, blank=True)
-    estado = models.CharField(max_length=2, null=True, blank=True)
-    categoria = models.CharField(max_length=100, null=True, blank=True)
-    status = models.CharField(max_length=50, null=True, blank=True)
+    razao_social = models.CharField(max_length=100, blank=True, default="")
+    cidade = models.CharField(max_length=100, blank=True, default="")
+    estado = models.CharField(max_length=2, blank=True, default="")
+    categoria = models.CharField(max_length=100, blank=True, default="")
+    status = models.CharField(max_length=50, blank=True, default="")
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
@@ -50,7 +50,7 @@ class SilverFornecedor(models.Model):
 class SilverProjeto(models.Model):
     id = models.BigIntegerField(primary_key=True)
     codigo_projeto = models.CharField(max_length=50)
-    nome_projeto = models.CharField(max_length=100, null=True, blank=True)
+    nome_projeto = models.CharField(max_length=100, blank=True, default="")
 
     programa = models.ForeignKey(
         SilverPrograma,
@@ -61,11 +61,11 @@ class SilverProjeto(models.Model):
         related_name="projetos",
     )
 
-    responsavel = models.CharField(max_length=100, null=True, blank=True)
+    responsavel = models.CharField(max_length=100, blank=True, default="")
     custo_hora = models.FloatField(null=True, blank=True)
     data_inicio = models.DateField(null=True, blank=True)
     data_fim_prevista = models.DateField(null=True, blank=True)
-    status = models.CharField(max_length=50, null=True, blank=True)
+    status = models.CharField(max_length=50, blank=True, default="")
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
@@ -84,12 +84,12 @@ class SilverTarefaProjeto(models.Model):
         related_name="tarefas",
     )
 
-    titulo = models.CharField(max_length=100, null=True, blank=True)
-    responsavel = models.CharField(max_length=100, null=True, blank=True)
+    titulo = models.CharField(max_length=100, blank=True, default="")
+    responsavel = models.CharField(max_length=100, blank=True, default="")
     estimativa_horas = models.IntegerField(null=True, blank=True)
     data_inicio = models.DateField(null=True, blank=True)
     data_fim_prevista = models.DateField(null=True, blank=True)
-    status = models.CharField(max_length=50, null=True, blank=True)
+    status = models.CharField(max_length=50, blank=True, default="")
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
@@ -107,7 +107,7 @@ class SilverTempoTarefa(models.Model):
         related_name="tempos",
     )
 
-    usuario = models.CharField(max_length=100, null=True, blank=True)
+    usuario = models.CharField(max_length=100, blank=True, default="")
     data = models.DateField()
     horas_trabalhadas = models.FloatField()
     silver_ingested_at = models.DateTimeField()
@@ -131,8 +131,8 @@ class SilverSolicitacaoCompra(models.Model):
 
     quantidade = models.BigIntegerField()
     data_solicitacao = models.DateField(null=True, blank=True)
-    prioridade = models.CharField(max_length=50, null=True, blank=True)
-    status = models.CharField(max_length=50, null=True, blank=True)
+    prioridade = models.CharField(max_length=50, blank=True, default="")
+    status = models.CharField(max_length=50, blank=True, default="")
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
@@ -159,7 +159,7 @@ class SilverPedidoCompra(models.Model):
     data_pedido = models.DateField(null=True, blank=True)
     data_previsao_entrega = models.DateField(null=True, blank=True)
     valor_total = models.FloatField(null=True, blank=True)
-    status = models.CharField(max_length=50, null=True, blank=True)
+    status = models.CharField(max_length=50, blank=True, default="")
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
@@ -218,7 +218,7 @@ class SilverEstoqueMateriaisProjeto(models.Model):
     )
 
     quantidade = models.BigIntegerField()
-    localizacao = models.CharField(max_length=100, null=True, blank=True)
+    localizacao = models.CharField(max_length=100, blank=True, default="")
     silver_ingested_at = models.DateTimeField()
 
     class Meta:
@@ -228,7 +228,7 @@ class SilverEstoqueMateriaisProjeto(models.Model):
 
 class GoldIndicadoresMateriais(models.Model):
     id = models.AutoField(primary_key=True)
-    categoria = models.CharField(max_length=100, null=True, blank=True)
+    categoria = models.CharField(max_length=100, blank=True, default="")
     custo_total = models.FloatField(null=True, blank=True)
     total_itens = models.BigIntegerField(null=True, blank=True)
     custo_medio = models.FloatField(null=True, blank=True)
@@ -241,10 +241,10 @@ class GoldIndicadoresMateriais(models.Model):
 
 class GoldCosts(models.Model):
     data = models.DateTimeField(null=True, blank=True)
-    nome_programa = models.CharField(max_length=100, null=True, blank=True)
-    gerente_programa = models.CharField(max_length=100, null=True, blank=True)
-    nome_projeto = models.CharField(max_length=100, null=True, blank=True)
-    responsavel_projeto = models.CharField(max_length=100, null=True, blank=True)
+    nome_programa = models.CharField(max_length=100, blank=True, default="")
+    gerente_programa = models.CharField(max_length=100, blank=True, default="")
+    nome_projeto = models.CharField(max_length=100, blank=True, default="")
+    responsavel_projeto = models.CharField(max_length=100, blank=True, default="")
     custo = models.FloatField(null=True, blank=True)
     gold_updated_at = models.DateTimeField(null=True, blank=True)
 
@@ -256,19 +256,19 @@ class GoldCosts(models.Model):
 class GoldBudgetSnapshot(models.Model):
     id = models.AutoField(primary_key=True)
     projeto_id = models.BigIntegerField(null=True, blank=True)
-    nome_projeto = models.CharField(max_length=100, null=True, blank=True)
-    nome_programa = models.CharField(max_length=100, null=True, blank=True)
-    gerente_programa = models.CharField(max_length=100, null=True, blank=True)
-    responsavel_projeto = models.CharField(max_length=100, null=True, blank=True)
+    nome_projeto = models.CharField(max_length=100, blank=True, default="")
+    nome_programa = models.CharField(max_length=100, blank=True, default="")
+    gerente_programa = models.CharField(max_length=100, blank=True, default="")
+    responsavel_projeto = models.CharField(max_length=100, blank=True, default="")
     budget = models.FloatField(null=True, blank=True)
     custo_materiais = models.FloatField(null=True, blank=True)
     custo_horas = models.FloatField(null=True, blank=True)
     custo_real = models.FloatField(null=True, blank=True)
     desvio_percent = models.FloatField(null=True, blank=True)
-    saude_financeira = models.CharField(max_length=20, null=True, blank=True)
+    saude_financeira = models.CharField(max_length=20, blank=True, default="")
     projecao_estouro = models.FloatField(null=True, blank=True)
-    periodo = models.CharField(max_length=7, null=True, blank=True)
-    status = models.CharField(max_length=50, null=True, blank=True)
+    periodo = models.CharField(max_length=7, blank=True, default="")
+    status = models.CharField(max_length=50, blank=True, default="")
     gold_updated_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -281,8 +281,8 @@ class AuditExecutionLog(models.Model):
     run_id = models.UUIDField()
     operation = models.CharField(max_length=20)
     status = models.CharField(max_length=20)
-    table_schema = models.CharField(max_length=100, null=True, blank=True)
-    table_name = models.CharField(max_length=100, null=True, blank=True)
+    table_schema = models.CharField(max_length=100, blank=True, default="")
+    table_name = models.CharField(max_length=100, blank=True, default="")
     affected_rows = models.IntegerField(null=True, blank=True)
     started_at = models.DateTimeField()
     finalized_at = models.DateTimeField(null=True, blank=True)

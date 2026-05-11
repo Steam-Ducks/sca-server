@@ -83,12 +83,9 @@ MIDDLEWARE = [
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = [
     o.strip()
-    for o in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
+    for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",")
     if o.strip()
 ]
-
-_cors_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
-CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins.split(",") if o.strip()]
 
 ROOT_URLCONF = "config.urls"
 TEMPLATES = [
@@ -166,6 +163,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -186,6 +184,11 @@ LOGGING = {
         },
     },
     "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+        },
         "file": {
             "level": "INFO",
             "class": "logging.FileHandler",
@@ -194,7 +197,7 @@ LOGGING = {
         },
     },
     "root": {
-        "handlers": ["file"],
+        "handlers": ["console", "file"],
         "level": "INFO",
     },
 }

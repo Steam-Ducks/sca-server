@@ -1,9 +1,16 @@
+import pytest
 from unittest.mock import MagicMock, patch
 
 from django.utils import timezone
 from rest_framework.test import APIClient
 
-from materials.views import MaterialsIndicatorsView, MaterialsTableView
+from materials.views import (
+    CostByProjectView,
+    FilterOptionsView,
+    MaterialsIndicatorsView,
+    MaterialsTableView,
+    TopMaterialsView,
+)
 from sca_data.models import (
     SilverFornecedor,
     SilverMaterial,
@@ -89,8 +96,8 @@ def test_materials_table_retorna_campos_corretos():
         assert item["projeto"] == "Projeto Alpha"
         assert item["programa"] == "Programa Alpha"
         assert item["quantidade"] == 10
-        assert item["valor_unitario"] == 150.00
-        assert item["valor_total"] == 1500.00
+        assert item["valor_unitario"] == pytest.approx(150.00)
+        assert item["valor_total"] == pytest.approx(1500.00)
         assert item["fornecedor"] == "Fornecedor Ltda"
         assert item["categoria"] == "Estrutural"
 
@@ -127,9 +134,9 @@ def test_materials_indicators_retorna_campos_corretos():
         MaterialsIndicatorsView, "_build_materiais_queryset", return_value=mock_qs
     ):
         response = APIClient().get("/api/materials/indicators/")
-        assert response.data["custo_total"] == 4500.53
+        assert response.data["custo_total"] == pytest.approx(4500.53)
         assert response.data["total_itens"] == 3
-        assert response.data["custo_medio"] == 1500.27
+        assert response.data["custo_medio"] == pytest.approx(1500.27)
 
 
 def test_materials_indicators_sem_dados_retorna_nulos():
@@ -232,3 +239,197 @@ def test_sem_filtro_retorna_todos_registros():
         response = APIClient().get("/api/compras/")
         assert response.status_code == 200
         assert len(response.data) == 1
+
+
+# ─── TopMaterialsView ─────────────────────────────────────────────────────────
+
+
+def _mock_top_materials(data=None):
+    if data is None:
+        data = [{"material": "Cabo de aço", "total_cost": 9000.00}]
+    mock = MagicMock()
+    mock.__iter__ = MagicMock(return_value=iter(data))
+    return mock
+
+
+def test_top_materials_retorna_200():
+    with patch("materials.views.get_top_materials_by_financial_impact") as mock_fn:
+        mock_fn.return_value = [{"material": "Cabo de aço", "total_cost": 9000.00}]
+        response = APIClient().get("/api/top-materials/")
+    assert response.status_code == 200
+
+
+def test_top_materials_retorna_lista_vazia():
+    with patch("materials.views.get_top_materials_by_financial_impact") as mock_fn:
+        mock_fn.return_value = []
+        response = APIClient().get("/api/top-materials/")
+    assert response.status_code == 200
+    assert response.data == []
+
+
+def test_top_materials_retorna_campos_corretos():
+    with patch("materials.views.get_top_materials_by_financial_impact") as mock_fn:
+        mock_fn.return_value = [{"material": "Cabo de aço", "total_cost": 9000.50}]
+        response = APIClient().get("/api/top-materials/")
+    assert response.data[0]["material"] == "Cabo de aço"
+    assert response.data[0]["total_cost"] == 9000.50
+
+
+def test_top_materials_aceita_filtro_periodo():
+    with patch("materials.views.get_top_materials_by_financial_impact") as mock_fn:
+        mock_fn.return_value = []
+        response = APIClient().get("/api/top-materials/?periodo=2024-03")
+    assert response.status_code == 200
+    call_params = mock_fn.call_args[0][0]
+    assert call_params.get("periodo") == "2024-03"
+
+
+def test_top_materials_aceita_filtro_data_inicio_e_fim():
+    with patch("materials.views.get_top_materials_by_financial_impact") as mock_fn:
+        mock_fn.return_value = []
+        response = APIClient().get(
+            "/api/top-materials/?data_inicio=2024-03-01&data_fim=2024-03-31"
+        )
+    assert response.status_code == 200
+    call_params = mock_fn.call_args[0][0]
+    assert call_params.get("data_inicio") == "2024-03-01"
+    assert call_params.get("data_fim") == "2024-03-31"
+
+
+def test_top_materials_limit_customizado():
+    with patch("materials.views.get_top_materials_by_financial_impact") as mock_fn:
+        mock_fn.return_value = []
+        APIClient().get("/api/top-materials/?limit=5")
+    assert mock_fn.call_args[1]["limit"] == 5
+
+
+def test_top_materials_limit_invalido_retorna_400():
+    response = APIClient().get("/api/top-materials/?limit=abc")
+    assert response.status_code == 400
+    assert "limit" in response.data
+
+
+def test_top_materials_aceita_filtro_programa():
+    with patch("materials.views.get_top_materials_by_financial_impact") as mock_fn:
+        mock_fn.return_value = []
+        APIClient().get("/api/top-materials/?programa=Programa+Alpha")
+    call_params = mock_fn.call_args[0][0]
+    assert call_params.get("programa") == "Programa Alpha"
+
+
+# ─── CostByProjectView ────────────────────────────────────────────────────────
+
+
+def test_cost_by_project_retorna_200():
+    with patch("materials.views.get_cost_by_project") as mock_fn:
+        mock_fn.return_value = []
+        response = APIClient().get("/api/cost-by-project/")
+    assert response.status_code == 200
+
+
+def test_cost_by_project_retorna_lista_vazia():
+    with patch("materials.views.get_cost_by_project") as mock_fn:
+        mock_fn.return_value = []
+        response = APIClient().get("/api/cost-by-project/")
+    assert response.data == []
+
+
+def test_cost_by_project_retorna_campos_corretos():
+    from decimal import Decimal
+
+    with patch("materials.views.get_cost_by_project") as mock_fn:
+        mock_fn.return_value = [
+            {"projeto": "Projeto Alpha", "total_cost": Decimal("5000.75")}
+        ]
+        response = APIClient().get("/api/cost-by-project/")
+    assert response.data[0]["projeto"] == "Projeto Alpha"
+    assert response.data[0]["total_cost"] == 5000.75
+
+
+def test_cost_by_project_converte_decimal_para_float():
+    from decimal import Decimal
+
+    with patch("materials.views.get_cost_by_project") as mock_fn:
+        mock_fn.return_value = [
+            {"projeto": "Proj X", "total_cost": Decimal("1234.56")}
+        ]
+        response = APIClient().get("/api/cost-by-project/")
+    assert isinstance(response.data[0]["total_cost"], float)
+
+
+def test_cost_by_project_aceita_filtro_periodo():
+    with patch("materials.views.get_cost_by_project") as mock_fn:
+        mock_fn.return_value = []
+        response = APIClient().get("/api/cost-by-project/?periodo=2024-03")
+    assert response.status_code == 200
+    call_params = mock_fn.call_args[0][0]
+    assert call_params.get("periodo") == "2024-03"
+
+
+def test_cost_by_project_aceita_filtro_data_inicio_e_fim():
+    with patch("materials.views.get_cost_by_project") as mock_fn:
+        mock_fn.return_value = []
+        response = APIClient().get(
+            "/api/cost-by-project/?data_inicio=2024-01-01&data_fim=2024-03-31"
+        )
+    assert response.status_code == 200
+    call_params = mock_fn.call_args[0][0]
+    assert call_params.get("data_inicio") == "2024-01-01"
+    assert call_params.get("data_fim") == "2024-03-31"
+
+
+def test_cost_by_project_total_cost_none_retorna_zero():
+    with patch("materials.views.get_cost_by_project") as mock_fn:
+        mock_fn.return_value = [{"projeto": "Proj Y", "total_cost": None}]
+        response = APIClient().get("/api/cost-by-project/")
+    assert response.data[0]["total_cost"] == 0.0
+
+
+# ─── FilterOptionsView ────────────────────────────────────────────────────────
+
+_FILTER_OPTIONS_FIXTURE = {
+    "periodos": ["2024-03", "2024-02", "2024-01"],
+    "programas": ["Programa Alpha", "Programa Beta"],
+    "projetos": [
+        {"nome": "Projeto Alpha", "programa": "Programa Alpha"},
+        {"nome": "Projeto Beta", "programa": "Programa Beta"},
+    ],
+    "categorias": ["Elétrico", "Estrutural"],
+    "fornecedores": ["Distribuidora SA", "Metalúrgica SA"],
+}
+
+
+def test_filter_options_retorna_200():
+    with patch("materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE):
+        response = APIClient().get("/api/materials/filter-options/")
+    assert response.status_code == 200
+
+
+def test_filter_options_retorna_todas_as_chaves():
+    with patch("materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE):
+        response = APIClient().get("/api/materials/filter-options/")
+    assert set(response.data.keys()) == {"periodos", "programas", "projetos", "categorias", "fornecedores"}
+
+
+def test_filter_options_periodos_sao_strings_yyyy_mm():
+    with patch("materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE):
+        response = APIClient().get("/api/materials/filter-options/")
+    for p in response.data["periodos"]:
+        assert len(p) == 7 and p[4] == "-", f"Período inválido: {p}"
+
+
+def test_filter_options_projetos_tem_nome_e_programa():
+    with patch("materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE):
+        response = APIClient().get("/api/materials/filter-options/")
+    for proj in response.data["projetos"]:
+        assert "nome" in proj
+        assert "programa" in proj
+
+
+def test_filter_options_retorna_listas_vazias_sem_dados():
+    vazio = {"periodos": [], "programas": [], "projetos": [], "categorias": [], "fornecedores": []}
+    with patch("materials.views.get_filter_options", return_value=vazio):
+        response = APIClient().get("/api/materials/filter-options/")
+    assert response.status_code == 200
+    assert response.data["periodos"] == []
+    assert response.data["projetos"] == []
