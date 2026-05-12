@@ -5,11 +5,8 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from materials.views import (
-    CostByProjectView,
-    FilterOptionsView,
     MaterialsIndicatorsView,
     MaterialsTableView,
-    TopMaterialsView,
 )
 from sca_data.models import (
     SilverFornecedor,
