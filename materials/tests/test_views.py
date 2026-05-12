@@ -347,9 +347,7 @@ def test_cost_by_project_converte_decimal_para_float():
     from decimal import Decimal
 
     with patch("materials.views.get_cost_by_project") as mock_fn:
-        mock_fn.return_value = [
-            {"projeto": "Proj X", "total_cost": Decimal("1234.56")}
-        ]
+        mock_fn.return_value = [{"projeto": "Proj X", "total_cost": Decimal("1234.56")}]
         response = APIClient().get("/api/cost-by-project/")
     assert isinstance(response.data[0]["total_cost"], float)
 
@@ -397,26 +395,40 @@ _FILTER_OPTIONS_FIXTURE = {
 
 
 def test_filter_options_retorna_200():
-    with patch("materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE):
+    with patch(
+        "materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE
+    ):
         response = APIClient().get("/api/materials/filter-options/")
     assert response.status_code == 200
 
 
 def test_filter_options_retorna_todas_as_chaves():
-    with patch("materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE):
+    with patch(
+        "materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE
+    ):
         response = APIClient().get("/api/materials/filter-options/")
-    assert set(response.data.keys()) == {"periodos", "programas", "projetos", "categorias", "fornecedores"}
+    assert set(response.data.keys()) == {
+        "periodos",
+        "programas",
+        "projetos",
+        "categorias",
+        "fornecedores",
+    }
 
 
 def test_filter_options_periodos_sao_strings_yyyy_mm():
-    with patch("materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE):
+    with patch(
+        "materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE
+    ):
         response = APIClient().get("/api/materials/filter-options/")
     for p in response.data["periodos"]:
         assert len(p) == 7 and p[4] == "-", f"Período inválido: {p}"
 
 
 def test_filter_options_projetos_tem_nome_e_programa():
-    with patch("materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE):
+    with patch(
+        "materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE
+    ):
         response = APIClient().get("/api/materials/filter-options/")
     for proj in response.data["projetos"]:
         assert "nome" in proj
@@ -424,7 +436,13 @@ def test_filter_options_projetos_tem_nome_e_programa():
 
 
 def test_filter_options_retorna_listas_vazias_sem_dados():
-    vazio = {"periodos": [], "programas": [], "projetos": [], "categorias": [], "fornecedores": []}
+    vazio = {
+        "periodos": [],
+        "programas": [],
+        "projetos": [],
+        "categorias": [],
+        "fornecedores": [],
+    }
     with patch("materials.views.get_filter_options", return_value=vazio):
         response = APIClient().get("/api/materials/filter-options/")
     assert response.status_code == 200
