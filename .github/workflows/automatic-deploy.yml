@@ -1,0 +1,14 @@
+name: Automatic Deploy
+
+#Condições para ativar o trigger do deploy
+on: 
+  push:
+    branches:
+      ['develop']
+
+jobs:
+  automatic-deploy: 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      

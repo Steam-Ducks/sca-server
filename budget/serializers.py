@@ -96,3 +96,12 @@ class GoldBudgetSnapshotSerializer(serializers.ModelSerializer):
 
     def get_programa(self, obj):
         return obj.nome_programa or "Sem programa"
+
+
+class BudgetIndicatorsSerializer(serializers.Serializer):
+    budgetTotal = serializers.FloatField(source="budget_total")
+    custoRealTotal = serializers.FloatField(source="custo_real_total")
+    desvioPercentMedio = serializers.FloatField(source="desvio_percent_medio")
+    projetosSaudaveis = serializers.IntegerField(source="projetos_saudaveis")
+    projetosAtencao = serializers.IntegerField(source="projetos_atencao")
+    projetosCriticos = serializers.IntegerField(source="projetos_criticos")
