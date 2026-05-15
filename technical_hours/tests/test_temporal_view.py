@@ -239,7 +239,7 @@ def test_temporal_aceita_filtro_funcao():
 
 def test_temporal_aplica_filtro_colaborador(rf):
     """TC02: filtro colaborador é repassado ao queryset via _apply_dimension_filters."""
-    from unittest.mock import MagicMock, patch
+    from unittest.mock import MagicMock
     from rest_framework.request import Request
 
     request = rf.get(URL, {"colaborador": "Lucas Martins"})
