@@ -576,8 +576,7 @@ class TestPipeline:
         fake_pipeline = [("table_a", mock_fn_1), ("table_b", mock_fn_2)]
 
         with patch("sca_data.db.silver.ingestion_silver.PIPELINE", fake_pipeline):
-            with patch("sca_data.db.silver.ingestion_silver.audit.log_exec"):
-                _run_pipeline(engine)
+            _run_pipeline(engine)
 
         mock_fn_1.assert_called_once()
         mock_fn_2.assert_called_once()
