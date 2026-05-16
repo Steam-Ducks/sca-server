@@ -42,8 +42,6 @@ def _create_table(df: pd.DataFrame, engine, tb_name: str):
 
 
 def _build_df(endpoint: str, file: str, run_id: str) -> pd.DataFrame:
-
-    started_at = datetime.datetime.now()
     table_name = file.replace(".parquet", "")
     route = f"{endpoint}/files/{file}"
 
