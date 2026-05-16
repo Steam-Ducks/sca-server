@@ -5,10 +5,6 @@ on:
     branches:
       - develop
 
-  pull_request:
-    branches:
-      - develop
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -26,18 +22,8 @@ jobs:
           script: |
             cd /home/deploy/app/sca-server
 
-            echo "Pulling latest changes..."
-
-            git fetch --all
-
             git checkout develop
 
-            git reset --hard origin/develop
-
-            echo "Rebuilding containers..."
-
-            docker compose -f docker-compose.prod.yml down
+            git pull origin develop
 
             docker compose -f docker-compose.prod.yml up -d --build
-
-            echo "Deploy completed!"
