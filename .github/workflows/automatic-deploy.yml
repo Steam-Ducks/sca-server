@@ -1,7 +1,11 @@
-name: Deploy Develop
+name: automatic-deploy
 
 on:
   push:
+    branches:
+      - develop
+
+  pull_request:
     branches:
       - develop
 
