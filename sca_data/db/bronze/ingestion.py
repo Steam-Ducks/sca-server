@@ -5,8 +5,6 @@ import pandas as pd
 import requests
 from sqlalchemy import text
 from sca_data.db.connection import get_or_create
-import sca_data.db.audit.audit as audit
-from sca_data.db.enums import OperationStatus, OperationType, LayerSchema
 
 logger = logging.getLogger(__name__)
 
@@ -58,38 +56,8 @@ def _build_df(endpoint: str, file: str, run_id: str) -> pd.DataFrame:
 
         _create_table(df, ENGINE, table_name)
 
-        audit.log_exec(
-            engine=ENGINE,
-            run_id=run_id,
-            operation=OperationType.INGEST,
-            status=OperationStatus.SUCCESS,
-            table_schema=LayerSchema.BRONZE,
-            table_name=table_name,
-            affected_rows=len(df),
-            started_at=started_at,
-            metadata={
-                "endpoint": route,
-                "columns": list(df.columns),
-            },
-        )
-
     except Exception as e:
         logging.error(f"It was not possible to ingest file {file}. Error {e}")
-
-        audit.log_exec(
-            engine=ENGINE,
-            run_id=run_id,
-            operation=OperationType.INGEST,
-            status=OperationStatus.FAILED,
-            table_schema=LayerSchema.BRONZE,
-            table_name=table_name,
-            affected_rows=0,
-            started_at=started_at,
-            metadata={
-                "endpoint": route,
-                "error": str(e),
-            },
-        )
 
 
 def _make_request(endpoint: str, run_id: str):
@@ -109,6 +77,5 @@ if __name__ == "__main__":
     run_id = str(uuid.uuid4())
     logging.info(f"Run ID: {run_id} ")
 
-    audit.create_audit(ENGINE)
     _ensure_schema(ENGINE)
     _make_request(ENDPOINT, run_id)
