@@ -227,18 +227,10 @@ def get_budget_indicators(params):
         "custo_real_total": round(
             sum((p.custo_materiais or 0) + (p.custo_horas or 0) for p in rows), 2
         ),
-        "desvio_percent_medio": round(
-            sum(p.desvio_percent for p in rows) / n, 1
-        ),
-        "projetos_saudaveis": sum(
-            1 for p in rows if p.saude_financeira == "Saudável"
-        ),
-        "projetos_atencao": sum(
-            1 for p in rows if p.saude_financeira == "Atenção"
-        ),
-        "projetos_criticos": sum(
-            1 for p in rows if p.saude_financeira == "Crítico"
-        ),
+        "desvio_percent_medio": round(sum(p.desvio_percent for p in rows) / n, 1),
+        "projetos_saudaveis": sum(1 for p in rows if p.saude_financeira == "Saudável"),
+        "projetos_atencao": sum(1 for p in rows if p.saude_financeira == "Atenção"),
+        "projetos_criticos": sum(1 for p in rows if p.saude_financeira == "Crítico"),
     }
 
 
@@ -253,9 +245,7 @@ def get_budget_indicators_gold(params):
         desvio_percent_medio=Coalesce(
             Avg("desvio_percent"), 0.0, output_field=FloatField()
         ),
-        projetos_saudaveis=Count(
-            "id", filter=Q(saude_financeira__iexact="Saudável")
-        ),
+        projetos_saudaveis=Count("id", filter=Q(saude_financeira__iexact="Saudável")),
         projetos_atencao=Count("id", filter=Q(saude_financeira__iexact="Atenção")),
         projetos_criticos=Count("id", filter=Q(saude_financeira__iexact="Crítico")),
     )

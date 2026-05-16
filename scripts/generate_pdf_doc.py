@@ -104,18 +104,35 @@ def build_pdf(output_path: str):
     pdf.set_font("DejaVu", "B", 20)
     pdf.set_text_color(30, 60, 120)
     pdf.ln(10)
-    pdf.cell(0, 12, "Indicadores de Orçamento e", align="C",
-             new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.cell(0, 12, "Saúde Financeira", align="C",
-             new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(
+        0,
+        12,
+        "Indicadores de Orçamento e",
+        align="C",
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+    )
+    pdf.cell(0, 12, "Saúde Financeira", align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.set_font("DejaVu", "", 12)
     pdf.set_text_color(80, 80, 80)
-    pdf.cell(0, 8, "SCA-317 · Documentação Técnica de Implementação", align="C",
-             new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(
+        0,
+        8,
+        "SCA-317 · Documentação Técnica de Implementação",
+        align="C",
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+    )
     pdf.ln(4)
     pdf.set_font("DejaVu", "I", 10)
-    pdf.cell(0, 6, "Projeto SCA — Supply Chain Analytics", align="C",
-             new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(
+        0,
+        6,
+        "Projeto SCA — Supply Chain Analytics",
+        align="C",
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+    )
     pdf.set_draw_color(30, 60, 120)
     pdf.ln(4)
     pdf.line(40, pdf.get_y(), 170, pdf.get_y())
@@ -142,42 +159,48 @@ def build_pdf(output_path: str):
     pdf.body_text("Foram realizadas mudanças nos dois repositórios do projeto:")
 
     pdf.subsection_title("2.1  Backend — sca-server")
-    pdf.bullet([
-        "Novo selector get_budget_indicators(params) — caminho silver (live queries)",
-        "Novo selector get_budget_indicators_gold(params) — caminho gold (tabela pré-computada)",
-        "Novo serializer BudgetIndicatorsSerializer",
-        "Nova view BudgetIndicatorsView (GET /api/budget/indicators/)",
-        "Registro da nova rota em budget/urls.py",
-        "21 testes unitários distribuídos em 3 novos arquivos de teste",
-    ])
+    pdf.bullet(
+        [
+            "Novo selector get_budget_indicators(params) — caminho silver (live queries)",
+            "Novo selector get_budget_indicators_gold(params) — caminho gold (tabela pré-computada)",
+            "Novo serializer BudgetIndicatorsSerializer",
+            "Nova view BudgetIndicatorsView (GET /api/budget/indicators/)",
+            "Registro da nova rota em budget/urls.py",
+            "21 testes unitários distribuídos em 3 novos arquivos de teste",
+        ]
+    )
 
     pdf.subsection_title("2.2  Frontend — sca-client")
-    pdf.bullet([
-        "Novos tipos BudgetIndicators e BudgetIndicatorsSnapshot em src/types/api.ts",
-        "Método fetchBudgetIndicators() em src/services/budgetService.ts",
-        "Atualização de OrcamentoSaudeFinanceira.vue para consumir o novo endpoint",
-        "Indicadores carregados em paralelo com a lista de projetos (Promise.all)",
-        "Filtro 'saude' passa a disparar recarga de indicadores no servidor",
-    ])
+    pdf.bullet(
+        [
+            "Novos tipos BudgetIndicators e BudgetIndicatorsSnapshot em src/types/api.ts",
+            "Método fetchBudgetIndicators() em src/services/budgetService.ts",
+            "Atualização de OrcamentoSaudeFinanceira.vue para consumir o novo endpoint",
+            "Indicadores carregados em paralelo com a lista de projetos (Promise.all)",
+            "Filtro 'saude' passa a disparar recarga de indicadores no servidor",
+        ]
+    )
 
     # ── 3. Indicadores retornados ────────────────────────────────────────────
     pdf.section_title("3. Indicadores Retornados pelo Endpoint")
     pdf.body_text(
         "O endpoint GET /api/budget/indicators/ retorna o seguinte envelope JSON:"
     )
-    pdf.code_block([
-        '{',
-        '  "data": {',
-        '    "budgetTotal":        <float>  -- soma do budget estimado de todos os projetos,',
-        '    "custoRealTotal":     <float>  -- soma do custo real (materiais + horas),',
-        '    "desvioPercentMedio": <float>  -- media aritmetica do desvio % por projeto,',
-        '    "projetosSaudaveis":  <int>    -- contagem de projetos classificados Saudavel,',
-        '    "projetosAtencao":    <int>    -- contagem de projetos classificados Atencao,',
-        '    "projetosCriticos":   <int>    -- contagem de projetos classificados Critico',
-        '  },',
-        '  "last_updated_at": "<ISO 8601>" | null',
-        '}',
-    ])
+    pdf.code_block(
+        [
+            "{",
+            '  "data": {',
+            '    "budgetTotal":        <float>  -- soma do budget estimado de todos os projetos,',
+            '    "custoRealTotal":     <float>  -- soma do custo real (materiais + horas),',
+            '    "desvioPercentMedio": <float>  -- media aritmetica do desvio % por projeto,',
+            '    "projetosSaudaveis":  <int>    -- contagem de projetos classificados Saudavel,',
+            '    "projetosAtencao":    <int>    -- contagem de projetos classificados Atencao,',
+            '    "projetosCriticos":   <int>    -- contagem de projetos classificados Critico',
+            "  },",
+            '  "last_updated_at": "<ISO 8601>" | null',
+            "}",
+        ]
+    )
     pdf.body_text(
         "Todos os sete critérios de aceitação da história de usuário são cobertos "
         "por campos deste envelope."
@@ -236,14 +259,16 @@ def build_pdf(output_path: str):
         "O sistema mantém dois caminhos de leitura, seguindo o padrão já estabelecido "
         "no módulo de orçamento:"
     )
-    pdf.bullet([
-        "Caminho Gold (prioritário): lê da tabela pré-computada "
-        "gold.\"budget_snapshot\" com agregações via SQL (Sum, Avg, Count). "
-        "Mais rápido e recomendado para ambientes com carga de dados regular.",
-        "Caminho Silver (fallback): executa as queries live sobre as tabelas silver "
-        "chamando internamente get_budget_snapshot() e computando as agregações "
-        "em Python. Utilizado quando a tabela gold está vazia.",
-    ])
+    pdf.bullet(
+        [
+            "Caminho Gold (prioritário): lê da tabela pré-computada "
+            'gold."budget_snapshot" com agregações via SQL (Sum, Avg, Count). '
+            "Mais rápido e recomendado para ambientes com carga de dados regular.",
+            "Caminho Silver (fallback): executa as queries live sobre as tabelas silver "
+            "chamando internamente get_budget_snapshot() e computando as agregações "
+            "em Python. Utilizado quando a tabela gold está vazia.",
+        ]
+    )
 
     pdf.body_text(
         "O critério de seleção do caminho é idêntico ao de BudgetSnapshotView: "
@@ -252,30 +277,32 @@ def build_pdf(output_path: str):
     )
 
     pdf.subsection_title("Diagrama simplificado")
-    pdf.code_block([
-        "GET /api/budget/indicators/?<filtros>",
-        "         |",
-        "         v",
-        "  BudgetIndicatorsView.get()",
-        "         |",
-        "         +---> get_budget_indicators_gold(params)",
-        "         |           |",
-        "         |       gold existe? --sim--> agrega SQL (Sum/Avg/Count)",
-        "         |           |",
-        "         |         nao",
-        "         |           |",
-        "         +---> get_budget_indicators(params)",
-        "                     |",
-        "               get_budget_snapshot(params)  [silver live]",
-        "                     |",
-        "               reduz rows em Python",
-        "         |",
-        "         v",
-        "  BudgetIndicatorsSerializer  (snake_case -> camelCase)",
-        "         |",
-        "         v",
-        '  { "data": {...}, "last_updated_at": "..." }',
-    ])
+    pdf.code_block(
+        [
+            "GET /api/budget/indicators/?<filtros>",
+            "         |",
+            "         v",
+            "  BudgetIndicatorsView.get()",
+            "         |",
+            "         +---> get_budget_indicators_gold(params)",
+            "         |           |",
+            "         |       gold existe? --sim--> agrega SQL (Sum/Avg/Count)",
+            "         |           |",
+            "         |         nao",
+            "         |           |",
+            "         +---> get_budget_indicators(params)",
+            "                     |",
+            "               get_budget_snapshot(params)  [silver live]",
+            "                     |",
+            "               reduz rows em Python",
+            "         |",
+            "         v",
+            "  BudgetIndicatorsSerializer  (snake_case -> camelCase)",
+            "         |",
+            "         v",
+            '  { "data": {...}, "last_updated_at": "..." }',
+        ]
+    )
 
     # ── 6. Filtros aceitos ───────────────────────────────────────────────────
     pdf.section_title("6. Filtros Aceitos")
@@ -289,8 +316,8 @@ def build_pdf(output_path: str):
     rows = [
         ("periodo", "string", "Filtra por mês de início no formato YYYY-MM"),
         ("programa", "string", "Filtra por nome do programa (case-insensitive)"),
-        ("projeto",  "string", "Filtra por nome do projeto (case-insensitive)"),
-        ("saude",    "string", "Filtra por classificação: Saudável, Atenção ou Crítico"),
+        ("projeto", "string", "Filtra por nome do projeto (case-insensitive)"),
+        ("saude", "string", "Filtra por classificação: Saudável, Atenção ou Crítico"),
     ]
     for r in rows:
         pdf.table_row(list(r), widths)
@@ -304,14 +331,22 @@ def build_pdf(output_path: str):
     widths = [85, 15, 80]
     pdf.table_row(headers, widths, header=True)
     bfiles = [
-        ("budget/selectors.py", "MOD", "Adicionou get_budget_indicators e get_budget_indicators_gold"),
+        (
+            "budget/selectors.py",
+            "MOD",
+            "Adicionou get_budget_indicators e get_budget_indicators_gold",
+        ),
         ("budget/serializers.py", "MOD", "Adicionou BudgetIndicatorsSerializer"),
         ("budget/views.py", "MOD", "Adicionou BudgetIndicatorsView"),
         ("budget/urls.py", "MOD", "Registrou rota budget/indicators/"),
         ("budget/tests/test_urls.py", "MOD", "Adicionou teste da nova rota"),
         ("budget/tests/test_indicators_view.py", "NEW", "12 testes de view/integração"),
         ("budget/tests/test_indicators_selectors.py", "NEW", "8 testes de seletores"),
-        ("budget/tests/test_indicators_serializers.py", "NEW", "4 testes de serializer"),
+        (
+            "budget/tests/test_indicators_serializers.py",
+            "NEW",
+            "4 testes de serializer",
+        ),
     ]
     for r in bfiles:
         pdf.table_row(list(r), widths)
@@ -322,10 +357,17 @@ def build_pdf(output_path: str):
     widths = [85, 15, 80]
     pdf.table_row(headers, widths, header=True)
     ffiles = [
-        ("src/types/api.ts", "MOD", "Adicionou BudgetIndicators e BudgetIndicatorsSnapshot"),
+        (
+            "src/types/api.ts",
+            "MOD",
+            "Adicionou BudgetIndicators e BudgetIndicatorsSnapshot",
+        ),
         ("src/services/budgetService.ts", "MOD", "Adicionou fetchBudgetIndicators()"),
-        ("src/views/OrcamentoSaudeFinanceira.vue", "MOD",
-         "KPIs via endpoint; saude recarrega indicadores"),
+        (
+            "src/views/OrcamentoSaudeFinanceira.vue",
+            "MOD",
+            "KPIs via endpoint; saude recarrega indicadores",
+        ),
     ]
     for r in ffiles:
         pdf.table_row(list(r), widths)
@@ -339,36 +381,42 @@ def build_pdf(output_path: str):
     )
 
     pdf.subsection_title("test_indicators_view.py  (12 testes)")
-    pdf.bullet([
-        "CT-V01: retorna HTTP 200 com dados gold",
-        "CT-V02: retorna HTTP 200 com fallback silver",
-        "CT-V03: resposta gold contém todos os campos com valores corretos",
-        "CT-V04: resposta silver fallback contém todos os campos com valores corretos",
-        "CT-V05: last_updated_at é null quando não há dados",
-        "CT-V06: gold tem prioridade sobre silver",
-        "CT-V07: cai no silver quando gold retorna None",
-        "CT-V08 a CT-V12: query params repassados corretamente aos seletores",
-    ])
+    pdf.bullet(
+        [
+            "CT-V01: retorna HTTP 200 com dados gold",
+            "CT-V02: retorna HTTP 200 com fallback silver",
+            "CT-V03: resposta gold contém todos os campos com valores corretos",
+            "CT-V04: resposta silver fallback contém todos os campos com valores corretos",
+            "CT-V05: last_updated_at é null quando não há dados",
+            "CT-V06: gold tem prioridade sobre silver",
+            "CT-V07: cai no silver quando gold retorna None",
+            "CT-V08 a CT-V12: query params repassados corretamente aos seletores",
+        ]
+    )
 
     pdf.subsection_title("test_indicators_selectors.py  (8 testes)")
-    pdf.bullet([
-        "CT-S01: retorna zeros quando não há projetos",
-        "CT-S02: soma correta de budget e custo_real",
-        "CT-S03: contagem correta por saúde (Saudável/Atenção/Crítico)",
-        "CT-S04: cálculo correto do desvio % médio",
-        "CT-S05: params repassados ao get_budget_snapshot",
-        "CT-S06: gold retorna None quando tabela vazia",
-        "CT-S07: gold retorna agregados quando há dados",
-        "CT-S08: filtros aplicados antes do aggregate no caminho gold",
-    ])
+    pdf.bullet(
+        [
+            "CT-S01: retorna zeros quando não há projetos",
+            "CT-S02: soma correta de budget e custo_real",
+            "CT-S03: contagem correta por saúde (Saudável/Atenção/Crítico)",
+            "CT-S04: cálculo correto do desvio % médio",
+            "CT-S05: params repassados ao get_budget_snapshot",
+            "CT-S06: gold retorna None quando tabela vazia",
+            "CT-S07: gold retorna agregados quando há dados",
+            "CT-S08: filtros aplicados antes do aggregate no caminho gold",
+        ]
+    )
 
     pdf.subsection_title("test_indicators_serializers.py  (4 testes)")
-    pdf.bullet([
-        "CT-SR01: campos snake_case mapeados para camelCase",
-        "CT-SR02: valores corretos na serialização padrão",
-        "CT-SR03: valores zero serializados corretamente",
-        "CT-SR04: precisão de float preservada",
-    ])
+    pdf.bullet(
+        [
+            "CT-SR01: campos snake_case mapeados para camelCase",
+            "CT-SR02: valores corretos na serialização padrão",
+            "CT-SR03: valores zero serializados corretamente",
+            "CT-SR04: precisão de float preservada",
+        ]
+    )
 
     # ── 9. Rastreabilidade ───────────────────────────────────────────────────
     pdf.section_title("9. Rastreabilidade com Critérios de Aceitação")
@@ -429,13 +477,15 @@ def build_pdf(output_path: str):
 
     # ── 11. Como executar ────────────────────────────────────────────────────
     pdf.section_title("11. Como Executar os Testes")
-    pdf.code_block([
-        "# A partir da raiz do repositório sca-server:",
-        "pytest budget/tests/ -v",
-        "",
-        "# Resultado esperado:",
-        "41 passed in < 1s",
-    ])
+    pdf.code_block(
+        [
+            "# A partir da raiz do repositório sca-server:",
+            "pytest budget/tests/ -v",
+            "",
+            "# Resultado esperado:",
+            "41 passed in < 1s",
+        ]
+    )
 
     pdf.output(output_path)
     print(f"PDF gerado: {output_path}")

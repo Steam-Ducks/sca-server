@@ -1,4 +1,3 @@
-import datetime
 from unittest.mock import MagicMock, patch
 
 from budget.selectors import get_budget_indicators, get_budget_indicators_gold
@@ -9,7 +8,9 @@ def _make_project_row(budget, custo_materiais, custo_horas, saude):
     p.budget = budget
     p.custo_materiais = custo_materiais
     p.custo_horas = custo_horas
-    p.desvio_percent = round((custo_materiais + custo_horas) / budget * 100, 1) if budget else 0.0
+    p.desvio_percent = (
+        round((custo_materiais + custo_horas) / budget * 100, 1) if budget else 0.0
+    )
     p.saude_financeira = saude
     return p
 
@@ -54,8 +55,8 @@ class TestGetBudgetIndicators:
 
     def test_calculates_desvio_percent_medio(self):
         rows = [
-            _make_project_row(1000, 400, 200, "Saudável"),   # 60%
-            _make_project_row(1000, 400, 400, "Atenção"),    # 80%
+            _make_project_row(1000, 400, 200, "Saudável"),  # 60%
+            _make_project_row(1000, 400, 400, "Atenção"),  # 80%
         ]
         with patch("budget.selectors.get_budget_snapshot", return_value=rows):
             result = get_budget_indicators({})

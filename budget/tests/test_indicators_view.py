@@ -137,7 +137,9 @@ class TestBudgetIndicatorsGoldPriority:
             with patch(
                 "budget.views.get_budget_indicators", return_value=_indicators_silver()
             ) as mock_silver:
-                with patch("budget.views.get_budget_last_updated_at", return_value=None):
+                with patch(
+                    "budget.views.get_budget_last_updated_at", return_value=None
+                ):
                     response = APIClient().get("/api/budget/indicators/")
 
         assert response.status_code == 200
