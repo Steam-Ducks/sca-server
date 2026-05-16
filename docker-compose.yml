@@ -43,46 +43,12 @@ services:
     networks:
       - app_net
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
-    container_name: elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - xpack.security.http.ssl.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-    ports:
-      - "9200:9200"
-    networks:
-      - app_net
-
-  elasticsearch_exporter:
-    image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
-    container_name: es_exporter
-    environment:
-      - ES_URI=http://elasticsearch:9200
-    ports:
-      - "9114:9114"
-    networks:
-      - app_net
-
-  logstash:
-    image: docker.elastic.co/logstash/logstash:8.13.0
-    container_name: logstash
-    volumes:
-      - ./logs:/app/logs
-      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
-    depends_on:
-      - elasticsearch
-    restart: always
-    networks:
-      - app_net
-
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
     volumes:
       - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
     ports:
       - "9090:9090"
     restart: always
@@ -92,14 +58,24 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
     ports:
       - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
     restart: always
+    depends_on:
+      - prometheus
     networks:
       - app_net
 
 volumes:
   postgres_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
   app_net:

@@ -101,13 +101,13 @@ class TestToFloat:
     def test_valid_floats(self):
         s = pd.Series(["1.5", "2.75"])
         result = _to_float(s)
-        assert result[0] == 1.5
-        assert result[1] == 2.75
+        assert result[0] == pytest.approx(1.5)
+        assert result[1] == pytest.approx(2.75)
 
     def test_integer_strings(self):
         s = pd.Series(["100", "0"])
         result = _to_float(s)
-        assert result[0] == 100.0
+        assert result[0] == pytest.approx(100.0)
 
     def test_invalid_becomes_nan(self):
         s = pd.Series(["abc", None])
@@ -195,7 +195,7 @@ class TestWriteSilver:
         mock_to_sql.assert_called_once()
         _, kwargs = mock_to_sql.call_args
         assert kwargs["schema"] == "silver"
-        assert kwargs["if_exists"] == "append"
+        assert kwargs["if_exists"] == "replace"
         assert kwargs["index"] is False
 
 
@@ -576,8 +576,7 @@ class TestPipeline:
         fake_pipeline = [("table_a", mock_fn_1), ("table_b", mock_fn_2)]
 
         with patch("sca_data.db.silver.ingestion_silver.PIPELINE", fake_pipeline):
-            with patch("sca_data.db.silver.ingestion_silver.audit.log_exec"):
-                _run_pipeline(engine)
+            _run_pipeline(engine)
 
         mock_fn_1.assert_called_once()
         mock_fn_2.assert_called_once()

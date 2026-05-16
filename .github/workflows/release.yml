@@ -161,4 +161,23 @@ jobs:
           git fetch origin develop
           git merge origin/develop --no-edit
           git push origin main
+
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: merge-to-main
+    if: success()
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DO_DROPLET_IP }}
+          username: ${{ secrets.DO_DEPLOY_USER }}
+          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/sca-server
+            git pull origin main
+            docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+            docker image prune -f
           

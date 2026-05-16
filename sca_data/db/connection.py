@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
 
-def getOrCreate() -> Engine:
+def get_or_create() -> Engine:
 
     load_dotenv()
 

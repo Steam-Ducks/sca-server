@@ -2,6 +2,8 @@ import django.db.models.deletion
 import django.utils.timezone
 from django.db import migrations, models
 
+SILVER_PROJETO = "sca_data.silverprojeto"
+
 
 class Migration(migrations.Migration):
 
@@ -119,7 +121,7 @@ class Migration(migrations.Migration):
                         db_column="projeto_id",
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         related_name="tarefas",
-                        to="sca_data.silverprojeto",
+                        to=SILVER_PROJETO,
                     ),
                 ),
                 ("titulo", models.CharField(blank=True, max_length=100, null=True)),
@@ -171,7 +173,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         db_column="projeto_id",
                         on_delete=django.db.models.deletion.DO_NOTHING,
-                        to="sca_data.silverprojeto",
+                        to=SILVER_PROJETO,
                     ),
                 ),
                 (
@@ -244,7 +246,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         db_column="projeto_id",
                         on_delete=django.db.models.deletion.DO_NOTHING,
-                        to="sca_data.silverprojeto",
+                        to=SILVER_PROJETO,
                     ),
                 ),
                 ("valor_alocado", models.FloatField(blank=True, null=True)),
@@ -264,7 +266,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         db_column="projeto_id",
                         on_delete=django.db.models.deletion.DO_NOTHING,
-                        to="sca_data.silverprojeto",
+                        to=SILVER_PROJETO,
                     ),
                 ),
                 (
@@ -293,7 +295,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         db_column="projeto_id",
                         on_delete=django.db.models.deletion.DO_NOTHING,
-                        to="sca_data.silverprojeto",
+                        to=SILVER_PROJETO,
                     ),
                 ),
                 (

@@ -1,15 +1,22 @@
-import datetime
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.db.models import Avg, Count, Exists, OuterRef, Q, Sum
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
+from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from materials.selectors import get_materials_queryset
+from materials.selectors import (
+    _parse_periodo,
+    get_cost_by_project,
+    get_filter_options,
+    get_materials_queryset,
+    get_top_materials_by_financial_impact,
+)
 from materials.serializers import (
     MaterialsIndicatorsSerializer,
     MaterialsTableSerializer,
+    TopMaterialsSerializer,
 )
 from sca_data.models import (
     SilverMaterial,
@@ -46,27 +53,6 @@ class MaterialsTableView(generics.ListAPIView):
 
     serializer_class = MaterialsTableSerializer
 
-    def _parse_periodo(self, raw: str) -> tuple:
-        """YYYY-MM → (primeiro_dia, último_dia) do mês."""
-        try:
-            if len(raw) != 7 or raw[4] != "-":
-                raise ValueError
-            year, month = int(raw[:4]), int(raw[5:7])
-            if not (1 <= month <= 12):
-                raise ValueError
-        except (ValueError, IndexError):
-            raise ValidationError(
-                {"periodo": f"Período inválido '{raw}'. Use o formato YYYY-MM."}
-            )
-
-        primeiro_dia = datetime.date(year, month, 1)
-        if month == 12:
-            ultimo_dia = datetime.date(year + 1, 1, 1) - datetime.timedelta(days=1)
-        else:
-            ultimo_dia = datetime.date(year, month + 1, 1) - datetime.timedelta(days=1)
-
-        return primeiro_dia, ultimo_dia
-
     def get_queryset(self):
         return get_materials_queryset(self.request.query_params)
 
@@ -84,7 +70,7 @@ class MaterialsTablePeriodoView(MaterialsTableView):
 
     def get_queryset(self):
         raw_periodo = self.kwargs.get("periodo", "")
-        primeiro_dia, ultimo_dia = self._parse_periodo(raw_periodo)
+        primeiro_dia, ultimo_dia = _parse_periodo(raw_periodo)
         params = {
             **self.request.query_params,
             "data_inicio": str(primeiro_dia),
@@ -95,24 +81,6 @@ class MaterialsTablePeriodoView(MaterialsTableView):
 
 class MaterialsIndicatorsView(generics.GenericAPIView):
     serializer_class = MaterialsIndicatorsSerializer
-
-    def _parse_periodo(self, raw: str) -> tuple:
-        try:
-            if len(raw) != 7 or raw[4] != "-":
-                raise ValueError
-            year, month = int(raw[:4]), int(raw[5:7])
-            if not (1 <= month <= 12):
-                raise ValueError
-        except (ValueError, IndexError):
-            raise ValidationError(
-                {"periodo": f"Período inválido '{raw}'. Use o formato YYYY-MM."}
-            )
-        primeiro_dia = datetime.date(year, month, 1)
-        if month == 12:
-            ultimo_dia = datetime.date(year + 1, 1, 1) - datetime.timedelta(days=1)
-        else:
-            ultimo_dia = datetime.date(year, month + 1, 1) - datetime.timedelta(days=1)
-        return primeiro_dia, ultimo_dia
 
     def _build_materiais_queryset(self, params):
         qs = SilverMaterial.objects.filter(status="Ativo")
@@ -146,9 +114,9 @@ class MaterialsIndicatorsView(generics.GenericAPIView):
             ped_q &= Q(fornecedor__razao_social__icontains=params["fornecedor"])
             apply_ped = True
 
-        raw_periodo = params.get("periodo")
         raw_inicio = params.get("data_inicio")
         raw_fim = params.get("data_fim")
+        raw_periodo = params.get("periodo")
 
         if raw_inicio or raw_fim:
             if raw_inicio:
@@ -157,7 +125,7 @@ class MaterialsIndicatorsView(generics.GenericAPIView):
                 ped_q &= Q(data_pedido__lte=raw_fim)
             apply_ped = True
         elif raw_periodo:
-            primeiro_dia, ultimo_dia = self._parse_periodo(raw_periodo)
+            primeiro_dia, ultimo_dia = _parse_periodo(raw_periodo)
             ped_q &= Q(data_pedido__gte=primeiro_dia, data_pedido__lte=ultimo_dia)
             apply_ped = True
 
@@ -184,3 +152,69 @@ class MaterialsIndicatorsView(generics.GenericAPIView):
             }
         )
         return Response(serializer.data)
+
+
+class TopMaterialsView(APIView):
+    """
+    Retorna o ranking dos materiais com maior impacto financeiro.
+
+    Query params
+    ------------
+    periodo     : YYYY-MM    — mês completo
+    data_inicio : YYYY-MM-DD — bound inferior inclusivo
+    data_fim    : YYYY-MM-DD — bound superior inclusivo
+    programa    : str
+    projeto     : str
+    categoria   : str
+    fornecedor  : str
+    limit       : int        — máximo de itens (padrão: 10)
+    """
+
+    def get(self, request):
+        try:
+            limit = int(request.query_params.get("limit", 10))
+        except ValueError:
+            raise ValidationError({"limit": "O parâmetro limit deve ser um inteiro."})
+
+        data = get_top_materials_by_financial_impact(request.query_params, limit=limit)
+        serializer = TopMaterialsSerializer(data, many=True)
+        return Response(serializer.data)
+
+
+class CostByProjectView(APIView):
+    """
+    Retorna o custo total de materiais por projeto (ranking do maior para o menor).
+
+    Query params
+    ------------
+    periodo     : YYYY-MM    — mês completo
+    data_inicio : YYYY-MM-DD — bound inferior inclusivo
+    data_fim    : YYYY-MM-DD — bound superior inclusivo
+    programa    : str
+    projeto     : str
+    categoria   : str
+    fornecedor  : str
+    """
+
+    def get(self, request):
+        qs = get_cost_by_project(request.query_params)
+        data = [
+            {"projeto": row["projeto"], "total_cost": float(row["total_cost"] or 0)}
+            for row in qs
+        ]
+        return Response(data)
+
+
+class FilterOptionsView(APIView):
+    """
+    Retorna os valores disponíveis para cada filtro do painel de materiais.
+
+    A resposta é derivada dos dados reais do banco, garantindo que os dropdowns
+    exibam somente períodos, programas, projetos, categorias e fornecedores
+    que possuem registros.
+
+    GET /api/materials/filter-options/
+    """
+
+    def get(self, request):
+        return Response(get_filter_options())

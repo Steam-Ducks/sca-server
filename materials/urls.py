@@ -1,9 +1,12 @@
 from django.urls import path
 
 from materials.views import (
+    CostByProjectView,
+    FilterOptionsView,
     MaterialsIndicatorsView,
     MaterialsTablePeriodoView,
     MaterialsTableView,
+    TopMaterialsView,
 )
 
 urlpatterns = [
@@ -18,5 +21,12 @@ urlpatterns = [
         "materials/indicators/",
         MaterialsIndicatorsView.as_view(),
         name="materials-indicators",
+    ),
+    path("top-materials/", TopMaterialsView.as_view(), name="top-materials"),
+    path("cost-by-project/", CostByProjectView.as_view(), name="cost-by-project"),
+    path(
+        "materials/filter-options/",
+        FilterOptionsView.as_view(),
+        name="materials-filter-options",
     ),
 ]

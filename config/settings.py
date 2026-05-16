@@ -42,7 +42,6 @@ else:
 # Application definition
 
 INSTALLED_APPS = [
-    "django_prometheus",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -53,19 +52,17 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     # project apps
-    "core",
     "users",
     "sca_data.apps.ScaDataConfig",
     "materials",
     "technical_hours",
     "consolidated.consolidated_dashboard",
-    "audit",
     "dashboard",
-    "main_dashboard",
+    "budget",
+    "costs",
 ]
 
 MIDDLEWARE = [
-    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -74,23 +71,16 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "core.middleware.RequestLogMiddleware",
-    "core.middleware.ErrorLogMiddleware",
-    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = [
     o.strip()
-    for o in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
+    for o in os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173").split(",")
     if o.strip()
 ]
 
-_cors_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
-CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_origins.split(",") if o.strip()]
-
 ROOT_URLCONF = "config.urls"
-
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -166,6 +156,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -186,6 +177,11 @@ LOGGING = {
         },
     },
     "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+        },
         "file": {
             "level": "INFO",
             "class": "logging.FileHandler",
@@ -194,7 +190,7 @@ LOGGING = {
         },
     },
     "root": {
-        "handlers": ["file"],
+        "handlers": ["console", "file"],
         "level": "INFO",
     },
 }

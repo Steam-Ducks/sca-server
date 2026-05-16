@@ -3,9 +3,8 @@ import logging
 import uuid
 import pandas as pd
 from sqlalchemy import text
-from sca_data.db.connection import getOrCreate
-import sca_data.db.audit.audit as audit
-from sca_data.db.enums import OperationStatus, OperationType, LayerSchema
+from sca_data.db.connection import get_or_create
+from sca_data.db.enums import OperationStatus
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +12,7 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s | %(name)s | %(levelname)s | %(message)s"
 )
 
-ENGINE = getOrCreate()
+ENGINE = get_or_create()
 
 
 def _read_bronze(engine, tb_name: str) -> pd.DataFrame:
@@ -22,20 +21,23 @@ def _read_bronze(engine, tb_name: str) -> pd.DataFrame:
     return df
 
 
+def _ensure_schema(engine):
+    with engine.connect() as conn:
+        conn.execute(text("CREATE SCHEMA IF NOT EXISTS silver"))
+        conn.commit()
+    logging.info("Schema 'silver' verificado/criado.")
+
+
 def _write_silver(df: pd.DataFrame, engine, tb_name: str) -> int:
     logging.info(f"Writing {tb_name} ...")
 
     df["silver_ingested_at"] = datetime.datetime.now()
 
-    with engine.connect() as conn:
-        conn.execute(text(f'TRUNCATE TABLE silver."{tb_name}" CASCADE'))
-        conn.commit()
-
     df.to_sql(
         tb_name,
         engine,
         schema="silver",
-        if_exists="append",
+        if_exists="replace",
         index=False,
     )
 
@@ -44,7 +46,7 @@ def _write_silver(df: pd.DataFrame, engine, tb_name: str) -> int:
 
 
 def _to_date(series: pd.Series) -> pd.Series:
-    return pd.to_datetime(series, errors="coerce").dt.date
+    return pd.to_datetime(series, errors="coerce", format="%Y-%m-%d").dt.date
 
 
 def _to_int(series: pd.Series) -> pd.Series:
@@ -414,24 +416,8 @@ def _run_pipeline(engine):
     run_id = str(uuid.uuid4())
     logging.info("=== Iniciando ETL Bronze → Silver ===")
 
-    def _log(
-        table_name: str,
-        status: OperationStatus,
-        started_at: datetime.datetime,
-        affected_rows: int = 0,
-        metadata: dict = None,
-    ):
-        audit.log_exec(
-            engine=engine,
-            run_id=run_id,
-            operation=OperationType.TRANSFORM,
-            table_schema=LayerSchema.SILVER,
-            status=status,
-            table_name=table_name,
-            affected_rows=affected_rows,
-            started_at=started_at,
-            metadata=metadata,
-        )
+    def _log(*args, **kwargs):
+        pass
 
     for name, fn in PIPELINE:
         logging.info(f"--- Processando: {name} ---")
@@ -441,5 +427,5 @@ def _run_pipeline(engine):
 
 
 if __name__ == "__main__":
-    audit.create_audit(ENGINE)
+    _ensure_schema(ENGINE)
     _run_pipeline(ENGINE)

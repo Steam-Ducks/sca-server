@@ -1,7 +1,14 @@
 # dashboard/tests/test_selectors.py
+import pytest
 from unittest.mock import MagicMock, patch
 
-from dashboard.selectors import build_filters, get_dashboard_kpis
+from dashboard.selectors import (
+    build_filters,
+    get_cost_composition,
+    get_dashboard_kpis,
+    get_program_summary,
+    get_projects_by_period,
+)
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -50,7 +57,7 @@ def test_build_filters_start_date():
 
 
 def test_build_filters_end_date():
-    mat, hrs, prj, values = build_filters({"end_date": "2024-12-31"})
+    mat, hrs, _, values = build_filters({"end_date": "2024-12-31"})
 
     assert "pc.data_pedido <= %(end_date)s" in mat
     assert "tt.data <= %(end_date)s" in hrs
@@ -101,7 +108,7 @@ def test_build_filters_all_params():
 
 
 def test_build_filters_clauses_start_with_where_when_filtered():
-    mat, hrs, prj, values = build_filters({"project": "Sensor Pressão Industrial"})
+    mat, hrs, prj, _ = build_filters({"project": "Sensor Pressão Industrial"})
 
     assert mat.startswith("WHERE ")
     assert hrs.startswith("WHERE ")
@@ -137,8 +144,8 @@ def test_get_dashboard_kpis_correct_values():
     with patcher:
         result = get_dashboard_kpis({})
 
-    assert result["total_materials_cost"] == 450000.0
-    assert result["total_hours_cost"] == 300000.0
+    assert result["total_materials_cost"] == pytest.approx(450000.0)
+    assert result["total_hours_cost"] == pytest.approx(300000.0)
     assert result["total_projects"] == 8
     assert result["total_programs"] == 3
 
@@ -150,7 +157,7 @@ def test_get_dashboard_kpis_consolidated_is_sum_of_materials_and_hours():
     with patcher:
         result = get_dashboard_kpis({})
 
-    assert result["total_consolidated_cost"] == 750000.0
+    assert result["total_consolidated_cost"] == pytest.approx(750000.0)
 
 
 def test_get_dashboard_kpis_rounds_to_two_decimals():
@@ -160,9 +167,11 @@ def test_get_dashboard_kpis_rounds_to_two_decimals():
     with patcher:
         result = get_dashboard_kpis({})
 
-    assert result["total_materials_cost"] == round(100000.555, 2)
-    assert result["total_hours_cost"] == round(200000.444, 2)
-    assert result["total_consolidated_cost"] == round(100000.555 + 200000.444, 2)
+    assert result["total_materials_cost"] == pytest.approx(round(100000.555, 2))
+    assert result["total_hours_cost"] == pytest.approx(round(200000.444, 2))
+    assert result["total_consolidated_cost"] == pytest.approx(
+        round(100000.555 + 200000.444, 2)
+    )
 
 
 def test_get_dashboard_kpis_executes_four_queries():
@@ -212,8 +221,145 @@ def test_get_dashboard_kpis_with_zeros():
     with patcher:
         result = get_dashboard_kpis({})
 
-    assert result["total_consolidated_cost"] == 0.0
-    assert result["total_materials_cost"] == 0.0
-    assert result["total_hours_cost"] == 0.0
+    assert result["total_consolidated_cost"] == pytest.approx(0.0)
+    assert result["total_materials_cost"] == pytest.approx(0.0)
+    assert result["total_hours_cost"] == pytest.approx(0.0)
     assert result["total_projects"] == 0
     assert result["total_programs"] == 0
+
+
+# ── get_projects_by_period ────────────────────────────────────────────────────
+
+
+@patch("dashboard.selectors.SilverProjeto.objects")
+def test_get_projects_by_period_no_dates_calls_filter_with_empty_q(mock_objects):
+    mock_objects.filter.return_value = []
+
+    get_projects_by_period()
+
+    mock_objects.filter.assert_called_once()
+
+
+@patch("dashboard.selectors.SilverProjeto.objects")
+def test_get_projects_by_period_with_start_date(mock_objects):
+    mock_objects.filter.return_value = []
+
+    get_projects_by_period(start_date="2024-01-01")
+
+    call_args = mock_objects.filter.call_args[0][0]
+    assert "silver_ingested_at__date__gte" in str(call_args)
+
+
+@patch("dashboard.selectors.SilverProjeto.objects")
+def test_get_projects_by_period_with_end_date(mock_objects):
+    mock_objects.filter.return_value = []
+
+    get_projects_by_period(end_date="2024-12-31")
+
+    call_args = mock_objects.filter.call_args[0][0]
+    assert "silver_ingested_at__date__lte" in str(call_args)
+
+
+@patch("dashboard.selectors.SilverProjeto.objects")
+def test_get_projects_by_period_with_both_dates(mock_objects):
+    mock_objects.filter.return_value = []
+
+    get_projects_by_period(start_date="2024-01-01", end_date="2024-12-31")
+
+    call_args = mock_objects.filter.call_args[0][0]
+    assert "silver_ingested_at__date__gte" in str(call_args)
+    assert "silver_ingested_at__date__lte" in str(call_args)
+
+
+@patch("dashboard.selectors.SilverProjeto.objects")
+def test_get_projects_by_period_returns_queryset(mock_objects):
+    mock_qs = MagicMock()
+    mock_objects.filter.return_value = mock_qs
+
+    result = get_projects_by_period()
+
+    assert result == mock_qs
+
+
+# ── _build_cost_filters — date branches ──────────────────────────────────────
+
+
+@patch("dashboard.selectors.SilverProjeto.objects")
+def test_get_program_summary_with_start_date_applies_compras_filter(mock_objects):
+    mock_qs = MagicMock()
+    mock_objects.select_related.return_value = mock_qs
+    mock_qs.values.return_value = mock_qs
+    mock_qs.annotate.return_value = mock_qs
+    mock_qs.order_by.return_value = []
+
+    get_program_summary({"start_date": "2024-01-01"})
+
+    annotate_call = mock_qs.annotate.call_args
+    assert annotate_call is not None
+
+
+@patch("dashboard.selectors.SilverProjeto.objects")
+def test_get_program_summary_with_end_date_applies_tempo_filter(mock_objects):
+    mock_qs = MagicMock()
+    mock_objects.select_related.return_value = mock_qs
+    mock_qs.values.return_value = mock_qs
+    mock_qs.annotate.return_value = mock_qs
+    mock_qs.order_by.return_value = []
+
+    get_program_summary({"end_date": "2024-12-31"})
+
+    annotate_call = mock_qs.annotate.call_args
+    assert annotate_call is not None
+
+
+@patch("dashboard.selectors.SilverProjeto.objects")
+def test_get_program_summary_with_both_dates(mock_objects):
+    mock_qs = MagicMock()
+    mock_objects.select_related.return_value = mock_qs
+    mock_qs.values.return_value = mock_qs
+    mock_qs.annotate.return_value = mock_qs
+    mock_qs.order_by.return_value = []
+
+    get_program_summary({"start_date": "2024-01-01", "end_date": "2024-12-31"})
+
+    mock_qs.annotate.assert_called_once()
+
+
+@patch("dashboard.selectors.SilverProjeto.objects")
+def test_get_cost_composition_with_start_date(mock_objects):
+    mock_qs = MagicMock()
+    mock_objects.select_related.return_value = mock_qs
+    mock_qs.aggregate.return_value = {"custo_materiais": 0.0, "custo_horas": 0.0}
+
+    result = get_cost_composition({"start_date": "2024-01-01"})
+
+    mock_qs.aggregate.assert_called_once()
+    assert result["pct_materiais"] == pytest.approx(0.0)
+
+
+@patch("dashboard.selectors.SilverProjeto.objects")
+def test_get_cost_composition_with_end_date(mock_objects):
+    mock_qs = MagicMock()
+    mock_objects.select_related.return_value = mock_qs
+    mock_qs.aggregate.return_value = {"custo_materiais": 500.0, "custo_horas": 500.0}
+
+    result = get_cost_composition({"end_date": "2024-12-31"})
+
+    assert result["custo_total"] == pytest.approx(1000.0)
+    assert result["pct_materiais"] == pytest.approx(50.0)
+    assert result["pct_horas"] == pytest.approx(50.0)
+
+
+@patch("dashboard.selectors.SilverProjeto.objects")
+def test_get_cost_composition_with_both_dates(mock_objects):
+    mock_qs = MagicMock()
+    mock_objects.select_related.return_value = mock_qs
+    mock_qs.aggregate.return_value = {"custo_materiais": 300.0, "custo_horas": 700.0}
+
+    result = get_cost_composition(
+        {"start_date": "2024-01-01", "end_date": "2024-12-31"}
+    )
+
+    assert result["custo_total"] == pytest.approx(1000.0)
+    assert result["pct_materiais"] == pytest.approx(30.0)
+    assert result["pct_horas"] == pytest.approx(70.0)

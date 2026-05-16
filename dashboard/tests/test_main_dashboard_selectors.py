@@ -1,7 +1,8 @@
+# dashboard/tests/test_main_dashboard_selectors.py
 import pytest
 from unittest.mock import MagicMock, patch
 
-from main_dashboard.selectors import (
+from dashboard.selectors import (
     get_cost_composition,
     get_program_summary,
     get_projects_by_period,
@@ -9,7 +10,7 @@ from main_dashboard.selectors import (
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_projects_by_period_filters_correctly(mock_objects):
     mock_qs = mock_objects.filter.return_value
 
@@ -23,7 +24,7 @@ def test_get_projects_by_period_filters_correctly(mock_objects):
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_program_summary_returns_expected_shape(mock_objects):
     mock_qs = MagicMock()
     mock_objects.select_related.return_value = mock_qs
@@ -44,13 +45,13 @@ def test_get_program_summary_returns_expected_shape(mock_objects):
     row = result[0]
     assert row["programa"] == "Programa A"
     assert row["qtd_projetos"] == 2
-    assert row["custo_materiais"] == 1000.0
-    assert row["custo_horas"] == 500.0
-    assert row["custo_total"] == 1500.0
+    assert row["custo_materiais"] == pytest.approx(1000.0)
+    assert row["custo_horas"] == pytest.approx(500.0)
+    assert row["custo_total"] == pytest.approx(1500.0)
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_program_summary_custo_total_is_sum_of_parts(mock_objects):
     mock_qs = MagicMock()
     mock_objects.select_related.return_value = mock_qs
@@ -67,11 +68,11 @@ def test_get_program_summary_custo_total_is_sum_of_parts(mock_objects):
 
     result = get_program_summary({})
 
-    assert result[0]["custo_total"] == round(3333.33 + 1666.67, 2)
+    assert result[0]["custo_total"] == pytest.approx(round(3333.33 + 1666.67, 2))
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_program_summary_null_program_becomes_sem_programa(mock_objects):
     mock_qs = MagicMock()
     mock_objects.select_related.return_value = mock_qs
@@ -92,7 +93,7 @@ def test_get_program_summary_null_program_becomes_sem_programa(mock_objects):
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_program_summary_empty_dataset(mock_objects):
     mock_qs = MagicMock()
     mock_objects.select_related.return_value = mock_qs
@@ -109,7 +110,7 @@ def test_get_program_summary_empty_dataset(mock_objects):
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_program_summary_applies_programa_filter(mock_objects):
     mock_qs = MagicMock()
     mock_objects.select_related.return_value = mock_qs
@@ -118,13 +119,13 @@ def test_get_program_summary_applies_programa_filter(mock_objects):
     mock_qs.annotate.return_value = mock_qs
     mock_qs.order_by.return_value = []
 
-    get_program_summary({"programa": "Programa A"})
+    get_program_summary({"program": "Programa A"})
 
     mock_qs.filter.assert_any_call(programa__nome_programa__iexact="Programa A")
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_program_summary_applies_projeto_filter(mock_objects):
     mock_qs = MagicMock()
     mock_objects.select_related.return_value = mock_qs
@@ -133,13 +134,13 @@ def test_get_program_summary_applies_projeto_filter(mock_objects):
     mock_qs.annotate.return_value = mock_qs
     mock_qs.order_by.return_value = []
 
-    get_program_summary({"projeto": "Projeto X"})
+    get_program_summary({"project": "Projeto X"})
 
     mock_qs.filter.assert_any_call(nome_projeto__iexact="Projeto X")
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_program_summary_no_filter_skips_filter_call(mock_objects):
     mock_qs = MagicMock()
     mock_objects.select_related.return_value = mock_qs
@@ -156,7 +157,7 @@ def test_get_program_summary_no_filter_skips_filter_call(mock_objects):
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_program_summary_orders_by_custo_materiais_desc(mock_objects):
     mock_qs = MagicMock()
     mock_objects.select_related.return_value = mock_qs
@@ -187,89 +188,91 @@ def _composition_mock(mock_objects, custo_materiais=0.0, custo_horas=0.0):
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_cost_composition_calculates_percentages(mock_objects):
     _composition_mock(mock_objects, custo_materiais=600.0, custo_horas=400.0)
 
     result = get_cost_composition({})
 
-    assert result["pct_materiais"] == 60.0
-    assert result["pct_horas"] == 40.0
+    assert result["pct_materiais"] == pytest.approx(60.0)
+    assert result["pct_horas"] == pytest.approx(40.0)
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_cost_composition_percentages_sum_to_100(mock_objects):
     _composition_mock(mock_objects, custo_materiais=750.0, custo_horas=250.0)
 
     result = get_cost_composition({})
 
-    assert round(result["pct_materiais"] + result["pct_horas"], 1) == 100.0
+    assert round(result["pct_materiais"] + result["pct_horas"], 1) == pytest.approx(
+        100.0
+    )
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_cost_composition_zero_total_returns_zero_percentages(mock_objects):
     _composition_mock(mock_objects, custo_materiais=0.0, custo_horas=0.0)
 
     result = get_cost_composition({})
 
-    assert result["pct_materiais"] == 0.0
-    assert result["pct_horas"] == 0.0
+    assert result["pct_materiais"] == pytest.approx(0.0)
+    assert result["pct_horas"] == pytest.approx(0.0)
 
 
 # ── CT02: absolute values ─────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_cost_composition_returns_absolute_values(mock_objects):
     _composition_mock(mock_objects, custo_materiais=450000.0, custo_horas=300000.0)
 
     result = get_cost_composition({})
 
-    assert result["custo_materiais"] == 450000.0
-    assert result["custo_horas"] == 300000.0
-    assert result["custo_total"] == 750000.0
+    assert result["custo_materiais"] == pytest.approx(450000.0)
+    assert result["custo_horas"] == pytest.approx(300000.0)
+    assert result["custo_total"] == pytest.approx(750000.0)
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_cost_composition_rounds_to_two_decimals(mock_objects):
     _composition_mock(mock_objects, custo_materiais=333.333, custo_horas=166.667)
 
     result = get_cost_composition({})
 
-    assert result["custo_materiais"] == 333.33
-    assert result["custo_horas"] == 166.67
-    assert result["custo_total"] == round(333.33 + 166.67, 2)
+    assert result["custo_materiais"] == pytest.approx(333.33)
+    assert result["custo_horas"] == pytest.approx(166.67)
+    assert result["custo_total"] == pytest.approx(round(333.33 + 166.67, 2))
 
 
 # ── CT03: filter application ──────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_cost_composition_applies_programa_filter(mock_objects):
     mock_qs = _composition_mock(mock_objects)
 
-    get_cost_composition({"programa": "Programa X"})
+    get_cost_composition({"program": "Programa X"})
 
     mock_qs.filter.assert_any_call(programa__nome_programa__iexact="Programa X")
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_cost_composition_applies_projeto_filter(mock_objects):
     mock_qs = _composition_mock(mock_objects)
 
-    get_cost_composition({"projeto": "Projeto Y"})
+    get_cost_composition({"project": "Projeto Y"})
 
     mock_qs.filter.assert_any_call(nome_projeto__iexact="Projeto Y")
 
 
 @pytest.mark.django_db
-@patch("main_dashboard.selectors.SilverProjeto.objects")
+@patch("dashboard.selectors.SilverProjeto.objects")
 def test_get_cost_composition_no_filter_skips_filter_call(mock_objects):
     mock_qs = _composition_mock(mock_objects)
 

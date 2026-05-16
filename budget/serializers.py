@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from sca_data.models import SilverProjeto
+from sca_data.models import GoldBudgetSnapshot, SilverProjeto
 
 
 class BudgetProjectSerializer(serializers.ModelSerializer):
@@ -62,4 +62,37 @@ class BudgetProjectSerializer(serializers.ModelSerializer):
     def get_periodo(self, obj):
         if obj.data_inicio:
             return obj.data_inicio.strftime("%Y-%m")
+        if obj.silver_ingested_at:
+            return obj.silver_ingested_at.strftime("%Y-%m")
         return "Sem periodo"
+
+
+class GoldBudgetSnapshotSerializer(serializers.ModelSerializer):
+    projeto = serializers.CharField(source="nome_projeto")
+    programa = serializers.SerializerMethodField()
+    custoMateriais = serializers.FloatField(source="custo_materiais")
+    custoHoras = serializers.FloatField(source="custo_horas")
+    custoReal = serializers.FloatField(source="custo_real")
+    desvioPercent = serializers.FloatField(source="desvio_percent")
+    saude = serializers.CharField(source="saude_financeira")
+    projecaoEstouro = serializers.FloatField(source="projecao_estouro", allow_null=True)
+
+    class Meta:
+        model = GoldBudgetSnapshot
+        fields = [
+            "id",
+            "projeto",
+            "programa",
+            "budget",
+            "custoMateriais",
+            "custoHoras",
+            "custoReal",
+            "desvioPercent",
+            "saude",
+            "projecaoEstouro",
+            "periodo",
+            "status",
+        ]
+
+    def get_programa(self, obj):
+        return obj.nome_programa or "Sem programa"

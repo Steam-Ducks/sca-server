@@ -1,9 +1,11 @@
 import datetime
+import pytest
 from unittest.mock import patch
 
 from django.utils import timezone
 from rest_framework.test import APIClient
 
+from materials.selectors import _parse_periodo
 from materials.views import MaterialsTablePeriodoView
 from sca_data.models import (
     SilverFornecedor,
@@ -114,8 +116,8 @@ def test_periodo_endpoint_retorna_campos_corretos():
         assert item["projeto"] == "Projeto Alpha"
         assert item["programa"] == "Programa Alpha"
         assert item["quantidade"] == 10
-        assert item["valor_unitario"] == 150.00
-        assert item["valor_total"] == 1500.00
+        assert item["valor_unitario"] == pytest.approx(150.00)
+        assert item["valor_total"] == pytest.approx(1500.00)
         assert item["fornecedor"] == "Fornecedor Ltda"
         assert item["categoria"] == "Estrutural"
         assert item["periodo"] == datetime.date(2024, 3, 15)
@@ -163,28 +165,24 @@ def test_periodo_endpoint_com_barra_retorna_404():
 
 
 def test_periodo_endpoint_dezembro_ultimo_dia_correto():
-    view = MaterialsTablePeriodoView()
-    inicio, fim = view._parse_periodo("2024-12")
+    inicio, fim = _parse_periodo("2024-12")
     assert inicio == datetime.date(2024, 12, 1)
     assert fim == datetime.date(2024, 12, 31)
 
 
 def test_periodo_endpoint_janeiro_ultimo_dia_correto():
-    view = MaterialsTablePeriodoView()
-    inicio, fim = view._parse_periodo("2024-01")
+    inicio, fim = _parse_periodo("2024-01")
     assert inicio == datetime.date(2024, 1, 1)
     assert fim == datetime.date(2024, 1, 31)
 
 
 def test_periodo_endpoint_fevereiro_ano_bissexto():
-    view = MaterialsTablePeriodoView()
-    inicio, fim = view._parse_periodo("2024-02")
+    inicio, fim = _parse_periodo("2024-02")
     assert inicio == datetime.date(2024, 2, 1)
     assert fim == datetime.date(2024, 2, 29)
 
 
 def test_periodo_endpoint_fevereiro_ano_nao_bissexto():
-    view = MaterialsTablePeriodoView()
-    inicio, fim = view._parse_periodo("2023-02")
+    inicio, fim = _parse_periodo("2023-02")
     assert inicio == datetime.date(2023, 2, 1)
     assert fim == datetime.date(2023, 2, 28)
