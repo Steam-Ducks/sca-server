@@ -2,7 +2,8 @@ import datetime
 import logging
 import uuid
 import pandas as pd
-from sqlalchemy import text
+from sqlalchemy import text, Table, MetaData
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sca_data.db.connection import get_or_create
 from sca_data.db.enums import OperationStatus
 
@@ -28,18 +29,45 @@ def _ensure_schema(engine):
     logging.info("Schema 'silver' verificado/criado.")
 
 
+def _na_to_none(v):
+    try:
+        return None if pd.isna(v) else v
+    except (TypeError, ValueError):
+        return v
+
+
 def _write_silver(df: pd.DataFrame, engine, tb_name: str) -> int:
     logging.info(f"Writing {tb_name} ...")
 
+    df = df.copy()
     df["silver_ingested_at"] = datetime.datetime.now()
 
-    df.to_sql(
-        tb_name,
-        engine,
-        schema="silver",
-        if_exists="replace",
-        index=False,
+    records = [
+        {k: _na_to_none(v) for k, v in row.items()}
+        for row in df.to_dict(orient="records")
+    ]
+
+    from sqlalchemy import inspect as sa_inspect
+
+    # Ensure id is a primary key — to_sql(if_exists="replace") drops PK constraints
+    inspector = sa_inspect(engine)
+    pk_cols = inspector.get_pk_constraint(tb_name, schema="silver").get(
+        "constrained_columns", []
     )
+    if "id" not in pk_cols:
+        with engine.begin() as conn:
+            conn.execute(text(f'ALTER TABLE silver."{tb_name}" ADD PRIMARY KEY (id)'))
+
+    metadata = MetaData()
+    table = Table(tb_name, metadata, schema="silver", autoload_with=engine)
+
+    with engine.begin() as conn:
+        stmt = pg_insert(table).values(records)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["id"],
+            set_={col: stmt.excluded[col] for col in df.columns if col != "id"},
+        )
+        conn.execute(stmt)
 
     logging.info(f"Table {tb_name} wrote in schema 'silver'!")
     return len(df)
