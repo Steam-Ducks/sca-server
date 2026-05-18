@@ -156,7 +156,7 @@ class CSVUploadView(APIView):
                     )
 
                 silver_fn(engine, run_id, _log_silver)
-            except Exception as exc:
+            except Exception:
                 logger.exception("Silver transform failed for %s", self.csv_type)
 
         return Response(
