@@ -7,8 +7,6 @@ import pandas as pd
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from sca_data.db.connection import get_or_create
-import sca_data.db.audit.audit as audit_mod
 from sca_data.db.enums import OperationStatus, OperationType, LayerSchema
 from imports.schemas import REQUIRED_COLUMNS
 
@@ -17,11 +15,15 @@ logger = logging.getLogger(__name__)
 _MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
 
 _engine = None
+audit_mod = None
 
 
 def _get_engine():
-    global _engine
+    global _engine, audit_mod
     if _engine is None:
+        from sca_data.db.connection import get_or_create
+        import sca_data.db.audit.audit as _am
+        audit_mod = _am
         _engine = get_or_create()
         audit_mod.create_audit(_engine)
     return _engine
