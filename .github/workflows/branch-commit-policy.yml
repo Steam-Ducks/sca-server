@@ -1,0 +1,61 @@
+name: Branch & Commit Policy
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  branch-name:
+    name: Validate branch name
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name pattern
+        uses: deepakputhraya/action-branch-name@master
+        with:
+          regex: '^(SCA|DEVOPS)-[0-9]+-[A-Za-z0-9._-]+$'
+          ignore: develop,main
+          min_length: 7
+          max_length: 80
+
+  commit-messages:
+    name: Validate commit messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit message format
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          header_regex='^(feat|fix|chore|docs|refactor|test|perf|ci|build|style|revert)\((SCA|DEVOPS)-[0-9]+\): .+$'
+          max_len=100
+          fail=0
+          for sha in $(git rev-list "$BASE_SHA".."$HEAD_SHA"); do
+            subject=$(git log -1 --format=%s "$sha")
+            parents=$(git log -1 --format=%P "$sha" | wc -w)
+            if [ "$parents" -gt 1 ]; then
+              echo "skip merge $sha: $subject"
+              continue
+            fi
+            if [[ ! "$subject" =~ $header_regex ]]; then
+              echo "::error::Invalid format ($sha): $subject"
+              echo "  expected: <type>(SCA-NNN|DEVOPS-NNN): <description>"
+              echo "  types: feat|fix|chore|docs|refactor|test|perf|ci|build|style|revert"
+              fail=1
+              continue
+            fi
+            if [ "${#subject}" -gt "$max_len" ]; then
+              echo "::error::Subject too long (${#subject} > $max_len) ($sha): $subject"
+              fail=1
+            fi
+            if [[ "$subject" == *. ]]; then
+              echo "::error::Subject ends with period ($sha): $subject"
+              fail=1
+            fi
+            echo "ok $sha: $subject"
+          done
+          exit $fail

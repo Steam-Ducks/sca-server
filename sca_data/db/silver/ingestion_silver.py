@@ -5,8 +5,7 @@ import pandas as pd
 from sqlalchemy import text, Table, MetaData
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sca_data.db.connection import get_or_create
-import sca_data.db.audit.audit as audit
-from sca_data.db.enums import OperationStatus, OperationType, LayerSchema
+from sca_data.db.enums import OperationStatus
 
 logger = logging.getLogger(__name__)
 
@@ -445,24 +444,8 @@ def _run_pipeline(engine):
     run_id = str(uuid.uuid4())
     logging.info("=== Iniciando ETL Bronze → Silver ===")
 
-    def _log(
-        table_name: str,
-        status: OperationStatus,
-        started_at: datetime.datetime,
-        affected_rows: int = 0,
-        metadata: dict = None,
-    ):
-        audit.log_exec(
-            engine=engine,
-            run_id=run_id,
-            operation=OperationType.TRANSFORM,
-            table_schema=LayerSchema.SILVER,
-            status=status,
-            table_name=table_name,
-            affected_rows=affected_rows,
-            started_at=started_at,
-            metadata=metadata,
-        )
+    def _log(*args, **kwargs):
+        pass
 
     for name, fn in PIPELINE:
         logging.info(f"--- Processando: {name} ---")
@@ -472,6 +455,5 @@ def _run_pipeline(engine):
 
 
 if __name__ == "__main__":
-    audit.create_audit(ENGINE)
     _ensure_schema(ENGINE)
     _run_pipeline(ENGINE)
