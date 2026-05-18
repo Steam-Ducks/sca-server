@@ -52,7 +52,9 @@ def _write_silver(df: pd.DataFrame, engine, tb_name: str) -> int:
 
     # Ensure id is a primary key — to_sql(if_exists="replace") drops PK constraints
     inspector = sa_inspect(engine)
-    pk_cols = inspector.get_pk_constraint(tb_name, schema="silver").get("constrained_columns", [])
+    pk_cols = inspector.get_pk_constraint(tb_name, schema="silver").get(
+        "constrained_columns", []
+    )
     if "id" not in pk_cols:
         with engine.begin() as conn:
             conn.execute(text(f'ALTER TABLE silver."{tb_name}" ADD PRIMARY KEY (id)'))

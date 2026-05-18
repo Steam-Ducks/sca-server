@@ -27,7 +27,9 @@ def _get_engine():
     return _engine
 
 
-def _audit(engine, run_id, operation, status, schema, table, rows, started_at, meta=None):
+def _audit(
+    engine, run_id, operation, status, schema, table, rows, started_at, meta=None
+):
     try:
         audit_mod.log_exec(
             engine=engine,
@@ -104,15 +106,29 @@ class CSVUploadView(APIView):
         except Exception as exc:
             logger.exception("Bronze ingestion failed for %s", self.csv_type)
             _audit(
-                engine, run_id, OperationType.INGEST, OperationStatus.FAILED,
-                LayerSchema.BRONZE, self.csv_type, 0, started_at,
+                engine,
+                run_id,
+                OperationType.INGEST,
+                OperationStatus.FAILED,
+                LayerSchema.BRONZE,
+                self.csv_type,
+                0,
+                started_at,
                 {"source": "csv_upload", "filename": file.name, "error": str(exc)},
             )
-            return Response({"error": f"Erro ao salvar dados brutos: {exc}"}, status=500)
+            return Response(
+                {"error": f"Erro ao salvar dados brutos: {exc}"}, status=500
+            )
 
         _audit(
-            engine, run_id, OperationType.INGEST, OperationStatus.SUCCESS,
-            LayerSchema.BRONZE, self.csv_type, len(df), started_at,
+            engine,
+            run_id,
+            OperationType.INGEST,
+            OperationStatus.SUCCESS,
+            LayerSchema.BRONZE,
+            self.csv_type,
+            len(df),
+            started_at,
             {"source": "csv_upload", "filename": file.name},
         )
 
@@ -121,21 +137,32 @@ class CSVUploadView(APIView):
             try:
                 _ensure_silver_schema(engine)
 
-                def _log_silver(table_name, op_status, st, affected_rows=0, metadata=None):
+                def _log_silver(
+                    table_name, op_status, st, affected_rows=0, metadata=None
+                ):
                     _audit(
-                        engine, run_id, OperationType.TRANSFORM, op_status,
-                        LayerSchema.SILVER, table_name, affected_rows, st, metadata,
+                        engine,
+                        run_id,
+                        OperationType.TRANSFORM,
+                        op_status,
+                        LayerSchema.SILVER,
+                        table_name,
+                        affected_rows,
+                        st,
+                        metadata,
                     )
 
                 silver_fn(engine, run_id, _log_silver)
             except Exception as exc:
                 logger.exception("Silver transform failed for %s", self.csv_type)
 
-        return Response({
-            "run_id": run_id,
-            "tabela": self.csv_type,
-            "linhas_recebidas": len(df),
-        })
+        return Response(
+            {
+                "run_id": run_id,
+                "tabela": self.csv_type,
+                "linhas_recebidas": len(df),
+            }
+        )
 
 
 class ProgramasUploadView(CSVUploadView):
