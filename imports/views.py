@@ -23,6 +23,7 @@ def _get_engine():
     if _engine is None:
         from sca_data.db.connection import get_or_create
         import sca_data.db.audit.audit as _am
+
         audit_mod = _am
         _engine = get_or_create()
         audit_mod.create_audit(_engine)
