@@ -17,3 +17,11 @@ if not os.environ.get("DB_HOST"):
     INSTALLED_APPS = [
         app for app in INSTALLED_APPS if not app.startswith("sca_data")  # noqa: F405
     ]
+else:
+    # TEST.NAME garante que o pytest use o mesmo banco onde o CI
+    # já criou os schemas (silver/gold/audit) e rodou as migrations.
+    # Sem isso, o Django cria "test_test_db" — vazio, sem schemas.
+    DATABASES["default"]["TEST"] = {  # noqa: F405
+        "NAME": os.environ.get("DB_NAME", "test_db"),
+    }
+ 
