@@ -129,7 +129,7 @@ class TestBudgetSnapshotGoldIntegration:
             gold_updated_at=datetime.now(tz=timezone.utc),
         )
 
-        response = APIClient().get("/api/budget/?program=MANSUP")
+        response = APIClient().get("/api/budget/?programa=MANSUP")
         assert response.status_code == 200
         # FIX: serializer usa "projeto" (não "nome_projeto")
         nomes = [p["projeto"] for p in response.data["data"]]

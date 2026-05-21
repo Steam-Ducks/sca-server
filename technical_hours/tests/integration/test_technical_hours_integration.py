@@ -135,7 +135,7 @@ class TestTechnicalHoursTableIntegration:
         assert response.status_code == 200
         assert len(response.data) >= 1
         for item in response.data:
-            assert item.get("data", "").startswith("2024-03")
+            assert item.get("periodo", "").startswith("2024-03")
 
     def test_filtro_por_data_inicio_e_fim(self, tarefa):
         SilverTempoTarefa.objects.create(
@@ -161,7 +161,7 @@ class TestTechnicalHoursTableIntegration:
         assert response.status_code == 200
         assert len(response.data) >= 1
         for item in response.data:
-            assert item["data"].startswith("2024-04")
+            assert item.get("periodo", "").startswith("2024-04")
 
     def test_data_inicio_posterior_a_data_fim_retorna_400(self):
         # CTI-06 (adicional): data_inicio > data_fim → 400 ValidationError
