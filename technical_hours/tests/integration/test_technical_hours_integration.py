@@ -13,6 +13,7 @@ Fonte: technical_hours/urls.py
 import os
 import pytest
 from datetime import date, datetime, timezone
+from rest_framework.test import APIClient
 
 from sca_data.models import (
     SilverPrograma,
@@ -35,11 +36,6 @@ pytestmark = [
 
 # URL correta conforme technical_hours/urls.py
 HORAS_URL = "/api/horas-tecnicas/"
-
-
-@pytest.fixture
-def client(api_client):
-    return api_client
 
 
 @pytest.fixture
@@ -105,19 +101,19 @@ class TestTechnicalHoursTableIntegration:
     Conjunto: get_queryset (filtros) + TechnicalHoursTableView + serializer
     """
 
-    def test_lista_retorna_200(self, client):
-        response = client.get(HORAS_URL)
+    def test_lista_retorna_200(self):
+        response = APIClient().get(HORAS_URL)
         assert response.status_code == 200
 
-    def test_lista_vazia_com_banco_vazio(self, client):
-        response = client.get(HORAS_URL)
+    def test_lista_vazia_com_banco_vazio(self):
+        response = APIClient().get(HORAS_URL)
         assert response.data == []
 
-    def test_retorna_horas_reais_do_banco(self, horas_marco, client):
-        response = client.get(HORAS_URL)
+    def test_retorna_horas_reais_do_banco(self, horas_marco):
+        response = APIClient().get(HORAS_URL)
         assert len(response.data) >= 2
 
-    def test_filtro_por_periodo_retorna_apenas_horas_do_mes(self, tarefa, client):
+    def test_filtro_por_periodo_retorna_apenas_horas_do_mes(self, tarefa):
         SilverTempoTarefa.objects.create(
             id=810,
             tarefa=tarefa,
@@ -135,13 +131,13 @@ class TestTechnicalHoursTableIntegration:
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
 
-        response = client.get(f"{HORAS_URL}?periodo=2024-03")
+        response = APIClient().get(f"{HORAS_URL}?periodo=2024-03")
         assert response.status_code == 200
         assert len(response.data) >= 1
         for item in response.data:
-            assert item.get("periodo", "").startswith("2024-03")
+            assert item.get("data", "").startswith("2024-03")
 
-    def test_filtro_por_data_inicio_e_fim(self, tarefa, client):
+    def test_filtro_por_data_inicio_e_fim(self, tarefa):
         SilverTempoTarefa.objects.create(
             id=820,
             tarefa=tarefa,
@@ -159,14 +155,18 @@ class TestTechnicalHoursTableIntegration:
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
 
-        response = client.get(f"{HORAS_URL}?data_inicio=2024-04-01&data_fim=2024-04-30")
+        response = APIClient().get(
+            f"{HORAS_URL}?data_inicio=2024-04-01&data_fim=2024-04-30"
+        )
         assert response.status_code == 200
         assert len(response.data) >= 1
         for item in response.data:
-            assert item.get("periodo", "").startswith("2024-04")
+            assert item["data"].startswith("2024-04")
 
-    def test_data_inicio_posterior_a_data_fim_retorna_400(self, client):
+    def test_data_inicio_posterior_a_data_fim_retorna_400(self):
         # CTI-06 (adicional): data_inicio > data_fim → 400 ValidationError
         # Valida: _filters_from_date_range levanta erro propagado pela view
-        response = client.get(f"{HORAS_URL}?data_inicio=2024-06-01&data_fim=2024-01-01")
+        response = APIClient().get(
+            f"{HORAS_URL}?data_inicio=2024-06-01&data_fim=2024-01-01"
+        )
         assert response.status_code == 400

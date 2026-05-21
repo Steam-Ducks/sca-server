@@ -17,6 +17,7 @@ Funções do conjunto:
 import os
 import pytest
 from datetime import datetime, timezone
+from rest_framework.test import APIClient
 
 from sca_data.models import GoldBudgetSnapshot
 
@@ -30,11 +31,6 @@ pytestmark = [
     pytest.mark.integration,
     pytest.mark.django_db,
 ]
-
-
-@pytest.fixture
-def client(api_client):
-    return api_client
 
 
 @pytest.fixture
@@ -69,23 +65,23 @@ class TestBudgetSnapshotGoldIntegration:
     custoHoras, custoReal, desvioPercent, saude, projecaoEstouro, periodo, status.
     """
 
-    def test_retorna_200(self, client):
+    def test_retorna_200(self):
         # CTI-01 (mínimo): banco vazio → GET retorna 200
         # Valida: rota /api/budget/ registrada e view responde sem dados
-        response = client.get("/api/budget/")
+        response = APIClient().get("/api/budget/")
         assert response.status_code == 200
 
-    def test_retorna_estrutura_data_e_last_updated_at(self, client):
+    def test_retorna_estrutura_data_e_last_updated_at(self):
         # CTI-02 (mínimo): estrutura do envelope de resposta
         # Valida: serializer retorna {"data": [...], "last_updated_at": ...}
-        response = client.get("/api/budget/")
+        response = APIClient().get("/api/budget/")
         assert "data" in response.data
         assert "last_updated_at" in response.data
 
-    def test_usa_dados_gold_quando_disponiveis(self, snapshot_gold, client):
+    def test_usa_dados_gold_quando_disponiveis(self, snapshot_gold):
         # CTI-03 (mínimo): dado inserido na gold → aparece na resposta
         # Valida: selector lê GoldBudgetSnapshot → view → serializer → response
-        response = client.get("/api/budget/")
+        response = APIClient().get("/api/budget/")
 
         assert response.status_code == 200
         assert len(response.data["data"]) == 1
@@ -93,27 +89,27 @@ class TestBudgetSnapshotGoldIntegration:
         assert projeto_data["projeto"] == "Conversor AC-DC"
         assert float(projeto_data["budget"]) == 500_000.0
 
-    def test_saude_financeira_reflete_valor_do_banco(self, snapshot_gold, client):
+    def test_saude_financeira_reflete_valor_do_banco(self, snapshot_gold):
         # CTI-04 (adicional): campo renomeado pelo serializer
         # Valida: saude_financeira (modelo) → "saude" (resposta camelCase)
-        response = client.get("/api/budget/")
+        response = APIClient().get("/api/budget/")
         projeto_data = response.data["data"][0]
         assert projeto_data["saude"] == "Saudável"
 
-    def test_last_updated_at_retorna_timestamp_da_gold(self, snapshot_gold, client):
+    def test_last_updated_at_retorna_timestamp_da_gold(self, snapshot_gold):
         # CTI-05 (adicional): metadado de atualização
         # Valida: gold_updated_at do banco chega como last_updated_at na resposta
-        response = client.get("/api/budget/")
+        response = APIClient().get("/api/budget/")
         assert response.data["last_updated_at"] is not None
 
-    def test_gold_vazia_retorna_lista_vazia_de_dados(self, client):
+    def test_gold_vazia_retorna_lista_vazia_de_dados(self):
         # CTI-06 (adicional): banco vazio → data é lista vazia, não null/erro
         # Valida: robustez da view quando gold não tem registros
-        response = client.get("/api/budget/")
+        response = APIClient().get("/api/budget/")
         assert response.status_code == 200
         assert isinstance(response.data["data"], list)
 
-    def test_filtro_por_programa_retorna_apenas_dados_do_programa(self, db, client):
+    def test_filtro_por_programa_retorna_apenas_dados_do_programa(self, db):
         # CTI-07 (mínimo): filtro ?program= → isola dados do programa
         # Valida: filtro passado via query param → selector aplica WHERE → response filtrado
         GoldBudgetSnapshot.objects.create(
@@ -133,7 +129,7 @@ class TestBudgetSnapshotGoldIntegration:
             gold_updated_at=datetime.now(tz=timezone.utc),
         )
 
-        response = client.get("/api/budget/?programa=MANSUP")
+        response = APIClient().get("/api/budget/?program=MANSUP")
         assert response.status_code == 200
         # FIX: serializer usa "projeto" (não "nome_projeto")
         nomes = [p["projeto"] for p in response.data["data"]]
