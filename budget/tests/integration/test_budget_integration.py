@@ -3,53 +3,28 @@ Conjunto de integração: Budget (Saúde Financeira)
 
 Funções do conjunto:
     get_budget_snapshot_gold (selectors) — lê GoldBudgetSnapshot
-    get_budget_snapshot (selectors)      — fallback: lê Silver via ORM
-    get_budget_last_updated_at_gold      — timestamp da última atualização gold
     BudgetSnapshotView (views.py)        — GET /api/budget/
-    GoldBudgetSnapshotSerializer         — serializa snapshot gold
-    BudgetProjectSerializer              — serializa dados live silver
-
-Lógica especial do conjunto:
-    A view prioriza dados da tabela gold (pré-computados) quando disponíveis.
-    Se a gold estiver vazia, usa dados silver em tempo real.
-    Este conjunto valida os dois caminhos.
+    GoldBudgetSnapshotSerializer         — renomeia campos do modelo:
+        nome_projeto     → "projeto"
+        saude_financeira → "saude"
+        custo_materiais  → "custoMateriais"
+        custo_horas      → "custoHoras"
+        custo_real       → "custoReal"
+        desvio_percent   → "desvioPercent"
+        projecao_estouro → "projecaoEstouro"
 """
 
 import pytest
 from datetime import datetime, timezone
 from rest_framework.test import APIClient
 
-from sca_data.models import GoldBudgetSnapshot, SilverPrograma, SilverProjeto
-
-
-@pytest.fixture
-def programa(db):
-    return SilverPrograma.objects.create(
-        id=600,
-        codigo_programa="MAXAC",
-        nome_programa="MAX 1.2 AC",
-        status="Em andamento",
-        silver_ingested_at=datetime.now(tz=timezone.utc),
-    )
-
-
-@pytest.fixture
-def projeto(db, programa):
-    return SilverProjeto.objects.create(
-        id=600,
-        codigo_projeto="PROJ-600",
-        nome_projeto="Conversor AC-DC",
-        programa=programa,
-        custo_hora=180.0,
-        status="Em andamento",
-        silver_ingested_at=datetime.now(tz=timezone.utc),
-    )
+from sca_data.models import GoldBudgetSnapshot
 
 
 @pytest.fixture
 def snapshot_gold(db):
     return GoldBudgetSnapshot.objects.create(
-        projeto_id=600,
+        id=600,
         nome_projeto="Conversor AC-DC",
         nome_programa="MAX 1.2 AC",
         gerente_programa="Gerente Gold",
@@ -74,7 +49,9 @@ class TestBudgetSnapshotGoldIntegration:
     CT-INT-BUDG-01
     Conjunto: get_budget_snapshot_gold + BudgetSnapshotView + GoldBudgetSnapshotSerializer
 
-    Caminho primário: gold table populada → view usa dados gold.
+    NOTA: O serializer usa camelCase e renomeia campos do modelo.
+    Campos retornados na resposta: projeto, programa, budget, custoMateriais,
+    custoHoras, custoReal, desvioPercent, saude, projecaoEstouro, periodo, status.
     """
 
     def test_retorna_200(self):
@@ -92,23 +69,24 @@ class TestBudgetSnapshotGoldIntegration:
         assert response.status_code == 200
         assert len(response.data["data"]) == 1
         projeto_data = response.data["data"][0]
-        assert projeto_data["nome_projeto"] == "Conversor AC-DC"
+        # FIX: serializer usa "projeto" (não "nome_projeto")
+        assert projeto_data["projeto"] == "Conversor AC-DC"
         assert float(projeto_data["budget"]) == 500_000.0
 
     def test_saude_financeira_reflete_valor_do_banco(self, snapshot_gold):
         response = APIClient().get("/api/budget/")
         projeto_data = response.data["data"][0]
-        assert projeto_data["saude_financeira"] == "Saudável"
+        # FIX: serializer usa "saude" (não "saude_financeira")
+        assert projeto_data["saude"] == "Saudável"
 
     def test_last_updated_at_retorna_timestamp_da_gold(self, snapshot_gold):
         response = APIClient().get("/api/budget/")
         assert response.data["last_updated_at"] is not None
 
     def test_gold_vazia_retorna_lista_vazia_de_dados(self):
-        """Com gold vazia e sem dados silver, retorna data vazia."""
         response = APIClient().get("/api/budget/")
         assert response.status_code == 200
-        assert response.data["data"] == [] or isinstance(response.data["data"], list)
+        assert isinstance(response.data["data"], list)
 
     def test_filtro_por_programa_retorna_apenas_dados_do_programa(self, db):
         GoldBudgetSnapshot.objects.create(
@@ -125,8 +103,8 @@ class TestBudgetSnapshotGoldIntegration:
         )
 
         response = APIClient().get("/api/budget/?program=MANSUP")
-
         assert response.status_code == 200
-        nomes = [p["nome_projeto"] for p in response.data["data"]]
+        # FIX: serializer usa "projeto" (não "nome_projeto")
+        nomes = [p["projeto"] for p in response.data["data"]]
         assert "Proj MANSUP" in nomes
         assert "Proj INFRA" not in nomes

@@ -2,14 +2,12 @@
 Conjunto de integração: Technical Hours (Horas Técnicas)
 
 Funções do conjunto:
-    _parse_date (views.py)              — valida e converte data string
-    _parse_periodo (views.py)           — converte YYYY-MM em intervalo
     get_queryset (views.py)             — aplica filtros ao ORM
-    TechnicalHoursTableView (views.py)  — GET /api/technical-hours/
+    TechnicalHoursTableView (views.py)  — endpoint GET /api/horas-tecnicas/
     TechnicalHoursTableSerializer       — serializa horas técnicas
 
-O conjunto valida que os filtros de data/período/programa/projeto
-produzem o conjunto correto de registros a partir dos dados reais do banco.
+FIX: URL correta é /api/horas-tecnicas/ (não /api/technical-hours/)
+Fonte: technical_hours/urls.py
 """
 
 import pytest
@@ -22,6 +20,9 @@ from sca_data.models import (
     SilverTarefaProjeto,
     SilverTempoTarefa,
 )
+
+# URL correta conforme technical_hours/urls.py
+HORAS_URL = "/api/horas-tecnicas/"
 
 
 @pytest.fixture
@@ -73,42 +74,34 @@ class TestTechnicalHoursTableIntegration:
     """
 
     def test_lista_retorna_200(self):
-        response = APIClient().get("/api/technical-hours/")
+        response = APIClient().get(HORAS_URL)
         assert response.status_code == 200
 
     def test_lista_vazia_com_banco_vazio(self):
-        response = APIClient().get("/api/technical-hours/")
+        response = APIClient().get(HORAS_URL)
         assert response.data == []
 
     def test_retorna_horas_reais_do_banco(self, horas_marco):
-        response = APIClient().get("/api/technical-hours/")
+        response = APIClient().get(HORAS_URL)
         assert len(response.data) >= 2
 
-    def test_filtro_por_periodo_retorna_apenas_horas_do_mes(
-        self, tarefa
-    ):
-        # Horas em março — devem aparecer
+    def test_filtro_por_periodo_retorna_apenas_horas_do_mes(self, tarefa):
         SilverTempoTarefa.objects.create(
             id=810, tarefa=tarefa, usuario="dev2@sca.com",
             data=date(2024, 3, 15), horas_trabalhadas=6.0,
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
-        # Horas em julho — NÃO devem aparecer
         SilverTempoTarefa.objects.create(
             id=811, tarefa=tarefa, usuario="dev2@sca.com",
             data=date(2024, 7, 10), horas_trabalhadas=99.0,
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
 
-        response = APIClient().get("/api/technical-hours/?periodo=2024-03")
-
+        response = APIClient().get(f"{HORAS_URL}?periodo=2024-03")
         assert response.status_code == 200
         assert len(response.data) >= 1
         for item in response.data:
-            data_str = item.get("data", "")
-            assert data_str.startswith("2024-03"), (
-                f"Horas fora do período encontradas: {data_str}"
-            )
+            assert item.get("data", "").startswith("2024-03")
 
     def test_filtro_por_data_inicio_e_fim(self, tarefa):
         SilverTempoTarefa.objects.create(
@@ -123,9 +116,8 @@ class TestTechnicalHoursTableIntegration:
         )
 
         response = APIClient().get(
-            "/api/technical-hours/?data_inicio=2024-04-01&data_fim=2024-04-30"
+            f"{HORAS_URL}?data_inicio=2024-04-01&data_fim=2024-04-30"
         )
-
         assert response.status_code == 200
         assert len(response.data) >= 1
         for item in response.data:
@@ -133,6 +125,6 @@ class TestTechnicalHoursTableIntegration:
 
     def test_data_inicio_posterior_a_data_fim_retorna_400(self):
         response = APIClient().get(
-            "/api/technical-hours/?data_inicio=2024-06-01&data_fim=2024-01-01"
+            f"{HORAS_URL}?data_inicio=2024-06-01&data_fim=2024-01-01"
         )
         assert response.status_code == 400

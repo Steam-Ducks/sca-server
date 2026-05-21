@@ -24,4 +24,3 @@ else:
     DATABASES["default"]["TEST"] = {  # noqa: F405
         "NAME": os.environ.get("DB_NAME", "test_db"),
     }
- 
