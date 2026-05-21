@@ -129,13 +129,8 @@ def test_materials_indicators_retorna_campos_corretos(api_client):
     with patch.object(
         MaterialsIndicatorsView, "_build_materiais_queryset", return_value=mock_qs
     ):
-<<<<<<< HEAD
         response = api_client.get("/api/materials/indicators/")
-        assert response.data["custo_total"] == 4500.53
-=======
-        response = APIClient().get("/api/materials/indicators/")
         assert response.data["custo_total"] == pytest.approx(4500.53)
->>>>>>> 9e90797c56ff7b00c563e37e5eaafc8d008674dc
         assert response.data["total_itens"] == 3
         assert response.data["custo_medio"] == pytest.approx(1500.27)
 
@@ -253,42 +248,42 @@ def _mock_top_materials(data=None):
     return mock
 
 
-def test_top_materials_retorna_200():
+def test_top_materials_retorna_200(api_client):
     with patch("materials.views.get_top_materials_by_financial_impact") as mock_fn:
         mock_fn.return_value = [{"material": "Cabo de aço", "total_cost": 9000.00}]
-        response = APIClient().get("/api/top-materials/")
+        response = api_client.get("/api/top-materials/")
     assert response.status_code == 200
 
 
-def test_top_materials_retorna_lista_vazia():
+def test_top_materials_retorna_lista_vazia(api_client):
     with patch("materials.views.get_top_materials_by_financial_impact") as mock_fn:
         mock_fn.return_value = []
-        response = APIClient().get("/api/top-materials/")
+        response = api_client.get("/api/top-materials/")
     assert response.status_code == 200
     assert response.data == []
 
 
-def test_top_materials_retorna_campos_corretos():
+def test_top_materials_retorna_campos_corretos(api_client):
     with patch("materials.views.get_top_materials_by_financial_impact") as mock_fn:
         mock_fn.return_value = [{"material": "Cabo de aço", "total_cost": 9000.50}]
-        response = APIClient().get("/api/top-materials/")
+        response = api_client.get("/api/top-materials/")
     assert response.data[0]["material"] == "Cabo de aço"
     assert response.data[0]["total_cost"] == 9000.50
 
 
-def test_top_materials_aceita_filtro_periodo():
+def test_top_materials_aceita_filtro_periodo(api_client):
     with patch("materials.views.get_top_materials_by_financial_impact") as mock_fn:
         mock_fn.return_value = []
-        response = APIClient().get("/api/top-materials/?periodo=2024-03")
+        response = api_client.get("/api/top-materials/?periodo=2024-03")
     assert response.status_code == 200
     call_params = mock_fn.call_args[0][0]
     assert call_params.get("periodo") == "2024-03"
 
 
-def test_top_materials_aceita_filtro_data_inicio_e_fim():
+def test_top_materials_aceita_filtro_data_inicio_e_fim(api_client):
     with patch("materials.views.get_top_materials_by_financial_impact") as mock_fn:
         mock_fn.return_value = []
-        response = APIClient().get(
+        response = api_client.get(
             "/api/top-materials/?data_inicio=2024-03-01&data_fim=2024-03-31"
         )
     assert response.status_code == 200
@@ -297,23 +292,23 @@ def test_top_materials_aceita_filtro_data_inicio_e_fim():
     assert call_params.get("data_fim") == "2024-03-31"
 
 
-def test_top_materials_limit_customizado():
+def test_top_materials_limit_customizado(api_client):
     with patch("materials.views.get_top_materials_by_financial_impact") as mock_fn:
         mock_fn.return_value = []
-        APIClient().get("/api/top-materials/?limit=5")
+        api_client.get("/api/top-materials/?limit=5")
     assert mock_fn.call_args[1]["limit"] == 5
 
 
-def test_top_materials_limit_invalido_retorna_400():
-    response = APIClient().get("/api/top-materials/?limit=abc")
+def test_top_materials_limit_invalido_retorna_400(api_client):
+    response = api_client.get("/api/top-materials/?limit=abc")
     assert response.status_code == 400
     assert "limit" in response.data
 
 
-def test_top_materials_aceita_filtro_programa():
+def test_top_materials_aceita_filtro_programa(api_client):
     with patch("materials.views.get_top_materials_by_financial_impact") as mock_fn:
         mock_fn.return_value = []
-        APIClient().get("/api/top-materials/?programa=Programa+Alpha")
+        api_client.get("/api/top-materials/?programa=Programa+Alpha")
     call_params = mock_fn.call_args[0][0]
     assert call_params.get("programa") == "Programa Alpha"
 
@@ -321,54 +316,54 @@ def test_top_materials_aceita_filtro_programa():
 # ─── CostByProjectView ────────────────────────────────────────────────────────
 
 
-def test_cost_by_project_retorna_200():
+def test_cost_by_project_retorna_200(api_client):
     with patch("materials.views.get_cost_by_project") as mock_fn:
         mock_fn.return_value = []
-        response = APIClient().get("/api/cost-by-project/")
+        response = api_client.get("/api/cost-by-project/")
     assert response.status_code == 200
 
 
-def test_cost_by_project_retorna_lista_vazia():
+def test_cost_by_project_retorna_lista_vazia(api_client):
     with patch("materials.views.get_cost_by_project") as mock_fn:
         mock_fn.return_value = []
-        response = APIClient().get("/api/cost-by-project/")
+        response = api_client.get("/api/cost-by-project/")
     assert response.data == []
 
 
-def test_cost_by_project_retorna_campos_corretos():
+def test_cost_by_project_retorna_campos_corretos(api_client):
     from decimal import Decimal
 
     with patch("materials.views.get_cost_by_project") as mock_fn:
         mock_fn.return_value = [
             {"projeto": "Projeto Alpha", "total_cost": Decimal("5000.75")}
         ]
-        response = APIClient().get("/api/cost-by-project/")
+        response = api_client.get("/api/cost-by-project/")
     assert response.data[0]["projeto"] == "Projeto Alpha"
     assert response.data[0]["total_cost"] == 5000.75
 
 
-def test_cost_by_project_converte_decimal_para_float():
+def test_cost_by_project_converte_decimal_para_float(api_client):
     from decimal import Decimal
 
     with patch("materials.views.get_cost_by_project") as mock_fn:
         mock_fn.return_value = [{"projeto": "Proj X", "total_cost": Decimal("1234.56")}]
-        response = APIClient().get("/api/cost-by-project/")
+        response = api_client.get("/api/cost-by-project/")
     assert isinstance(response.data[0]["total_cost"], float)
 
 
-def test_cost_by_project_aceita_filtro_periodo():
+def test_cost_by_project_aceita_filtro_periodo(api_client):
     with patch("materials.views.get_cost_by_project") as mock_fn:
         mock_fn.return_value = []
-        response = APIClient().get("/api/cost-by-project/?periodo=2024-03")
+        response = api_client.get("/api/cost-by-project/?periodo=2024-03")
     assert response.status_code == 200
     call_params = mock_fn.call_args[0][0]
     assert call_params.get("periodo") == "2024-03"
 
 
-def test_cost_by_project_aceita_filtro_data_inicio_e_fim():
+def test_cost_by_project_aceita_filtro_data_inicio_e_fim(api_client):
     with patch("materials.views.get_cost_by_project") as mock_fn:
         mock_fn.return_value = []
-        response = APIClient().get(
+        response = api_client.get(
             "/api/cost-by-project/?data_inicio=2024-01-01&data_fim=2024-03-31"
         )
     assert response.status_code == 200
@@ -377,10 +372,10 @@ def test_cost_by_project_aceita_filtro_data_inicio_e_fim():
     assert call_params.get("data_fim") == "2024-03-31"
 
 
-def test_cost_by_project_total_cost_none_retorna_zero():
+def test_cost_by_project_total_cost_none_retorna_zero(api_client):
     with patch("materials.views.get_cost_by_project") as mock_fn:
         mock_fn.return_value = [{"projeto": "Proj Y", "total_cost": None}]
-        response = APIClient().get("/api/cost-by-project/")
+        response = api_client.get("/api/cost-by-project/")
     assert response.data[0]["total_cost"] == 0.0
 
 
@@ -398,19 +393,19 @@ _FILTER_OPTIONS_FIXTURE = {
 }
 
 
-def test_filter_options_retorna_200():
+def test_filter_options_retorna_200(api_client):
     with patch(
         "materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE
     ):
-        response = APIClient().get("/api/materials/filter-options/")
+        response = api_client.get("/api/materials/filter-options/")
     assert response.status_code == 200
 
 
-def test_filter_options_retorna_todas_as_chaves():
+def test_filter_options_retorna_todas_as_chaves(api_client):
     with patch(
         "materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE
     ):
-        response = APIClient().get("/api/materials/filter-options/")
+        response = api_client.get("/api/materials/filter-options/")
     assert set(response.data.keys()) == {
         "periodos",
         "programas",
@@ -420,26 +415,26 @@ def test_filter_options_retorna_todas_as_chaves():
     }
 
 
-def test_filter_options_periodos_sao_strings_yyyy_mm():
+def test_filter_options_periodos_sao_strings_yyyy_mm(api_client):
     with patch(
         "materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE
     ):
-        response = APIClient().get("/api/materials/filter-options/")
+        response = api_client.get("/api/materials/filter-options/")
     for p in response.data["periodos"]:
         assert len(p) == 7 and p[4] == "-", f"Período inválido: {p}"
 
 
-def test_filter_options_projetos_tem_nome_e_programa():
+def test_filter_options_projetos_tem_nome_e_programa(api_client):
     with patch(
         "materials.views.get_filter_options", return_value=_FILTER_OPTIONS_FIXTURE
     ):
-        response = APIClient().get("/api/materials/filter-options/")
+        response = api_client.get("/api/materials/filter-options/")
     for proj in response.data["projetos"]:
         assert "nome" in proj
         assert "programa" in proj
 
 
-def test_filter_options_retorna_listas_vazias_sem_dados():
+def test_filter_options_retorna_listas_vazias_sem_dados(api_client):
     vazio = {
         "periodos": [],
         "programas": [],
@@ -448,7 +443,7 @@ def test_filter_options_retorna_listas_vazias_sem_dados():
         "fornecedores": [],
     }
     with patch("materials.views.get_filter_options", return_value=vazio):
-        response = APIClient().get("/api/materials/filter-options/")
+        response = api_client.get("/api/materials/filter-options/")
     assert response.status_code == 200
     assert response.data["periodos"] == []
     assert response.data["projetos"] == []
