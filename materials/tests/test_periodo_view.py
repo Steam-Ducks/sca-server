@@ -2,7 +2,6 @@ import datetime
 from unittest.mock import patch
 
 from django.utils import timezone
-from rest_framework.test import APIClient
 
 from materials.views import MaterialsTablePeriodoView
 from sca_data.models import (
@@ -85,30 +84,30 @@ def _make_pedido(
 # ---------------------------------------------------------------------------
 
 
-def test_periodo_endpoint_retorna_200():
+def test_periodo_endpoint_retorna_200(api_client):
     with patch.object(MaterialsTablePeriodoView, "get_queryset", return_value=[]):
-        response = APIClient().get(f"{URL}2024-03/")
+        response = api_client.get(f"{URL}2024-03/")
         assert response.status_code == 200
 
 
-def test_periodo_endpoint_retorna_lista_vazia():
+def test_periodo_endpoint_retorna_lista_vazia(api_client):
     with patch.object(MaterialsTablePeriodoView, "get_queryset", return_value=[]):
-        response = APIClient().get(f"{URL}2024-03/")
+        response = api_client.get(f"{URL}2024-03/")
         assert response.data == []
 
 
-def test_periodo_endpoint_retorna_lista():
+def test_periodo_endpoint_retorna_lista(api_client):
     pedido = _make_pedido()
     with patch.object(MaterialsTablePeriodoView, "get_queryset", return_value=[pedido]):
-        response = APIClient().get(f"{URL}2024-03/")
+        response = api_client.get(f"{URL}2024-03/")
         assert isinstance(response.data, list)
         assert len(response.data) == 1
 
 
-def test_periodo_endpoint_retorna_campos_corretos():
+def test_periodo_endpoint_retorna_campos_corretos(api_client):
     pedido = _make_pedido()
     with patch.object(MaterialsTablePeriodoView, "get_queryset", return_value=[pedido]):
-        response = APIClient().get(f"{URL}2024-03/")
+        response = api_client.get(f"{URL}2024-03/")
         item = response.data[0]
         assert item["material"] == "Cabo de aço"
         assert item["projeto"] == "Projeto Alpha"
@@ -121,7 +120,7 @@ def test_periodo_endpoint_retorna_campos_corretos():
         assert item["periodo"] == datetime.date(2024, 3, 15)
 
 
-def test_periodo_endpoint_multiplos_registros():
+def test_periodo_endpoint_multiplos_registros(api_client):
     pedido1 = _make_pedido(id=1)
     pedido2 = _make_pedido(
         id=2,
@@ -138,27 +137,27 @@ def test_periodo_endpoint_multiplos_registros():
     with patch.object(
         MaterialsTablePeriodoView, "get_queryset", return_value=[pedido1, pedido2]
     ):
-        response = APIClient().get(f"{URL}2024-03/")
+        response = api_client.get(f"{URL}2024-03/")
         assert response.status_code == 200
         assert len(response.data) == 2
         assert response.data[0]["material"] == "Cabo de aço"
         assert response.data[1]["material"] == "Tubo galvanizado"
 
 
-def test_periodo_endpoint_periodo_invalido_retorna_400():
-    response = APIClient().get(f"{URL}2024-13/")
+def test_periodo_endpoint_periodo_invalido_retorna_400(api_client):
+    response = api_client.get(f"{URL}2024-13/")
     assert response.status_code == 400
     assert "periodo" in response.data
 
 
-def test_periodo_endpoint_formato_errado_retorna_400():
+def test_periodo_endpoint_formato_errado_retorna_400(api_client):
     for bad in ["202403", "abcd-ef", "2024-3"]:
-        response = APIClient().get(f"{URL}{bad}/")
+        response = api_client.get(f"{URL}{bad}/")
         assert response.status_code == 400, f"Esperado 400 para '{bad}'"
 
 
-def test_periodo_endpoint_com_barra_retorna_404():
-    response = APIClient().get("/api/compras/periodo/2024/03/")
+def test_periodo_endpoint_com_barra_retorna_404(api_client):
+    response = api_client.get("/api/compras/periodo/2024/03/")
     assert response.status_code == 404
 
 

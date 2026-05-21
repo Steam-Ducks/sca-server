@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock, patch
 
 from django.utils import timezone
-from rest_framework.test import APIClient
 
 from materials.views import MaterialsIndicatorsView, MaterialsTableView
 from sca_data.models import (
@@ -66,24 +65,24 @@ def _criar_pedido_em_memoria():
     return pedido
 
 
-def test_materials_table_returns_200():
+def test_materials_table_returns_200(api_client):
     with patch.object(MaterialsTableView, "get_queryset", return_value=[]):
-        response = APIClient().get("/api/compras/")
+        response = api_client.get("/api/compras/")
         assert response.status_code == 200
 
 
-def test_materials_table_returns_list():
+def test_materials_table_returns_list(api_client):
     pedido = _criar_pedido_em_memoria()
     with patch.object(MaterialsTableView, "get_queryset", return_value=[pedido]):
-        response = APIClient().get("/api/compras/")
+        response = api_client.get("/api/compras/")
         assert isinstance(response.data, list)
         assert len(response.data) == 1
 
 
-def test_materials_table_retorna_campos_corretos():
+def test_materials_table_retorna_campos_corretos(api_client):
     pedido = _criar_pedido_em_memoria()
     with patch.object(MaterialsTableView, "get_queryset", return_value=[pedido]):
-        response = APIClient().get("/api/compras/")
+        response = api_client.get("/api/compras/")
         item = response.data[0]
         assert item["material"] == "Cabo de aço"
         assert item["projeto"] == "Projeto Alpha"
@@ -109,56 +108,56 @@ def _mock_materiais_qs(custo_total=4500.0, total_itens=3, custo_medio=1500.0):
     return mock_qs
 
 
-def test_materials_indicators_returns_200():
+def test_materials_indicators_returns_200(api_client):
     with patch.object(
         MaterialsIndicatorsView,
         "_build_materiais_queryset",
         return_value=_mock_materiais_qs(),
     ):
-        response = APIClient().get("/api/materials/indicators/")
+        response = api_client.get("/api/materials/indicators/")
         assert response.status_code == 200
 
 
-def test_materials_indicators_retorna_campos_corretos():
+def test_materials_indicators_retorna_campos_corretos(api_client):
     mock_qs = _mock_materiais_qs(
         custo_total=4500.53, total_itens=3, custo_medio=1500.27
     )
     with patch.object(
         MaterialsIndicatorsView, "_build_materiais_queryset", return_value=mock_qs
     ):
-        response = APIClient().get("/api/materials/indicators/")
+        response = api_client.get("/api/materials/indicators/")
         assert response.data["custo_total"] == 4500.53
         assert response.data["total_itens"] == 3
         assert response.data["custo_medio"] == 1500.27
 
 
-def test_materials_indicators_sem_dados_retorna_nulos():
+def test_materials_indicators_sem_dados_retorna_nulos(api_client):
     mock_qs = _mock_materiais_qs(custo_total=None, total_itens=0, custo_medio=None)
     with patch.object(
         MaterialsIndicatorsView, "_build_materiais_queryset", return_value=mock_qs
     ):
-        response = APIClient().get("/api/materials/indicators/")
+        response = api_client.get("/api/materials/indicators/")
         assert response.data["custo_total"] is None
         assert response.data["total_itens"] == 0
         assert response.data["custo_medio"] is None
 
 
-def test_materials_indicators_filtra_por_categoria():
+def test_materials_indicators_filtra_por_categoria(api_client):
     mock_qs = _mock_materiais_qs(custo_total=1000.0, total_itens=2, custo_medio=500.0)
     with patch.object(
         MaterialsIndicatorsView, "_build_materiais_queryset", return_value=mock_qs
     ):
-        response = APIClient().get("/api/materials/indicators/?categoria=LED")
+        response = api_client.get("/api/materials/indicators/?categoria=LED")
         assert response.status_code == 200
         assert response.data["total_itens"] == 2
 
 
-def test_materials_indicators_filtra_por_programa():
+def test_materials_indicators_filtra_por_programa(api_client):
     mock_qs = _mock_materiais_qs(custo_total=800.0, total_itens=1, custo_medio=800.0)
     with patch.object(
         MaterialsIndicatorsView, "_build_materiais_queryset", return_value=mock_qs
     ):
-        response = APIClient().get("/api/materials/indicators/?programa=Cloud")
+        response = api_client.get("/api/materials/indicators/?programa=Cloud")
         assert response.status_code == 200
         assert response.data["total_itens"] == 1
 
@@ -166,69 +165,69 @@ def test_materials_indicators_filtra_por_programa():
 # ─── Filtros por período na view base ────────────────────────────────────────
 
 
-def test_filtro_por_periodo_yyyy_mm_retorna_200():
+def test_filtro_por_periodo_yyyy_mm_retorna_200(api_client):
     pedido = _criar_pedido_em_memoria()
     with patch.object(MaterialsTableView, "get_queryset", return_value=[pedido]):
-        response = APIClient().get("/api/compras/?periodo=2024-03")
+        response = api_client.get("/api/compras/?periodo=2024-03")
         assert response.status_code == 200
         assert len(response.data) == 1
 
 
-def test_filtro_por_data_inicio_retorna_200():
+def test_filtro_por_data_inicio_retorna_200(api_client):
     pedido = _criar_pedido_em_memoria()
     with patch.object(MaterialsTableView, "get_queryset", return_value=[pedido]):
-        response = APIClient().get("/api/compras/?data_inicio=2024-03-01")
+        response = api_client.get("/api/compras/?data_inicio=2024-03-01")
         assert response.status_code == 200
         assert len(response.data) == 1
 
 
-def test_filtro_por_data_fim_retorna_200():
+def test_filtro_por_data_fim_retorna_200(api_client):
     pedido = _criar_pedido_em_memoria()
     with patch.object(MaterialsTableView, "get_queryset", return_value=[pedido]):
-        response = APIClient().get("/api/compras/?data_fim=2024-03-31")
+        response = api_client.get("/api/compras/?data_fim=2024-03-31")
         assert response.status_code == 200
         assert len(response.data) == 1
 
 
-def test_filtro_por_data_inicio_e_fim_retorna_200():
+def test_filtro_por_data_inicio_e_fim_retorna_200(api_client):
     pedido = _criar_pedido_em_memoria()
     with patch.object(MaterialsTableView, "get_queryset", return_value=[pedido]):
-        response = APIClient().get(
+        response = api_client.get(
             "/api/compras/?data_inicio=2024-03-01&data_fim=2024-03-31"
         )
         assert response.status_code == 200
         assert len(response.data) == 1
 
 
-def test_periodo_invalido_retorna_400():
-    response = APIClient().get("/api/compras/?periodo=invalido")
+def test_periodo_invalido_retorna_400(api_client):
+    response = api_client.get("/api/compras/?periodo=invalido")
     assert response.status_code == 400
     assert "periodo" in response.data
 
 
-def test_periodo_com_mes_invalido_retorna_400():
-    response = APIClient().get("/api/compras/?periodo=2024-13")
+def test_periodo_com_mes_invalido_retorna_400(api_client):
+    response = api_client.get("/api/compras/?periodo=2024-13")
     assert response.status_code == 400
     assert "periodo" in response.data
 
 
-def test_data_inicio_invalida_retorna_400():
-    response = APIClient().get("/api/compras/?data_inicio=nao-e-data")
+def test_data_inicio_invalida_retorna_400(api_client):
+    response = api_client.get("/api/compras/?data_inicio=nao-e-data")
     assert response.status_code == 400
     assert "data_inicio" in response.data
 
 
-def test_data_inicio_posterior_a_data_fim_retorna_400():
-    response = APIClient().get(
+def test_data_inicio_posterior_a_data_fim_retorna_400(api_client):
+    response = api_client.get(
         "/api/compras/?data_inicio=2024-03-31&data_fim=2024-03-01"
     )
     assert response.status_code == 400
     assert "data_inicio" in response.data
 
 
-def test_sem_filtro_retorna_todos_registros():
+def test_sem_filtro_retorna_todos_registros(api_client):
     pedido = _criar_pedido_em_memoria()
     with patch.object(MaterialsTableView, "get_queryset", return_value=[pedido]):
-        response = APIClient().get("/api/compras/")
+        response = api_client.get("/api/compras/")
         assert response.status_code == 200
         assert len(response.data) == 1

@@ -2,7 +2,6 @@ import datetime
 from unittest.mock import patch
 
 from django.utils import timezone
-from rest_framework.test import APIClient
 
 from consolidated.consolidated_dashboard.views import ConsolidatedDashboardPeriodoView
 from sca_data.models import SilverPrograma, SilverProjeto
@@ -42,19 +41,18 @@ def _make_projeto(
     return projeto
 
 
-def test_periodo_endpoint_retorna_200():
+def test_periodo_endpoint_retorna_200(api_client):
     with patch.object(
         ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[]
     ):
         with patch.object(
             ConsolidatedDashboardPeriodoView, "_get_last_updated_at", return_value=None
         ):
-            client = APIClient()
-            response = client.get("/api/consolidated/periodo/2024-03/")
+            response = api_client.get("/api/consolidated/periodo/2024-03/")
             assert response.status_code == 200
 
 
-def test_periodo_endpoint_retorna_lista():
+def test_periodo_endpoint_retorna_lista(api_client):
     projeto = _make_projeto()
     with patch.object(
         ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[projeto]
@@ -66,14 +64,13 @@ def test_periodo_endpoint_retorna_lista():
                 2026, 4, 26, 8, 15, tzinfo=datetime.timezone.utc
             ),
         ):
-            client = APIClient()
-            response = client.get("/api/consolidated/periodo/2024-03/")
+            response = api_client.get("/api/consolidated/periodo/2024-03/")
             assert isinstance(response.data["data"], list)
             assert len(response.data["data"]) == 1
             assert response.data["last_updated_at"] == "2026-04-26T08:15:00+00:00"
 
 
-def test_periodo_endpoint_retorna_campos_corretos():
+def test_periodo_endpoint_retorna_campos_corretos(api_client):
     projeto = _make_projeto()
     with patch.object(
         ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[projeto]
@@ -81,8 +78,7 @@ def test_periodo_endpoint_retorna_campos_corretos():
         with patch.object(
             ConsolidatedDashboardPeriodoView, "_get_last_updated_at", return_value=None
         ):
-            client = APIClient()
-            response = client.get("/api/consolidated/periodo/2024-03/")
+            response = api_client.get("/api/consolidated/periodo/2024-03/")
             item = response.data["data"][0]
             assert item["nome_projeto"] == "Migracao AWS"
             assert item["programa"] == "Cloud"
@@ -92,23 +88,20 @@ def test_periodo_endpoint_retorna_campos_corretos():
             assert item["total_horas"] == 40.00
 
 
-def test_periodo_endpoint_periodo_invalido_retorna_400():
-    client = APIClient()
-    response = client.get("/api/consolidated/periodo/2024-13/")
+def test_periodo_endpoint_periodo_invalido_retorna_400(api_client):
+    response = api_client.get("/api/consolidated/periodo/2024-13/")
     assert response.status_code == 400
     assert "periodo" in response.data
 
 
-def test_periodo_endpoint_formato_errado_retorna_400():
-    client = APIClient()
+def test_periodo_endpoint_formato_errado_retorna_400(api_client):
     for bad in ["202403", "abcd-ef", "2024-3"]:
-        response = client.get(f"/api/consolidated/periodo/{bad}/")
+        response = api_client.get(f"/api/consolidated/periodo/{bad}/")
         assert response.status_code == 400, f"Esperado 400 para '{bad}'"
 
 
-def test_periodo_endpoint_com_barra_retorna_404():
-    client = APIClient()
-    response = client.get("/api/consolidated/periodo/2024/03/")
+def test_periodo_endpoint_com_barra_retorna_404(api_client):
+    response = api_client.get("/api/consolidated/periodo/2024/03/")
     assert response.status_code == 404
 
 
@@ -126,40 +119,39 @@ def test_periodo_endpoint_janeiro_ultimo_dia_correto():
     assert fim == datetime.date(2024, 1, 31)
 
 
-def test_periodo_endpoint_com_filtro_programa():
+def test_periodo_endpoint_com_filtro_programa(api_client):
     with patch.object(
         ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[]
     ):
         with patch.object(
             ConsolidatedDashboardPeriodoView, "_get_last_updated_at", return_value=None
         ):
-            client = APIClient()
-            response = client.get("/api/consolidated/periodo/2024-03/?programa=Cloud")
+            response = api_client.get(
+                "/api/consolidated/periodo/2024-03/?programa=Cloud"
+            )
             assert response.status_code == 200
 
 
-def test_periodo_endpoint_com_filtro_status():
+def test_periodo_endpoint_com_filtro_status(api_client):
     with patch.object(
         ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[]
     ):
         with patch.object(
             ConsolidatedDashboardPeriodoView, "_get_last_updated_at", return_value=None
         ):
-            client = APIClient()
-            response = client.get(
+            response = api_client.get(
                 "/api/consolidated/periodo/2024-03/?status=Em Andamento"
             )
             assert response.status_code == 200
 
 
-def test_periodo_endpoint_lista_vazia():
+def test_periodo_endpoint_lista_vazia(api_client):
     with patch.object(
         ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[]
     ):
         with patch.object(
             ConsolidatedDashboardPeriodoView, "_get_last_updated_at", return_value=None
         ):
-            client = APIClient()
-            response = client.get("/api/consolidated/periodo/2024-03/")
+            response = api_client.get("/api/consolidated/periodo/2024-03/")
             assert response.status_code == 200
             assert response.data == {"data": [], "last_updated_at": None}
