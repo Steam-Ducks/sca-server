@@ -2,7 +2,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from rest_framework.test import APIClient
 
 from dashboard.selectors import get_top_projects_by_cost
 from dashboard.serializers import TopProjectSerializer
@@ -236,29 +235,26 @@ def test_top_project_serializer_total_cost_is_float():
 
 
 @pytest.mark.django_db
-def test_top_projects_endpoint_returns_200():
+def test_top_projects_endpoint_returns_200(api_client):
     with patch("dashboard.views.get_top_projects_by_cost", return_value=TOP_MOCK):
-        client = APIClient()
-        response = client.get("/api/dashboard/top-projects/")
+        response = api_client.get("/api/dashboard/top-projects/")
 
     assert response.status_code == 200
 
 
 @pytest.mark.django_db
-def test_top_projects_endpoint_returns_list():
+def test_top_projects_endpoint_returns_list(api_client):
     with patch("dashboard.views.get_top_projects_by_cost", return_value=TOP_MOCK):
-        client = APIClient()
-        response = client.get("/api/dashboard/top-projects/")
+        response = api_client.get("/api/dashboard/top-projects/")
 
     assert isinstance(response.data, list)
     assert len(response.data) == 3
 
 
 @pytest.mark.django_db
-def test_top_projects_endpoint_response_fields():
+def test_top_projects_endpoint_response_fields(api_client):
     with patch("dashboard.views.get_top_projects_by_cost", return_value=TOP_MOCK):
-        client = APIClient()
-        response = client.get("/api/dashboard/top-projects/")
+        response = api_client.get("/api/dashboard/top-projects/")
 
     row = response.data[0]
     assert "project_name" in row
@@ -266,10 +262,9 @@ def test_top_projects_endpoint_response_fields():
 
 
 @pytest.mark.django_db
-def test_top_projects_endpoint_passes_filters_to_selector():
+def test_top_projects_endpoint_passes_filters_to_selector(api_client):
     with patch("dashboard.views.get_top_projects_by_cost", return_value=[]) as mock_sel:
-        client = APIClient()
-        client.get(
+        api_client.get(
             "/api/dashboard/top-projects/"
             "?start_date=2024-01-01&end_date=2024-12-31"
             "&program=MANSUP&project=Conversor&status=Em+andamento"
@@ -284,10 +279,9 @@ def test_top_projects_endpoint_passes_filters_to_selector():
 
 
 @pytest.mark.django_db
-def test_top_projects_endpoint_no_filters_calls_selector_with_empty_params():
+def test_top_projects_endpoint_no_filters_calls_selector_with_empty_params(api_client):
     with patch("dashboard.views.get_top_projects_by_cost", return_value=[]) as mock_sel:
-        client = APIClient()
-        client.get("/api/dashboard/top-projects/")
+        api_client.get("/api/dashboard/top-projects/")
 
     called_with = mock_sel.call_args[0][0]
     assert called_with.get("program") is None
@@ -296,10 +290,9 @@ def test_top_projects_endpoint_no_filters_calls_selector_with_empty_params():
 
 
 @pytest.mark.django_db
-def test_top_projects_endpoint_returns_empty_list_when_no_data():
+def test_top_projects_endpoint_returns_empty_list_when_no_data(api_client):
     with patch("dashboard.views.get_top_projects_by_cost", return_value=[]):
-        client = APIClient()
-        response = client.get("/api/dashboard/top-projects/")
+        response = api_client.get("/api/dashboard/top-projects/")
 
     assert response.status_code == 200
     assert response.data == []
