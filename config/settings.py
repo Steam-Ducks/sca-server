@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "budget",
     "costs",
     "imports",
+    "monitoring",
 ]
 
 MIDDLEWARE = [
