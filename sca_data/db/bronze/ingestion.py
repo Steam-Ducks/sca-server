@@ -15,7 +15,7 @@ logging.basicConfig(
 
 
 ENGINE = get_or_create()
-ENDPOINT = "https://sca-api-sb1c.onrender.com/"
+ENDPOINT = "https://sca-api-sb1c.onrender.com"
 
 
 def _ensure_schema(engine):

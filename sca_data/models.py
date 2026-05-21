@@ -274,3 +274,20 @@ class GoldBudgetSnapshot(models.Model):
     class Meta:
         app_label = "sca_data"
         db_table = 'gold"."budget_snapshot'
+
+
+class FatoExecucaoCarga(models.Model):
+    run_id = models.UUIDField()
+    fonte = models.CharField(max_length=50)
+    tabela = models.CharField(max_length=100)
+    status = models.CharField(max_length=20)
+    linhas_processadas = models.IntegerField(null=True, blank=True)
+    erros = models.IntegerField(default=0)
+    avisos = models.IntegerField(default=0)
+    detalhes_falha = models.TextField(null=True, blank=True)
+    iniciado_em = models.DateTimeField()
+    finalizado_em = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        app_label = "sca_data"
+        db_table = 'audit"."fato_execucao_carga'
