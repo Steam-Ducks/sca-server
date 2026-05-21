@@ -34,6 +34,12 @@ test-cov: ## Roda testes com relatório de cobertura
 	coverage run -m pytest sca_data/tests/ -v
 	coverage report -m
 
+test-integration: ## Roda testes de integração (requer banco ativo)
+	pytest -m integration --reuse-db -v
+
+test-all: ## Roda unitários + integração
+	pytest --reuse-db -v
+
 # ─── DOCKER ──────────────────────────────────────────────────────────────────
 
 up: ## Sobe backend + postgres + prometheus + grafana
