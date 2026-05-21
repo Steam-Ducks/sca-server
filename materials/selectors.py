@@ -1,11 +1,9 @@
 import datetime
 
-from django.db.models import Q
+from django.db.models import Q, Sum, F, DecimalField
+from django.db.models.functions import Cast, TruncMonth
 from rest_framework.exceptions import ValidationError as DRFValidationError
-from django.db.models import Sum, F
 from sca_data.models import SilverPedidoCompra
-from django.db.models import DecimalField
-from django.db.models.functions import Cast
 
 
 def _parse_date(raw: str, param_name: str) -> datetime.date:
@@ -165,3 +163,81 @@ def get_cost_by_project(params, limit=None):
         qs = qs[:limit]
 
     return qs
+
+
+def get_filter_options() -> dict:
+    """
+    Retorna os valores disponíveis para cada filtro baseados nos dados reais do banco.
+
+    Todas as queries partem de SilverPedidoCompra com solicitacao__isnull=False,
+    garantindo que os valores exibidos nos dropdowns correspondam exatamente ao
+    conjunto de dados que as queries de filtro retornam.
+    """
+    base_qs = SilverPedidoCompra.objects.filter(solicitacao__isnull=False)
+
+    # Períodos: meses distintos de data_pedido, ordenados do mais recente ao mais antigo
+    meses_qs = (
+        base_qs.filter(data_pedido__isnull=False)
+        .annotate(mes=TruncMonth("data_pedido"))
+        .values_list("mes", flat=True)
+        .distinct()
+        .order_by("-mes")
+    )
+    periodos = sorted(
+        {m.strftime("%Y-%m") for m in meses_qs if m},
+        reverse=True,
+    )
+
+    # Programas que têm pelo menos um pedido real
+    programas = list(
+        base_qs.filter(solicitacao__projeto__programa__nome_programa__isnull=False)
+        .exclude(solicitacao__projeto__programa__nome_programa="")
+        .values_list("solicitacao__projeto__programa__nome_programa", flat=True)
+        .distinct()
+        .order_by("solicitacao__projeto__programa__nome_programa")
+    )
+
+    # Projetos com programa associado — permite filtro cruzado no frontend
+    projetos_qs = (
+        base_qs.filter(solicitacao__projeto__nome_projeto__isnull=False)
+        .exclude(solicitacao__projeto__nome_projeto="")
+        .values(
+            "solicitacao__projeto__nome_projeto",
+            "solicitacao__projeto__programa__nome_programa",
+        )
+        .distinct()
+        .order_by("solicitacao__projeto__nome_projeto")
+    )
+    projetos = [
+        {
+            "nome": p["solicitacao__projeto__nome_projeto"],
+            "programa": p["solicitacao__projeto__programa__nome_programa"],
+        }
+        for p in projetos_qs
+    ]
+
+    # Categorias de materiais presentes em pedidos reais
+    categorias = list(
+        base_qs.filter(solicitacao__material__categoria__isnull=False)
+        .exclude(solicitacao__material__categoria="")
+        .values_list("solicitacao__material__categoria", flat=True)
+        .distinct()
+        .order_by("solicitacao__material__categoria")
+    )
+
+    # Fornecedores de pedidos reais (sem reverse relation)
+    fornecedores = list(
+        base_qs.filter(fornecedor__razao_social__isnull=False)
+        .exclude(fornecedor__razao_social="")
+        .values_list("fornecedor__razao_social", flat=True)
+        .distinct()
+        .order_by("fornecedor__razao_social")
+    )
+
+    return {
+        "periodos": periodos,
+        "programas": programas,
+        "projetos": projetos,
+        "categorias": categorias,
+        "fornecedores": fornecedores,
+    }

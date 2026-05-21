@@ -1,3 +1,4 @@
+import pytest
 from unittest.mock import MagicMock, patch
 
 from technical_hours.views import TechnicalHoursKpiView
@@ -41,9 +42,15 @@ def test_kpi_calcula_valores_corretamente(api_client):
         "get_queryset",
         return_value=_mock_qs(total_horas=40.0, soma_custo=16800.0, registros=1),
     ):
+<<<<<<< HEAD
         response = api_client.get(URL)
         assert response.data["total_horas"] == 40.0
         assert response.data["custo_total"] == 16800.0
+=======
+        response = APIClient().get(URL)
+        assert response.data["total_horas"] == pytest.approx(40.0)
+        assert response.data["custo_total"] == pytest.approx(16800.0)
+>>>>>>> 9e90797c56ff7b00c563e37e5eaafc8d008674dc
         assert response.data["registros"] == 1
 
 
@@ -57,8 +64,13 @@ def test_kpi_calcula_custo_medio(api_client):
         "get_queryset",
         return_value=_mock_qs(total_horas=40.0, soma_custo=16800.0),
     ):
+<<<<<<< HEAD
         response = api_client.get(URL)
         assert response.data["custo_medio"] == 420.0
+=======
+        response = APIClient().get(URL)
+        assert response.data["custo_medio"] == pytest.approx(420.0)
+>>>>>>> 9e90797c56ff7b00c563e37e5eaafc8d008674dc
 
 
 def test_kpi_arredonda_para_duas_casas(api_client):
@@ -68,8 +80,13 @@ def test_kpi_arredonda_para_duas_casas(api_client):
         "get_queryset",
         return_value=_mock_qs(total_horas=3.0, soma_custo=10.0),
     ):
+<<<<<<< HEAD
         response = api_client.get(URL)
         assert response.data["custo_medio"] == 3.33
+=======
+        response = APIClient().get(URL)
+        assert response.data["custo_medio"] == pytest.approx(3.33)
+>>>>>>> 9e90797c56ff7b00c563e37e5eaafc8d008674dc
 
 
 # ── Casos extremos ───────────────────────────────────────────────────────────
@@ -83,9 +100,9 @@ def test_kpi_sem_dados_retorna_zeros(api_client):
     ):
         response = api_client.get(URL)
         assert response.status_code == 200
-        assert response.data["custo_total"] == 0.0
-        assert response.data["total_horas"] == 0.0
-        assert response.data["custo_medio"] == 0.0
+        assert response.data["custo_total"] == pytest.approx(0.0)
+        assert response.data["total_horas"] == pytest.approx(0.0)
+        assert response.data["custo_medio"] == pytest.approx(0.0)
         assert response.data["registros"] == 0
 
 
@@ -96,8 +113,13 @@ def test_kpi_custo_medio_zero_quando_sem_horas(api_client):
         "get_queryset",
         return_value=_mock_qs(total_horas=0.0, soma_custo=0.0),
     ):
+<<<<<<< HEAD
         response = api_client.get(URL)
         assert response.data["custo_medio"] == 0.0
+=======
+        response = APIClient().get(URL)
+        assert response.data["custo_medio"] == pytest.approx(0.0)
+>>>>>>> 9e90797c56ff7b00c563e37e5eaafc8d008674dc
 
 
 # ── CT03: filtros respeitados pelo endpoint ──────────────────────────────────
