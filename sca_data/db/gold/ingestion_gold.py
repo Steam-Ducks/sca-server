@@ -2,7 +2,7 @@ import logging
 
 from sqlalchemy import text
 
-from sca_data.db.connection import getOrCreate
+from sca_data.db.connection import get_or_create
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +10,7 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s | %(name)s | %(levelname)s | %(message)s"
 )
 
-ENGINE = getOrCreate()
+ENGINE = get_or_create()
 
 _SQL_MATERIALS_INDICATORS = """
     TRUNCATE TABLE gold."indicators_materiais";

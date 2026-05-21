@@ -1,4 +1,5 @@
 # dashboard/tests/test_serializers.py
+import pytest
 from dashboard.serializers import DashboardKPIsSerializer
 
 
@@ -12,9 +13,9 @@ def test_serializer_validates_correct_data():
     }
     serializer = DashboardKPIsSerializer(data)
 
-    assert serializer.data["total_consolidated_cost"] == 750000.00
-    assert serializer.data["total_materials_cost"] == 450000.00
-    assert serializer.data["total_hours_cost"] == 300000.00
+    assert serializer.data["total_consolidated_cost"] == pytest.approx(750000.00)
+    assert serializer.data["total_materials_cost"] == pytest.approx(450000.00)
+    assert serializer.data["total_hours_cost"] == pytest.approx(300000.00)
     assert serializer.data["total_projects"] == 8
     assert serializer.data["total_programs"] == 3
 

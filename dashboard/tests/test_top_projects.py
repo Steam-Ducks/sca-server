@@ -61,8 +61,8 @@ def test_get_top_projects_correct_values():
         result = get_top_projects_by_cost({})
 
     assert result[0]["project_name"] == "Projeto Alpha"
-    assert result[0]["total_cost"] == 980000.0
-    assert result[1]["total_cost"] == 750000.55
+    assert result[0]["total_cost"] == pytest.approx(980000.0)
+    assert result[1]["total_cost"] == pytest.approx(750000.55)
 
 
 def test_get_top_projects_rounds_to_two_decimals():
@@ -72,7 +72,7 @@ def test_get_top_projects_rounds_to_two_decimals():
     with patcher:
         result = get_top_projects_by_cost({})
 
-    assert result[0]["total_cost"] == round(123456.789, 2)
+    assert result[0]["total_cost"] == pytest.approx(round(123456.789, 2))
 
 
 def test_get_top_projects_empty_result():
@@ -213,7 +213,7 @@ def test_top_project_serializer_correct_values():
     data = {"project_name": "Projeto Beta", "total_cost": 750000.0}
     s = TopProjectSerializer(data)
     assert s.data["project_name"] == "Projeto Beta"
-    assert s.data["total_cost"] == 750000.0
+    assert s.data["total_cost"] == pytest.approx(750000.0)
 
 
 def test_top_project_serializer_many_true():

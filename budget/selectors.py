@@ -1,4 +1,6 @@
 from django.db.models import (
+    Avg,
+    Count,
     DateTimeField,
     ExpressionWrapper,
     F,
@@ -204,3 +206,46 @@ def get_budget_snapshot_gold(params):
 def get_budget_last_updated_at_gold():
     result = GoldBudgetSnapshot.objects.aggregate(latest=Max("gold_updated_at"))
     return result["latest"]
+
+
+def get_budget_indicators(params):
+    rows = get_budget_snapshot(params)
+
+    if not rows:
+        return {
+            "budget_total": 0.0,
+            "custo_real_total": 0.0,
+            "desvio_percent_medio": 0.0,
+            "projetos_saudaveis": 0,
+            "projetos_atencao": 0,
+            "projetos_criticos": 0,
+        }
+
+    n = len(rows)
+    return {
+        "budget_total": round(sum(p.budget for p in rows), 2),
+        "custo_real_total": round(
+            sum((p.custo_materiais or 0) + (p.custo_horas or 0) for p in rows), 2
+        ),
+        "desvio_percent_medio": round(sum(p.desvio_percent for p in rows) / n, 1),
+        "projetos_saudaveis": sum(1 for p in rows if p.saude_financeira == "Saudável"),
+        "projetos_atencao": sum(1 for p in rows if p.saude_financeira == "Atenção"),
+        "projetos_criticos": sum(1 for p in rows if p.saude_financeira == "Crítico"),
+    }
+
+
+def get_budget_indicators_gold(params):
+    qs = get_budget_snapshot_gold(params)
+    if not qs.exists():
+        return None
+
+    return qs.aggregate(
+        budget_total=Coalesce(Sum("budget"), 0.0, output_field=FloatField()),
+        custo_real_total=Coalesce(Sum("custo_real"), 0.0, output_field=FloatField()),
+        desvio_percent_medio=Coalesce(
+            Avg("desvio_percent"), 0.0, output_field=FloatField()
+        ),
+        projetos_saudaveis=Count("id", filter=Q(saude_financeira__iexact="Saudável")),
+        projetos_atencao=Count("id", filter=Q(saude_financeira__iexact="Atenção")),
+        projetos_criticos=Count("id", filter=Q(saude_financeira__iexact="Crítico")),
+    )

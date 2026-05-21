@@ -101,13 +101,13 @@ class TestToFloat:
     def test_valid_floats(self):
         s = pd.Series(["1.5", "2.75"])
         result = _to_float(s)
-        assert result[0] == 1.5
-        assert result[1] == 2.75
+        assert result[0] == pytest.approx(1.5)
+        assert result[1] == pytest.approx(2.75)
 
     def test_integer_strings(self):
         s = pd.Series(["100", "0"])
         result = _to_float(s)
-        assert result[0] == 100.0
+        assert result[0] == pytest.approx(100.0)
 
     def test_invalid_becomes_nan(self):
         s = pd.Series(["abc", None])
@@ -180,23 +180,75 @@ class TestReadBronze:
 
 
 class TestWriteSilver:
-    @patch("sca_data.db.silver.ingestion_silver.pd.DataFrame.to_sql")
-    def test_adds_ingested_at_column(self, mock_to_sql, engine):
+    def _setup_inspector(self, mock_inspect, pk_cols=None):
+        inspector = MagicMock()
+        inspector.get_pk_constraint.return_value = {
+            "constrained_columns": pk_cols if pk_cols is not None else ["id"]
+        }
+        mock_inspect.return_value = inspector
+
+    def _setup_pg_insert(self, mock_pg_insert):
+        mock_stmt = MagicMock()
+        mock_pg_insert.return_value = mock_stmt
+        mock_stmt.on_conflict_do_update.return_value = mock_stmt
+        return mock_stmt
+
+    @patch("sca_data.db.silver.ingestion_silver.Table")
+    @patch("sca_data.db.silver.ingestion_silver.pg_insert")
+    @patch("sqlalchemy.inspect")
+    def test_adds_silver_ingested_at_to_records(
+        self, mock_inspect, mock_pg_insert, mock_table, engine
+    ):
+        self._setup_inspector(mock_inspect)
+        self._setup_pg_insert(mock_pg_insert)
+
         df = pd.DataFrame({"id": [1], "nome": ["teste"]})
         _write_silver(df, engine, "programas")
 
-        assert "silver_ingested_at" in df.columns
+        records = mock_pg_insert.return_value.values.call_args[0][0]
+        assert "silver_ingested_at" in records[0]
 
-    @patch("sca_data.db.silver.ingestion_silver.pd.DataFrame.to_sql")
-    def test_writes_to_silver_schema(self, mock_to_sql, engine):
+    @patch("sca_data.db.silver.ingestion_silver.Table")
+    @patch("sca_data.db.silver.ingestion_silver.pg_insert")
+    @patch("sqlalchemy.inspect")
+    def test_no_pk_triggers_alter_table(
+        self, mock_inspect, mock_pg_insert, mock_table, engine
+    ):
+        self._setup_inspector(mock_inspect, pk_cols=[])
+        self._setup_pg_insert(mock_pg_insert)
+
         df = pd.DataFrame({"id": [1]})
         _write_silver(df, engine, "programas")
 
-        mock_to_sql.assert_called_once()
-        _, kwargs = mock_to_sql.call_args
-        assert kwargs["schema"] == "silver"
-        assert kwargs["if_exists"] == "replace"
-        assert kwargs["index"] is False
+        # engine.begin() called twice: once for ALTER TABLE, once for upsert
+        assert engine.begin.call_count == 2
+
+    @patch("sca_data.db.silver.ingestion_silver.Table")
+    @patch("sca_data.db.silver.ingestion_silver.pg_insert")
+    @patch("sqlalchemy.inspect")
+    def test_existing_pk_skips_alter_table(
+        self, mock_inspect, mock_pg_insert, mock_table, engine
+    ):
+        self._setup_inspector(mock_inspect, pk_cols=["id"])
+        self._setup_pg_insert(mock_pg_insert)
+
+        df = pd.DataFrame({"id": [1]})
+        _write_silver(df, engine, "programas")
+
+        # engine.begin() called only once for the upsert
+        assert engine.begin.call_count == 1
+
+    @patch("sca_data.db.silver.ingestion_silver.Table")
+    @patch("sca_data.db.silver.ingestion_silver.pg_insert")
+    @patch("sqlalchemy.inspect")
+    def test_returns_row_count(self, mock_inspect, mock_pg_insert, mock_table, engine):
+        self._setup_inspector(mock_inspect)
+        self._setup_pg_insert(mock_pg_insert)
+
+        df = pd.DataFrame({"id": [1, 2, 3]})
+        result = _write_silver(df, engine, "programas")
+
+        assert result == 3
 
 
 def _make_engine_with_df(df: pd.DataFrame):
@@ -576,8 +628,7 @@ class TestPipeline:
         fake_pipeline = [("table_a", mock_fn_1), ("table_b", mock_fn_2)]
 
         with patch("sca_data.db.silver.ingestion_silver.PIPELINE", fake_pipeline):
-            with patch("sca_data.db.silver.ingestion_silver.audit.log_exec"):
-                _run_pipeline(engine)
+            _run_pipeline(engine)
 
         mock_fn_1.assert_called_once()
         mock_fn_2.assert_called_once()

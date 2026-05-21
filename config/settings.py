@@ -42,7 +42,6 @@ else:
 # Application definition
 
 INSTALLED_APPS = [
-    "django_prometheus",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -54,20 +53,19 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "corsheaders",
     # project apps
-    "core",
     "users",
     "sca_data.apps.ScaDataConfig",
     "materials",
     "technical_hours",
     "consolidated.consolidated_dashboard",
-    "audit",
     "dashboard",
     "budget",
     "costs",
+    "imports",
+    "monitoring",
 ]
 
 MIDDLEWARE = [
-    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -76,9 +74,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "core.middleware.RequestLogMiddleware",
-    "core.middleware.ErrorLogMiddleware",
-    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG

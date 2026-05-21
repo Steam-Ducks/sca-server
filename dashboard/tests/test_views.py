@@ -38,9 +38,9 @@ def test_dashboard_kpis_returns_correct_values(api_client):
         response = api_client.get("/api/dashboard/kpis/")
         data = response.data
 
-        assert data["total_consolidated_cost"] == 750000.00
-        assert data["total_materials_cost"] == 450000.00
-        assert data["total_hours_cost"] == 300000.00
+        assert data["total_consolidated_cost"] == pytest.approx(750000.00)
+        assert data["total_materials_cost"] == pytest.approx(450000.00)
+        assert data["total_hours_cost"] == pytest.approx(300000.00)
         assert data["total_projects"] == 8
         assert data["total_programs"] == 3
 

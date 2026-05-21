@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch, call
 import pytest
 
 
-with patch("sca_data.db.connection.getOrCreate", return_value=MagicMock()):
+with patch("sca_data.db.connection.get_or_create", return_value=MagicMock()):
     from sca_data.db.gold.ingestion_gold import (
         _run_budget_snapshot,
         _run_costs,
