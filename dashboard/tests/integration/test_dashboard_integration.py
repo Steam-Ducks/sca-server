@@ -22,7 +22,6 @@ from sca_data.models import (
     SilverProjeto,
     SilverComprasProjeto,
     SilverPedidoCompra,
-    SilverSolicitacaoCompra,
     SilverTarefaProjeto,
     SilverTempoTarefa,
 )
@@ -134,21 +133,16 @@ class TestDashboardKPIsIntegration:
             assert campo in response.data, f"Campo ausente: {campo}"
 
     def test_custo_materiais_reflete_soma_real_do_banco(self, projeto, pedido_compra):
-        sol = SilverSolicitacaoCompra.objects.create(
-            id=1,
-            projeto=projeto,
-            silver_ingested_at=datetime.now(tz=timezone.utc),
-        )
         SilverComprasProjeto.objects.create(
             id=1,
-            solicitacao=sol,
+            projeto=projeto,
             valor_alocado=80_000.0,
             pedido_compra=pedido_compra,
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
         SilverComprasProjeto.objects.create(
             id=2,
-            solicitacao=sol,
+            projeto=projeto,
             valor_alocado=20_000.0,
             pedido_compra=pedido_compra,
             silver_ingested_at=datetime.now(tz=timezone.utc),
@@ -184,25 +178,16 @@ class TestDashboardKPIsIntegration:
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
 
-        sol_mansup = SilverSolicitacaoCompra.objects.create(
-            id=10, projeto=projeto, silver_ingested_at=datetime.now(tz=timezone.utc)
-        )
-        sol_infra = SilverSolicitacaoCompra.objects.create(
-            id=20,
-            projeto=outro_projeto,
-            silver_ingested_at=datetime.now(tz=timezone.utc),
-        )
-
         SilverComprasProjeto.objects.create(
             id=10,
-            solicitacao=sol_mansup,
+            projeto=projeto,
             valor_alocado=50_000.0,
             pedido_compra=pedido_compra,
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
         SilverComprasProjeto.objects.create(
             id=20,
-            solicitacao=sol_infra,
+            projeto=outro_projeto,
             valor_alocado=999_000.0,
             pedido_compra=pc_outro,
             silver_ingested_at=datetime.now(tz=timezone.utc),
@@ -281,24 +266,16 @@ class TestTopProjectsIntegration:
             data_pedido=date(2024, 3, 15),
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
-        sol_barato = SilverSolicitacaoCompra.objects.create(
-            id=301,
-            projeto=proj_barato,
-            silver_ingested_at=datetime.now(tz=timezone.utc),
-        )
-        sol_caro = SilverSolicitacaoCompra.objects.create(
-            id=302, projeto=proj_caro, silver_ingested_at=datetime.now(tz=timezone.utc)
-        )
         SilverComprasProjeto.objects.create(
             id=301,
-            solicitacao=sol_barato,
+            projeto=proj_barato,
             valor_alocado=1_000.0,
             pedido_compra=pc_301,
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
         SilverComprasProjeto.objects.create(
             id=302,
-            solicitacao=sol_caro,
+            projeto=proj_caro,
             valor_alocado=900_000.0,
             pedido_compra=pc_302,
             silver_ingested_at=datetime.now(tz=timezone.utc),
@@ -306,7 +283,7 @@ class TestTopProjectsIntegration:
 
         response = APIClient().get("/api/dashboard/top-projects/")
         assert len(response.data) >= 2
-        assert response.data[0]["nome_projeto"] == "Projeto Caro"
+        assert response.data[0]["project_name"] == "Projeto Caro"
 
     def test_top_projects_limita_a_10_resultados(self, programa, fornecedor):
         for i in range(15):
@@ -326,14 +303,9 @@ class TestTopProjectsIntegration:
                 data_pedido=date(2024, 3, 15),
                 silver_ingested_at=datetime.now(tz=timezone.utc),
             )
-            sol = SilverSolicitacaoCompra.objects.create(
-                id=400 + i,
-                projeto=proj,
-                silver_ingested_at=datetime.now(tz=timezone.utc),
-            )
             SilverComprasProjeto.objects.create(
                 id=400 + i,
-                solicitacao=sol,
+                projeto=proj,
                 valor_alocado=float(i * 1000),
                 pedido_compra=pc,
                 silver_ingested_at=datetime.now(tz=timezone.utc),
@@ -365,9 +337,6 @@ class TestCostEvolutionIntegration:
     def test_filtro_por_data_retorna_apenas_periodo_correto(
         self, programa, projeto, fornecedor
     ):
-        sol = SilverSolicitacaoCompra.objects.create(
-            id=501, projeto=projeto, silver_ingested_at=datetime.now(tz=timezone.utc)
-        )
         pc_jan = SilverPedidoCompra.objects.create(
             id=501,
             numero_pedido="PC-501",
@@ -384,14 +353,14 @@ class TestCostEvolutionIntegration:
         )
         SilverComprasProjeto.objects.create(
             id=501,
-            solicitacao=sol,
+            projeto=projeto,
             valor_alocado=10_000.0,
             pedido_compra=pc_jan,
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
         SilverComprasProjeto.objects.create(
             id=502,
-            solicitacao=sol,
+            projeto=projeto,
             valor_alocado=99_000.0,
             pedido_compra=pc_dez,
             silver_ingested_at=datetime.now(tz=timezone.utc),
@@ -401,5 +370,5 @@ class TestCostEvolutionIntegration:
             "/api/dashboard/cost-evolution/?start_date=2024-01-01&end_date=2024-03-31"
         )
         assert response.status_code == 200
-        meses = [item["periodo"] for item in response.data]
+        meses = [item["period"] for item in response.data]
         assert "2024-12" not in meses
