@@ -1,15 +1,12 @@
 """
 Conjunto de integração: Core / Health Check
 
-SITUAÇÃO ATUAL: o app `core` não está registrado em config/urls.py.
-Os endpoints /api/health/, /api/log/ e /api/metric/ retornam 404.
+Funções do conjunto:
+    health_check (views.py) — GET /api/health/ → {"status": "ok"}
+    receive_log (views.py)  — POST /api/log/
+    receive_metric          — POST /api/metric/
 
-AÇÃO NECESSÁRIA (responsabilidade do desenvolvedor do CI):
-    Adicionar em config/urls.py:
-        path("api/", include("core.urls")),
-
-Enquanto isso, os testes estão marcados com @pytest.mark.xfail.
-Quando o core for registrado: remova o xfail de cada classe.
+Registrado em config/urls.py: path("api/", include("core.urls"))
 """
 
 import json
@@ -17,34 +14,33 @@ import pytest
 from rest_framework.test import APIClient
 
 
-@pytest.mark.xfail(
-    reason="core app não registrado em config/urls.py — adicionar path('api/', include('core.urls'))",
-    strict=True,
-)
 @pytest.mark.integration
 class TestHealthCheckIntegration:
     """
-    CT-INT-CORE-01
+    CTI-01 ao CTI-03
     Conjunto: health_check view + URL routing + DRF Response
+
+    Carga: sem dados — endpoint é stateless (não lê banco).
     """
 
     def test_health_retorna_200(self):
+        # CTI-01 (mínimo): GET /api/health/ → 200
+        # Valida: URL registrada, view responde sem erro
         response = APIClient().get("/api/health/")
         assert response.status_code == 200
 
     def test_health_retorna_status_ok(self):
+        # CTI-02 (mínimo): corpo da resposta contém {"status": "ok"}
+        # Valida: serialização da view até o cliente
         response = APIClient().get("/api/health/")
         assert response.data == {"status": "ok"}
 
     def test_health_so_aceita_get(self):
+        # CTI-03 (adicional): POST → 405 Method Not Allowed
         response = APIClient().post("/api/health/")
         assert response.status_code == 405
 
 
-@pytest.mark.xfail(
-    reason="core app não registrado em config/urls.py — adicionar path('api/', include('core.urls'))",
-    strict=True,
-)
 @pytest.mark.integration
 class TestReceiveLogIntegration:
     """
@@ -64,7 +60,9 @@ class TestReceiveLogIntegration:
 
     def test_receive_log_aceita_payload_vazio(self):
         response = APIClient().post(
-            "/api/log/", data="{}", content_type="application/json",
+            "/api/log/",
+            data="{}",
+            content_type="application/json",
         )
         assert response.status_code == 200
 
@@ -73,10 +71,6 @@ class TestReceiveLogIntegration:
         assert response.status_code == 405
 
 
-@pytest.mark.xfail(
-    reason="core app não registrado em config/urls.py — adicionar path('api/', include('core.urls'))",
-    strict=True,
-)
 @pytest.mark.integration
 class TestReceiveMetricIntegration:
     """

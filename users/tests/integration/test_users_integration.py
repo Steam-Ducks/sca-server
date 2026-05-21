@@ -24,17 +24,23 @@ from users.models import User
 @pytest.mark.django_db
 class TestUserListCreateIntegration:
     """
-    CT-INT-USR-01
+    CTI-01 ao CTI-06
     Conjunto: User model + UserSerializer + UserListCreateView
+
+    Carga: 0–2 objetos User por teste (banco limpo a cada teste).
     """
 
     def test_lista_vazia_quando_nao_ha_usuarios(self):
+        # CTI-01 (mínimo): banco vazio → GET retorna 200 com lista vazia
+        # Valida: view responde sem erro quando não há dados
         client = APIClient()
         response = client.get("/api/users/")
         assert response.status_code == 200
         assert response.data == []
 
     def test_cria_usuario_via_post_e_persiste_no_banco(self):
+        # CTI-02 (mínimo): POST persiste no banco → dado existe no ORM
+        # Valida: view → ORM → banco (cadeia completa de escrita)
         client = APIClient()
         payload = {"name": "Usuário Teste", "email": "teste@sca.com"}
 
@@ -46,6 +52,8 @@ class TestUserListCreateIntegration:
         assert usuario.name == "Usuário Teste"
 
     def test_get_retorna_usuario_recem_criado(self):
+        # CTI-03 (mínimo): dado inserido → aparece na resposta GET
+        # Valida: ORM → serializer → response (cadeia completa de leitura)
         User.objects.create(name="Usuário Alpha", email="alpha@sca.com")
         User.objects.create(name="Usuário Beta", email="beta@sca.com")
 
@@ -59,6 +67,8 @@ class TestUserListCreateIntegration:
         assert "beta@sca.com" in emails
 
     def test_resposta_contem_campos_corretos(self):
+        # CTI-04 (adicional): estrutura dos campos da resposta
+        # Valida: serializer inclui todos os campos esperados pelo frontend
         User.objects.create(name="Campo Teste", email="campos@sca.com")
 
         client = APIClient()
@@ -70,6 +80,8 @@ class TestUserListCreateIntegration:
         assert "email" in usuario
 
     def test_email_duplicado_retorna_400(self):
+        # CTI-05 (adicional): regra de negócio — e-mail único
+        # Valida: validação do serializer bloqueia duplicata antes de persistir
         User.objects.create(name="Primeiro", email="mesmo@sca.com")
 
         client = APIClient()
@@ -80,6 +92,8 @@ class TestUserListCreateIntegration:
         assert User.objects.count() == 1
 
     def test_post_sem_email_retorna_400(self):
+        # CTI-06 (adicional): campo obrigatório ausente → 400
+        # Valida: validação de campos obrigatórios na cadeia view → serializer
         client = APIClient()
         response = client.post("/api/users/", data={"name": "Sem Email"}, format="json")
         assert response.status_code == 400
