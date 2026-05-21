@@ -49,6 +49,43 @@ def _audit(
         logger.exception("Audit logging failed for %s", table)
 
 
+def _validate_rows(df):
+    """Count error and warning rows in the dataframe.
+
+    Erros: rows with at least one empty/null required value.
+    Avisos: rows where a non-empty cell contains only whitespace.
+    """
+    erros = int(df.isnull().any(axis=1).sum() + (df == "").any(axis=1).sum())
+    avisos = int(
+        df.apply(lambda col: col.str.strip().eq("") & col.ne(""), axis=0)
+        .any(axis=1)
+        .sum()
+    )
+    return erros, avisos
+
+
+def _register_execucao(
+    run_id, tabela, status, linhas, erros, avisos, detalhes, iniciado_em
+):
+    try:
+        from sca_data.models import FatoExecucaoCarga
+
+        FatoExecucaoCarga.objects.create(
+            run_id=run_id,
+            fonte="csv_upload",
+            tabela=tabela,
+            status=status,
+            linhas_processadas=linhas,
+            erros=erros,
+            avisos=avisos,
+            detalhes_falha=detalhes,
+            iniciado_em=iniciado_em,
+            finalizado_em=datetime.datetime.now(),
+        )
+    except Exception:
+        logger.exception("Failed to register execucao_carga for %s", tabela)
+
+
 class CSVUploadView(APIView):
     csv_type: str = None
 
@@ -88,6 +125,8 @@ class CSVUploadView(APIView):
                 status=400,
             )
 
+        erros, avisos = _validate_rows(df)
+
         engine = _get_engine()
         run_id = str(uuid.uuid4())
         started_at = datetime.datetime.now()
@@ -119,6 +158,16 @@ class CSVUploadView(APIView):
                 started_at,
                 {"source": "csv_upload", "filename": file.name, "error": str(exc)},
             )
+            _register_execucao(
+                run_id,
+                self.csv_type,
+                OperationStatus.FAILED,
+                0,
+                erros,
+                avisos,
+                str(exc),
+                started_at,
+            )
             return Response(
                 {"error": f"Erro ao salvar dados brutos: {exc}"}, status=500
             )
@@ -136,6 +185,8 @@ class CSVUploadView(APIView):
         )
 
         silver_fn = dict(_SILVER_PIPELINE).get(self.csv_type)
+        silver_failed = False
+        silver_error = None
         if silver_fn:
             try:
                 _ensure_silver_schema(engine)
@@ -156,8 +207,26 @@ class CSVUploadView(APIView):
                     )
 
                 silver_fn(engine, run_id, _log_silver)
-            except Exception:
+            except Exception as exc:
                 logger.exception("Silver transform failed for %s", self.csv_type)
+                silver_failed = True
+                silver_error = str(exc)
+
+        if silver_failed:
+            final_status = OperationStatus.PARTIAL
+        else:
+            final_status = OperationStatus.SUCCESS
+
+        _register_execucao(
+            run_id,
+            self.csv_type,
+            final_status,
+            len(df),
+            erros,
+            avisos,
+            silver_error,
+            started_at,
+        )
 
         return Response(
             {
