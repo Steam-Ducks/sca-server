@@ -18,6 +18,17 @@ services:
     networks:
       - app_net
 
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: postgres_exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT:-5432}/${DB_NAME}?sslmode=${DB_SSL_MODE:-disable}"
+    ports:
+      - "9187:9187"
+    restart: always
+    networks:
+      - app_net
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -26,6 +37,10 @@ services:
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-remote-write-receiver'
     restart: always
     networks:
       - app_net
