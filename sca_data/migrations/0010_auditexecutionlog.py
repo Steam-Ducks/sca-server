@@ -23,7 +23,10 @@ class Migration(migrations.Migration):
                 ("run_id", models.UUIDField()),
                 ("operation", models.CharField(max_length=20)),
                 ("status", models.CharField(max_length=20)),
-                ("table_schema", models.CharField(blank=True, max_length=100, null=True)),
+                (
+                    "table_schema",
+                    models.CharField(blank=True, max_length=100, null=True),
+                ),
                 ("table_name", models.CharField(blank=True, max_length=100, null=True)),
                 ("affected_rows", models.IntegerField(blank=True, null=True)),
                 ("started_at", models.DateTimeField()),
