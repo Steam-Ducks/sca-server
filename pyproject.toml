@@ -4,6 +4,17 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 
+markers = [
+    "integration: conjunto de funções com banco PostgreSQL real, sem mocks.",
+]
+
+# Rodar unitários (padrão, SQLite):
+#   pytest -m "not integration"
+#
+# Rodar integração localmente (PostgreSQL via Docker):
+#   export DB_HOST=localhost DB_USER=test_user DB_PASSWORD=test_password DB_NAME=test_db
+#   pytest -m integration --reuse-db -v
+
 [tool.ruff]
 line-length = 88
 target-version = "py312"

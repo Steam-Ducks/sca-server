@@ -276,18 +276,36 @@ class GoldBudgetSnapshot(models.Model):
         db_table = 'gold"."budget_snapshot'
 
 
-class AuditExecutionLog(models.Model):
+class FatoExecucaoCarga(models.Model):
     id = models.AutoField(primary_key=True)
+    run_id = models.UUIDField()
+    fonte = models.CharField(max_length=50)
+    tabela = models.CharField(max_length=100)
+    status = models.CharField(max_length=20)
+    linhas_processadas = models.IntegerField(null=True, blank=True)
+    erros = models.IntegerField(default=0)
+    avisos = models.IntegerField(default=0)
+    detalhes_falha = models.TextField(null=True, blank=True)
+    iniciado_em = models.DateTimeField()
+    finalizado_em = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        app_label = "sca_data"
+        managed = True
+        db_table = 'audit"."fato_execucao_carga'
+
+
+class AuditExecutionLog(models.Model):
     run_id = models.UUIDField()
     operation = models.CharField(max_length=20)
     status = models.CharField(max_length=20)
-    table_schema = models.CharField(max_length=100, blank=True, default="")
-    table_name = models.CharField(max_length=100, blank=True, default="")
-    affected_rows = models.IntegerField(null=True, blank=True)
+    table_schema = models.CharField(max_length=100, blank=True, null=True)
+    table_name = models.CharField(max_length=100, blank=True, null=True)
+    affected_rows = models.IntegerField(blank=True, null=True)
     started_at = models.DateTimeField()
-    finalized_at = models.DateTimeField(null=True, blank=True)
-    operation_duration = models.IntegerField(null=True, blank=True)
-    operation_metadata = models.JSONField(null=True, blank=True)
+    finalized_at = models.DateTimeField(blank=True, null=True)
+    operation_duration = models.IntegerField(blank=True, null=True)
+    operation_metadata = models.JSONField(blank=True, null=True)
 
     class Meta:
         app_label = "sca_data"

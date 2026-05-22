@@ -73,10 +73,9 @@ class TestCreateTable:
 
 
 class TestBuildDf:
-    @patch("sca_data.db.bronze.ingestion.audit.log_exec")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.bronze.ingestion.requests.get")
-    def test_fetches_file_from_endpoint(self, mock_get, mock_create, mock_log):
+    def test_fetches_file_from_endpoint(self, mock_get, mock_create):
         mock_get.return_value.json.return_value = [{"id": 1, "nome": "Alpha"}]
 
         _build_df("http://api.example.com", "programas.parquet", "test-run-id")
@@ -85,12 +84,9 @@ class TestBuildDf:
             "http://api.example.com/files/programas.parquet"
         )
 
-    @patch("sca_data.db.bronze.ingestion.audit.log_exec")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.bronze.ingestion.requests.get")
-    def test_strips_parquet_extension_from_table_name(
-        self, mock_get, mock_create, mock_log
-    ):
+    def test_strips_parquet_extension_from_table_name(self, mock_get, mock_create):
         mock_get.return_value.json.return_value = [{"id": 1}]
 
         _build_df("http://api.example.com", "programas.parquet", "test-run-id")
@@ -99,10 +95,9 @@ class TestBuildDf:
         assert tb_name == "programas"
         assert ".parquet" not in tb_name
 
-    @patch("sca_data.db.bronze.ingestion.audit.log_exec")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.bronze.ingestion.requests.get")
-    def test_builds_dataframe_from_json_response(self, mock_get, mock_create, mock_log):
+    def test_builds_dataframe_from_json_response(self, mock_get, mock_create):
         mock_get.return_value.json.return_value = [
             {"id": 1, "nome": "Alpha"},
             {"id": 2, "nome": "Beta"},
@@ -114,10 +109,9 @@ class TestBuildDf:
         assert isinstance(df_arg, pd.DataFrame)
         assert len(df_arg) == 2
 
-    @patch("sca_data.db.bronze.ingestion.audit.log_exec")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.bronze.ingestion.requests.get")
-    def test_exception_does_not_propagate(self, mock_get, mock_create, mock_log):
+    def test_exception_does_not_propagate(self, mock_get, mock_create):
         mock_get.side_effect = Exception("Network error")
 
         _build_df("http://api.example.com", "programas.parquet", "test-run-id")

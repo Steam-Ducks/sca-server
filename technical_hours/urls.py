@@ -4,6 +4,7 @@ from technical_hours.views import (
     TechnicalHoursKpiView,
     TechnicalHoursTablePeriodoView,
     TechnicalHoursTableView,
+    TechnicalHoursTemporalView,
 )
 
 urlpatterns = [
@@ -16,6 +17,11 @@ urlpatterns = [
         "horas-tecnicas/kpis/",
         TechnicalHoursKpiView.as_view(),
         name="technical-hours-kpis",
+    ),
+    path(
+        "horas-tecnicas/temporal/",
+        TechnicalHoursTemporalView.as_view(),
+        name="technical-hours-temporal",
     ),
     path(
         "horas-tecnicas/periodo/<str:periodo>/",

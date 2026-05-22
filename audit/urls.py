@@ -1,4 +1,5 @@
 from django.urls import path
+
 from audit.views import AuditExecutionLogTableView
 
 urlpatterns = [

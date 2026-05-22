@@ -5,7 +5,8 @@ from datetime import datetime, timedelta, timezone
 from django.conf import settings
 from django.db import connection
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
@@ -17,11 +18,13 @@ _SILVER_STALENESS_HOURS = 48
 
 
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def health_check(request):
     return Response({"status": "ok"}, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
+@permission_classes([AllowAny])
 def status_view(request):
     services = _check_services()
     processes = _get_recent_processes()
