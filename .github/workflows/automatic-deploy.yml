@@ -1,7 +1,7 @@
 name: automatic-deploy
 
 on:
-  merge:
+  push:
     branches:
       - develop
 
