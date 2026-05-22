@@ -3,7 +3,7 @@ name: automatic-deploy
 on:
   push:
     branches:
-      - develop
+      - main
 
 jobs:
   deploy:
@@ -22,8 +22,8 @@ jobs:
           script: |
             cd /home/deploy/app/sca-server
 
-            git checkout develop
+            git checkout main
 
-            git pull origin develop
+            git pull origin main
 
             docker compose -f docker-compose.prod.yml up -d --build
