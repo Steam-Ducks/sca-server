@@ -7,6 +7,11 @@ from config.settings import *  # noqa: F401,F403
 # silver. Localmente, sem Postgres disponível, cai pra SQLite em memória
 # e remove sca_data do app registry (models silver usam tipos Postgres
 # incompatíveis com SQLite; seus testes são puramente unit-mocked).
+REST_FRAMEWORK = {  # noqa: F405
+    **REST_FRAMEWORK,  # noqa: F405
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
+}
+
 if not os.environ.get("DB_HOST"):
     DATABASES = {
         "default": {

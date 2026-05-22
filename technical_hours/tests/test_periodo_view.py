@@ -3,7 +3,6 @@ from decimal import Decimal
 from unittest.mock import patch
 
 from django.utils import timezone
-from rest_framework.test import APIClient
 
 from sca_data.models import (
     SilverPrograma,
@@ -69,31 +68,28 @@ def _make_tempo(
 # ---------------------------------------------------------------------------
 
 
-def test_periodo_endpoint_retorna_200():
+def test_periodo_endpoint_retorna_200(api_client):
     with patch.object(TechnicalHoursTablePeriodoView, "get_queryset", return_value=[]):
-        client = APIClient()
-        response = client.get(f"{URL}2024-03/")
+        response = api_client.get(f"{URL}2024-03/")
         assert response.status_code == 200
 
 
-def test_periodo_endpoint_retorna_lista():
+def test_periodo_endpoint_retorna_lista(api_client):
     tempo = _make_tempo()
     with patch.object(
         TechnicalHoursTablePeriodoView, "get_queryset", return_value=[tempo]
     ):
-        client = APIClient()
-        response = client.get(f"{URL}2024-03/")
+        response = api_client.get(f"{URL}2024-03/")
         assert isinstance(response.data, list)
         assert len(response.data) == 1
 
 
-def test_periodo_endpoint_retorna_campos_corretos():
+def test_periodo_endpoint_retorna_campos_corretos(api_client):
     tempo = _make_tempo()
     with patch.object(
         TechnicalHoursTablePeriodoView, "get_queryset", return_value=[tempo]
     ):
-        client = APIClient()
-        response = client.get(f"{URL}2024-03/")
+        response = api_client.get(f"{URL}2024-03/")
         item = response.data[0]
         assert item["colaborador"] == "Lucas Martins"
         assert item["funcao"] == "Cloud Architect"
@@ -106,31 +102,27 @@ def test_periodo_endpoint_retorna_campos_corretos():
         assert item["tarefa"] == "Arquitetura Cloud"
 
 
-def test_periodo_endpoint_lista_vazia():
+def test_periodo_endpoint_lista_vazia(api_client):
     with patch.object(TechnicalHoursTablePeriodoView, "get_queryset", return_value=[]):
-        client = APIClient()
-        response = client.get(f"{URL}2024-03/")
+        response = api_client.get(f"{URL}2024-03/")
         assert response.status_code == 200
         assert response.data == []
 
 
-def test_periodo_endpoint_periodo_invalido_retorna_400():
-    client = APIClient()
-    response = client.get(f"{URL}2024-13/")
+def test_periodo_endpoint_periodo_invalido_retorna_400(api_client):
+    response = api_client.get(f"{URL}2024-13/")
     assert response.status_code == 400
     assert "periodo" in response.data
 
 
-def test_periodo_endpoint_formato_errado_retorna_400():
-    client = APIClient()
+def test_periodo_endpoint_formato_errado_retorna_400(api_client):
     for bad in ["202403", "abcd-ef", "2024-3"]:
-        response = client.get(f"{URL}{bad}/")
+        response = api_client.get(f"{URL}{bad}/")
         assert response.status_code == 400, f"Esperado 400 para '{bad}'"
 
 
-def test_periodo_endpoint_com_barra_retorna_404():
-    client = APIClient()
-    response = client.get("/api/horas-tecnicas/periodo/2024/03/")
+def test_periodo_endpoint_com_barra_retorna_404(api_client):
+    response = api_client.get("/api/horas-tecnicas/periodo/2024/03/")
     assert response.status_code == 404
 
 
@@ -148,7 +140,7 @@ def test_periodo_endpoint_janeiro_ultimo_dia_correto():
     assert fim == datetime.date(2024, 1, 31)
 
 
-def test_periodo_endpoint_multiplos_registros():
+def test_periodo_endpoint_multiplos_registros(api_client):
     tempo1 = _make_tempo(id=1)
     tempo2 = _make_tempo(
         id=2,
@@ -164,8 +156,7 @@ def test_periodo_endpoint_multiplos_registros():
     with patch.object(
         TechnicalHoursTablePeriodoView, "get_queryset", return_value=[tempo1, tempo2]
     ):
-        client = APIClient()
-        response = client.get(f"{URL}2024-03/")
+        response = api_client.get(f"{URL}2024-03/")
         assert response.status_code == 200
         assert len(response.data) == 2
         assert response.data[0]["colaborador"] == "Lucas Martins"
