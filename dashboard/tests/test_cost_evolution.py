@@ -2,7 +2,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
 
-from rest_framework.test import APIClient
 
 from dashboard.selectors import get_cost_evolution
 from dashboard.serializers import CostEvolutionSerializer
@@ -309,24 +308,24 @@ def test_serializer_period_is_string():
 
 
 @pytest.mark.django_db
-def test_endpoint_returns_200():
+def test_endpoint_returns_200(api_client):
     with patch("dashboard.views.get_cost_evolution", return_value=EVOLUTION_MOCK):
-        response = APIClient().get("/api/dashboard/cost-evolution/")
+        response = api_client.get("/api/dashboard/cost-evolution/")
     assert response.status_code == 200
 
 
 @pytest.mark.django_db
-def test_endpoint_returns_list():
+def test_endpoint_returns_list(api_client):
     with patch("dashboard.views.get_cost_evolution", return_value=EVOLUTION_MOCK):
-        response = APIClient().get("/api/dashboard/cost-evolution/")
+        response = api_client.get("/api/dashboard/cost-evolution/")
     assert isinstance(response.data, list)
     assert len(response.data) == 3
 
 
 @pytest.mark.django_db
-def test_endpoint_response_fields():
+def test_endpoint_response_fields(api_client):
     with patch("dashboard.views.get_cost_evolution", return_value=EVOLUTION_MOCK):
-        response = APIClient().get("/api/dashboard/cost-evolution/")
+        response = api_client.get("/api/dashboard/cost-evolution/")
     row = response.data[0]
     assert "period" in row
     assert "materials_cost" in row
@@ -335,9 +334,9 @@ def test_endpoint_response_fields():
 
 
 @pytest.mark.django_db
-def test_endpoint_passes_all_filters_to_selector():
+def test_endpoint_passes_all_filters_to_selector(api_client):
     with patch("dashboard.views.get_cost_evolution", return_value=[]) as mock_sel:
-        APIClient().get(
+        api_client.get(
             "/api/dashboard/cost-evolution/"
             "?start_date=2024-01-01&end_date=2024-12-31"
             "&program=MANSUP&project=Conversor&status=Em+andamento"
@@ -351,17 +350,17 @@ def test_endpoint_passes_all_filters_to_selector():
 
 
 @pytest.mark.django_db
-def test_endpoint_no_filters_returns_all():
+def test_endpoint_no_filters_returns_all(api_client):
     with patch("dashboard.views.get_cost_evolution", return_value=EVOLUTION_MOCK):
-        response = APIClient().get("/api/dashboard/cost-evolution/")
+        response = api_client.get("/api/dashboard/cost-evolution/")
     assert response.status_code == 200
     assert len(response.data) == 3
 
 
 @pytest.mark.django_db
-def test_endpoint_empty_returns_empty_list():
+def test_endpoint_empty_returns_empty_list(api_client):
     with patch("dashboard.views.get_cost_evolution", return_value=[]):
-        response = APIClient().get("/api/dashboard/cost-evolution/")
+        response = api_client.get("/api/dashboard/cost-evolution/")
     assert response.status_code == 200
     assert response.data == []
 
