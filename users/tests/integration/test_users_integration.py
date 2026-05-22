@@ -49,7 +49,11 @@ class TestUserListCreateIntegration:
     def test_cria_usuario_via_post_e_persiste_no_banco(self):
         # CTI-02 (mínimo): POST persiste no banco → dado existe no ORM
         # Valida: view → ORM → banco (cadeia completa de escrita)
-        payload = {"username": "testusr", "name": "Usuário Teste", "email": "teste@sca.com"}
+        payload = {
+            "username": "testusr",
+            "name": "Usuário Teste",
+            "email": "teste@sca.com",
+        }
 
         response = self.client.post("/api/users/", data=payload, format="json")
 
@@ -61,8 +65,12 @@ class TestUserListCreateIntegration:
     def test_get_retorna_usuario_recem_criado(self):
         # CTI-03 (mínimo): dado inserido → aparece na resposta GET
         # Valida: ORM → serializer → response (cadeia completa de leitura)
-        User.objects.create_user(username="alpha", name="Usuário Alpha", email="alpha@sca.com")
-        User.objects.create_user(username="beta", name="Usuário Beta", email="beta@sca.com")
+        User.objects.create_user(
+            username="alpha", name="Usuário Alpha", email="alpha@sca.com"
+        )
+        User.objects.create_user(
+            username="beta", name="Usuário Beta", email="beta@sca.com"
+        )
 
         response = self.client.get("/api/users/")
 
@@ -75,7 +83,9 @@ class TestUserListCreateIntegration:
     def test_resposta_contem_campos_corretos(self):
         # CTI-04 (adicional): estrutura dos campos da resposta
         # Valida: serializer inclui todos os campos esperados pelo frontend
-        User.objects.create_user(username="campos", name="Campo Teste", email="campos@sca.com")
+        User.objects.create_user(
+            username="campos", name="Campo Teste", email="campos@sca.com"
+        )
 
         response = self.client.get("/api/users/")
 
@@ -87,7 +97,9 @@ class TestUserListCreateIntegration:
     def test_email_duplicado_retorna_400(self):
         # CTI-05 (adicional): regra de negócio — e-mail único
         # Valida: validação do serializer bloqueia duplicata antes de persistir
-        User.objects.create_user(username="primeiro", name="Primeiro", email="mesmo@sca.com")
+        User.objects.create_user(
+            username="primeiro", name="Primeiro", email="mesmo@sca.com"
+        )
 
         payload = {"username": "segundo", "name": "Segundo", "email": "mesmo@sca.com"}
         response = self.client.post("/api/users/", data=payload, format="json")
@@ -98,6 +110,10 @@ class TestUserListCreateIntegration:
     def test_post_sem_email_retorna_400(self):
         # CTI-06 (adicional): campo obrigatório ausente → 400
         # Valida: validação de campos obrigatórios na cadeia view → serializer
-        response = self.client.post("/api/users/", data={"username": "semEmail", "name": "Sem Email"}, format="json")
+        response = self.client.post(
+            "/api/users/",
+            data={"username": "semEmail", "name": "Sem Email"},
+            format="json",
+        )
         assert response.status_code == 400
         assert User.objects.count() == 0
