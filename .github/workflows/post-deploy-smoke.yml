@@ -6,7 +6,6 @@ on:
     types:
       - completed
   schedule:
-    - cron: '0 8 * * 1-5'
   workflow_dispatch:
 
 jobs:
