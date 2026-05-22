@@ -277,6 +277,7 @@ class GoldBudgetSnapshot(models.Model):
 
 
 class FatoExecucaoCarga(models.Model):
+    id = models.AutoField(primary_key=True)
     run_id = models.UUIDField()
     fonte = models.CharField(max_length=50)
     tabela = models.CharField(max_length=100)
@@ -290,6 +291,7 @@ class FatoExecucaoCarga(models.Model):
 
     class Meta:
         app_label = "sca_data"
+        managed = True
         db_table = 'audit"."fato_execucao_carga'
 
 
