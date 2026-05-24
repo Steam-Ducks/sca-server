@@ -107,6 +107,9 @@ $toRun = if ($Scenarios.Count -gt 0) { $Scenarios } else { $allScenarios }
 $scenariosDir = Join-Path $PSScriptRoot 'scenarios'
 $failed = @()
 
+$env:K6_PROMETHEUS_RW_TREND_STATS = "p(50),p(95),p(99)"
+$env:K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM = "false"
+
 foreach ($name in $toRun) {
     $file = Join-Path $scenariosDir "$name.js"
 
@@ -121,7 +124,6 @@ foreach ($name in $toRun) {
 
     k6 run @envArgs `
       --out experimental-prometheus-rw=http://localhost:9090/api/v1/write `
-      --tag scenario=$name `
       $file
 
     if ($LASTEXITCODE -ne 0) {
