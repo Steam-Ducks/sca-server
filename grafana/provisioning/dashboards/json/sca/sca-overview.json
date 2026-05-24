@@ -1,0 +1,138 @@
+{
+  "title": "SCA — Visão Geral",
+  "uid": "sca-overview",
+  "version": 4,
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "graphTooltip": 1,
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 100, "type": "row", "title": "Agora",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 }, "collapsed": false
+    },
+    {
+      "id": 1, "type": "stat", "title": "Requisições por segundo",
+      "description": "Volume total de requisições que o servidor está recebendo agora",
+      "gridPos": { "x": 0, "y": 1, "w": 4, "h": 4 },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 50, "color": "orange" }, { "value": 200, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(django_http_requests_latency_including_middlewares_seconds_count[5m]))", "legendFormat": "" }]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Erros do servidor por segundo",
+      "description": "Falhas internas do servidor (ex.: exceção não tratada, banco indisponível). Meta: próximo de zero",
+      "gridPos": { "x": 4, "y": 1, "w": 4, "h": 4 },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 0.1, "color": "orange" }, { "value": 1, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(django_http_responses_total_by_status_total{status=~\"5..\"}[5m]))", "legendFormat": "" }]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Erros do cliente por segundo",
+      "description": "Requisições com erro causado pelo chamador (ex.: recurso não encontrado, permissão negada)",
+      "gridPos": { "x": 8, "y": 1, "w": 4, "h": 4 },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 1, "color": "orange" }, { "value": 10, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(django_http_responses_total_by_status_total{status=~\"4..\"}[5m]))", "legendFormat": "" }]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Tempo de resposta — 95% das req.",
+      "description": "95% das requisições responderam em menos deste tempo. Meta: abaixo de 500ms",
+      "gridPos": { "x": 12, "y": 1, "w": 4, "h": 4 },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "unit": "ms", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 500, "color": "orange" }, { "value": 2000, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "" }]
+    },
+    {
+      "id": 5, "type": "stat", "title": "Consultas ao banco por segundo",
+      "description": "Quantas consultas SQL o servidor está enviando ao banco de dados por segundo",
+      "gridPos": { "x": 16, "y": 1, "w": 4, "h": 4 },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "unit": "ops", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 500, "color": "orange" }, { "value": 2000, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(django_db_execute_total[5m]))", "legendFormat": "" }]
+    },
+    {
+      "id": 6, "type": "stat", "title": "Erros no banco de dados (5 min)",
+      "description": "Falhas ao executar consultas no banco nos últimos 5 minutos",
+      "gridPos": { "x": 20, "y": 1, "w": 4, "h": 4 },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 1, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(increase(django_db_errors_total[5m]))", "legendFormat": "" }]
+    },
+    {
+      "id": 101, "type": "row", "title": "Ao longo do tempo",
+      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 }, "collapsed": false
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Requisições por código de resposta",
+      "description": "2xx = sucesso, 3xx = redirecionamento, 4xx = erro do cliente, 5xx = erro do servidor",
+      "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "options": { "legend": { "displayMode": "table", "placement": "right" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum by (status) (rate(django_http_responses_total_by_status_total[5m]))", "legendFormat": "Código {{status}}" }
+      ]
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "Tempo de resposta ao longo do tempo",
+      "description": "Mediana: metade das requisições foram mais rápidas. 95%: só 5% demoraram mais. 99%: só 1% demoraram mais",
+      "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "options": { "legend": { "displayMode": "table", "placement": "right" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.50, sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "Mediana (50%)" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "Lento (95%)" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.99, sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "Muito lento (99%)" }
+      ]
+    },
+    {
+      "id": 102, "type": "row", "title": "Por endpoint",
+      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 1 }, "collapsed": false
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Endpoints mais acessados — req/s",
+      "description": "Os 10 endpoints que recebem mais requisições por segundo",
+      "gridPos": { "x": 0, "y": 15, "w": 12, "h": 8 },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi" } },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "topk(10, sum by (view) (rate(django_http_requests_latency_including_middlewares_seconds_count[5m])))", "legendFormat": "{{view}}" }
+      ]
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Endpoints mais lentos — 95% das req.",
+      "description": "Os 10 endpoints onde 95% das requisições levaram mais tempo para responder",
+      "gridPos": { "x": 12, "y": 15, "w": 12, "h": 8 },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi" } },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "topk(10, histogram_quantile(0.95, sum by (view, le) (rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m]))) * 1000)", "legendFormat": "{{view}}" }
+      ]
+    },
+    {
+      "id": 103, "type": "row", "title": "Erros e banco de dados",
+      "gridPos": { "x": 0, "y": 23, "w": 24, "h": 1 }, "collapsed": false
+    },
+    {
+      "id": 11, "type": "timeseries", "title": "Erros do servidor por endpoint",
+      "description": "Endpoints que estão gerando falhas internas. Qualquer linha acima de zero merece investigação",
+      "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi" } },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum by (view) (rate(django_http_responses_total_by_status_total{status=~\"5..\"}[5m]))", "legendFormat": "{{view}}" }
+      ]
+    },
+    {
+      "id": 12, "type": "timeseries", "title": "Consultas ao banco e erros por segundo",
+      "description": "Volume de consultas SQL enviadas ao banco. Erros indicam falhas ao executar consultas (ex.: timeout, violação de restrição)",
+      "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 },
+      "fieldConfig": { "defaults": { "unit": "ops" } },
+      "options": { "legend": { "displayMode": "table", "placement": "right" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(django_db_execute_total[5m]))", "legendFormat": "Consultas/s" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(django_db_errors_total[5m]))", "legendFormat": "Erros no banco/s" }
+      ]
+    }
+  ]
+}

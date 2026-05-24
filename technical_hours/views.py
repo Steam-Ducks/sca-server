@@ -1,5 +1,6 @@
 import datetime
 
+from django.core.cache import cache
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum
 from django.db.models.functions import TruncMonth
 from rest_framework import generics
@@ -8,6 +9,15 @@ from rest_framework.response import Response
 
 from sca_data.models import SilverTempoTarefa
 from technical_hours.serializers import TechnicalHoursTableSerializer
+
+_CACHE_TTL = 300
+
+
+def _ck(prefix, params=None, **kwargs):
+    parts = sorted((params or {}).items())
+    extra = sorted(kwargs.items())
+    suffix = "&".join(f"{k}={v}" for k, v in parts + extra if v)
+    return f"{prefix}:{suffix}" if suffix else prefix
 
 
 class TechnicalHoursTableView(generics.ListAPIView):
@@ -144,6 +154,15 @@ class TechnicalHoursTableView(generics.ListAPIView):
         queryset = self._apply_dimension_filters(queryset)
         return queryset.order_by("-custo_total")
 
+    def list(self, request, *args, **kwargs):
+        key = _ck("tech_hours_table", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+        response = super().list(request, *args, **kwargs)
+        cache.set(key, response.data, _CACHE_TTL)
+        return response
+
 
 class TechnicalHoursKpiView(TechnicalHoursTableView):
     """
@@ -163,6 +182,11 @@ class TechnicalHoursKpiView(TechnicalHoursTableView):
     """
 
     def get(self, request, *args, **kwargs):
+        key = _ck("tech_hours_kpi", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+
         qs = self.get_queryset()
         agg = qs.aggregate(
             total_horas=Sum("horas_trabalhadas"),
@@ -171,16 +195,16 @@ class TechnicalHoursKpiView(TechnicalHoursTableView):
         )
         total_horas = float(agg["total_horas"] or 0)
         custo_total = float(agg["soma_custo"] or 0)
-        return Response(
-            {
-                "custo_total": round(custo_total, 2),
-                "total_horas": round(total_horas, 2),
-                "custo_medio": (
-                    round(custo_total / total_horas, 2) if total_horas else 0
-                ),
-                "registros": agg["registros"] or 0,
-            }
-        )
+        data = {
+            "custo_total": round(custo_total, 2),
+            "total_horas": round(total_horas, 2),
+            "custo_medio": (
+                round(custo_total / total_horas, 2) if total_horas else 0
+            ),
+            "registros": agg["registros"] or 0,
+        }
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)
 
 
 class TechnicalHoursTablePeriodoView(TechnicalHoursTableView):
@@ -205,6 +229,17 @@ class TechnicalHoursTablePeriodoView(TechnicalHoursTableView):
             "data__lte": ultimo_dia,
         }
 
+    def list(self, request, *args, **kwargs):
+        periodo = self.kwargs.get("periodo", "")
+        key = _ck("tech_hours_table_p", request.query_params, periodo=periodo)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+        # skip TechnicalHoursTableView.list() to avoid double caching
+        response = super(TechnicalHoursTableView, self).list(request, *args, **kwargs)
+        cache.set(key, response.data, _CACHE_TTL)
+        return response
+
 
 class TechnicalHoursTemporalView(TechnicalHoursTableView):
     """
@@ -225,6 +260,11 @@ class TechnicalHoursTemporalView(TechnicalHoursTableView):
         return {}
 
     def get(self, request, *args, **kwargs):
+        key = _ck("tech_hours_temporal", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+
         qs = self.get_queryset()
         agg = (
             qs.annotate(mes=TruncMonth("data"))
@@ -235,13 +275,13 @@ class TechnicalHoursTemporalView(TechnicalHoursTableView):
             )
             .order_by("mes")
         )
-        return Response(
-            [
-                {
-                    "periodo": row["mes"].strftime("%Y-%m"),
-                    "total_horas": round(float(row["total_horas"] or 0), 2),
-                    "total_custo": round(float(row["total_custo"] or 0), 2),
-                }
-                for row in agg
-            ]
-        )
+        data = [
+            {
+                "periodo": row["mes"].strftime("%Y-%m"),
+                "total_horas": round(float(row["total_horas"] or 0), 2),
+                "total_custo": round(float(row["total_custo"] or 0), 2),
+            }
+            for row in agg
+        ]
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)

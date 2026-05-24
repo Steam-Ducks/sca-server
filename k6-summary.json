@@ -1,0 +1,647 @@
+{
+  "options": {
+    "summaryTrendStats": [
+      "avg",
+      "min",
+      "med",
+      "max",
+      "p(90)",
+      "p(95)"
+    ],
+    "summaryTimeUnit": "",
+    "noColor": false
+  },
+  "state": {
+    "isStdOutTTY": true,
+    "isStdErrTTY": true,
+    "testRunDurationMs": 53480.3633
+  },
+  "metrics": {
+    "http_req_connecting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.10185416666666665,
+        "min": 0,
+        "med": 0,
+        "max": 1.8937,
+        "p(90)": 0,
+        "p(95)": 0.46817999999999876
+      }
+    },
+    "http_req_sending": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(90)": 0.51289,
+        "p(95)": 0.51673,
+        "avg": 0.11797083333333334,
+        "min": 0,
+        "med": 0,
+        "max": 1.2916
+      }
+    },
+    "vus": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "value": 1,
+        "min": 0,
+        "max": 1
+      }
+    },
+    "http_req_blocked": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 2.4108,
+        "p(90)": 0,
+        "p(95)": 0.46817999999999876,
+        "avg": 0.1234,
+        "min": 0,
+        "med": 0
+      }
+    },
+    "http_req_receiving": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.16408750000000003,
+        "min": 0,
+        "med": 0,
+        "max": 1.507,
+        "p(90)": 0.8054599999999997,
+        "p(95)": 0.9834449999999999
+      }
+    },
+    "http_req_duration{name:status}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 1177.3612,
+        "min": 1177.3612,
+        "med": 1177.3612,
+        "max": 1177.3612,
+        "p(90)": 1177.3612,
+        "p(95)": 1177.3612
+      },
+      "thresholds": {
+        "p(95)<10000": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_waiting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "min": 1006.1322,
+        "med": 1238.78765,
+        "max": 14285.1868,
+        "p(90)": 2525.2200799999996,
+        "p(95)": 6529.49874499999,
+        "avg": 2181.0958125
+      }
+    },
+    "data_received": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 10119,
+        "rate": 189.20963463238104
+      }
+    },
+    "vus_max": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "value": 1,
+        "min": 1,
+        "max": 1
+      }
+    },
+    "http_req_duration{expected_response:true}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 14285.1868,
+        "p(90)": 2525.2200799999996,
+        "p(95)": 6529.49874499999,
+        "avg": 2181.3778708333334,
+        "min": 1006.1322,
+        "med": 1239.0414
+      }
+    },
+    "checks": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "fails": 2,
+        "rate": 0.9583333333333334,
+        "passes": 46
+      }
+    },
+    "data_sent": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "rate": 165.12602860347434,
+        "count": 8831
+      }
+    },
+    "iteration_duration": {
+      "contains": "time",
+      "values": {
+        "avg": 51315.8709,
+        "min": 51315.8709,
+        "med": 51315.8709,
+        "max": 51315.8709,
+        "p(90)": 51315.8709,
+        "p(95)": 51315.8709
+      },
+      "type": "trend"
+    },
+    "iterations": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "rate": 0.018698451885797118,
+        "count": 1
+      }
+    },
+    "group_duration": {
+      "values": {
+        "min": 1266.741,
+        "med": 4608.5461,
+        "max": 19840.2526,
+        "p(90)": 13255.523260000004,
+        "p(95)": 16547.88792999999,
+        "avg": 7177.608485714286
+      },
+      "type": "trend",
+      "contains": "time"
+    },
+    "http_req_duration": {
+      "thresholds": {
+        "p(95)<5000": {
+          "ok": false
+        }
+      },
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 2181.3778708333334,
+        "min": 1006.1322,
+        "med": 1239.0414,
+        "max": 14285.1868,
+        "p(90)": 2525.2200799999996,
+        "p(95)": 6529.49874499999
+      }
+    },
+    "http_reqs": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 24,
+        "rate": 0.44876284525913085
+      }
+    },
+    "http_req_tls_handshaking": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 0,
+        "max": 0,
+        "p(90)": 0,
+        "p(95)": 0,
+        "avg": 0,
+        "min": 0
+      }
+    },
+    "http_req_failed": {
+      "thresholds": {
+        "rate<0.01": {
+          "ok": true
+        }
+      },
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0,
+        "passes": 0,
+        "fails": 24
+      }
+    }
+  },
+  "setup_data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzc5NjgwMTUyLCJpYXQiOjE3Nzk2NTEzNTIsImp0aSI6IjhkOGJhMzg4NmI3YzRkYjVhZmQ3ZTkxMTUwNzMyMzhjIiwidXNlcl9pZCI6MX0.1iOB4PQV01WxmD7esB0Qb4jOhxmjibceBfykbLerV6Y"
+  },
+  "root_group": {
+    "checks": [],
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": [
+        {
+          "name": "setup",
+          "path": "::setup",
+          "id": "5c0f8025f7e0b6654089e5b00e950f1a",
+          "groups": [],
+          "checks": [
+              {
+                "name": "login retorna 200",
+                "path": "::setup::login retorna 200",
+                "id": "7532804b74fe8f73fd9dc1ce3f20382b",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "passes": 1,
+                "fails": 0,
+                "name": "login retorna token",
+                "path": "::setup::login retorna token",
+                "id": "5adec0853c7df96571918db3ecd2d5b3"
+              }
+            ]
+        },
+        {
+          "path": "::health",
+          "id": "612cc1c9a7c3d7996d1eb6414fb9c69d",
+          "groups": [],
+          "checks": [
+              {
+                "id": "3564f721fe16feb0f28fb25365f15c1b",
+                "passes": 1,
+                "fails": 0,
+                "name": "health: status 2xx",
+                "path": "::health::health: status 2xx"
+              },
+              {
+                "name": "health: tempo < 3s",
+                "path": "::health::health: tempo < 3s",
+                "id": "64685bce9d1818718db981be5dab3894",
+                "passes": 0,
+                "fails": 1
+              },
+              {
+                "name": "status: status 2xx",
+                "path": "::health::status: status 2xx",
+                "id": "b414532fa14344c04ec890d8115c82cc",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "passes": 1,
+                "fails": 0,
+                "name": "status: tempo < 3s",
+                "path": "::health::status: tempo < 3s",
+                "id": "fed8a96e8726b3e966bb8b4c3732be3f"
+              }
+            ],
+          "name": "health"
+        },
+        {
+          "name": "dashboard",
+          "path": "::dashboard",
+          "id": "4127c5b4ec4d84d8d6603b3aae632e90",
+          "groups": [],
+          "checks": [
+              {
+                "name": "dashboard/kpis: status 2xx",
+                "path": "::dashboard::dashboard/kpis: status 2xx",
+                "id": "961f320e8548db59a2d32a0be7be3e1f",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "name": "dashboard/kpis: tempo < 3s",
+                "path": "::dashboard::dashboard/kpis: tempo < 3s",
+                "id": "cbe6a0d763066b3143fd5168860d6363",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "path": "::dashboard::dashboard/projects: status 2xx",
+                "id": "e642ba7d0f7799a5943592b332a2b9a0",
+                "passes": 1,
+                "fails": 0,
+                "name": "dashboard/projects: status 2xx"
+              },
+              {
+                "path": "::dashboard::dashboard/projects: tempo < 3s",
+                "id": "323b505e3b1f7c9c33d341e042f91621",
+                "passes": 0,
+                "fails": 1,
+                "name": "dashboard/projects: tempo < 3s"
+              },
+              {
+                "path": "::dashboard::dashboard/summary: status 2xx",
+                "id": "47ea7170c39ad5c9c0188927dbc53e87",
+                "passes": 1,
+                "fails": 0,
+                "name": "dashboard/summary: status 2xx"
+              },
+              {
+                "passes": 1,
+                "fails": 0,
+                "name": "dashboard/summary: tempo < 3s",
+                "path": "::dashboard::dashboard/summary: tempo < 3s",
+                "id": "e5b7ed0304713b9b87607488922cbffb"
+              },
+              {
+                "name": "dashboard/composition: status 2xx",
+                "path": "::dashboard::dashboard/composition: status 2xx",
+                "id": "364412a02486693c2e79edffdaaa203c",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "name": "dashboard/composition: tempo < 3s",
+                "path": "::dashboard::dashboard/composition: tempo < 3s",
+                "id": "58df77d0f62a7d352bb28d3ce82ac835",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "name": "dashboard/top-projects: status 2xx",
+                "path": "::dashboard::dashboard/top-projects: status 2xx",
+                "id": "f81c496b50a98d332939948ecb07545e",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "name": "dashboard/top-projects: tempo < 3s",
+                "path": "::dashboard::dashboard/top-projects: tempo < 3s",
+                "id": "7c36e892f1ef45528d628a93e2a158a7",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "name": "dashboard/cost-evolution: status 2xx",
+                "path": "::dashboard::dashboard/cost-evolution: status 2xx",
+                "id": "c778958499efa3f88047169d2f7d0a5f",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "id": "2d45ff6c5731267bcb9414b6e553e724",
+                "passes": 1,
+                "fails": 0,
+                "name": "dashboard/cost-evolution: tempo < 3s",
+                "path": "::dashboard::dashboard/cost-evolution: tempo < 3s"
+              }
+            ]
+        },
+        {
+          "name": "materials",
+          "path": "::materials",
+          "id": "546b1cf95e01062f528c580e6f9db9a5",
+          "groups": [],
+          "checks": [
+              {
+                "fails": 0,
+                "name": "compras: status 2xx",
+                "path": "::materials::compras: status 2xx",
+                "id": "0c1a1fa0122b049b109a41ededc2916b",
+                "passes": 1
+              },
+              {
+                "passes": 1,
+                "fails": 0,
+                "name": "compras: tempo < 3s",
+                "path": "::materials::compras: tempo < 3s",
+                "id": "df10d4c7683bb85626a3774c3a1c3c22"
+              },
+              {
+                "id": "026b1dbfedf84daf0cf273cae61192f4",
+                "passes": 1,
+                "fails": 0,
+                "name": "compras/periodo: status 2xx",
+                "path": "::materials::compras/periodo: status 2xx"
+              },
+              {
+                "id": "84962016245d58bf7aeff5556013f16d",
+                "passes": 1,
+                "fails": 0,
+                "name": "compras/periodo: tempo < 3s",
+                "path": "::materials::compras/periodo: tempo < 3s"
+              },
+              {
+                "name": "materials/indicators: status 2xx",
+                "path": "::materials::materials/indicators: status 2xx",
+                "id": "c12c01a47de86001e3264e2ec8418dfd",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "id": "cf98bfd2122d87630730a5870d42561f",
+                "passes": 1,
+                "fails": 0,
+                "name": "materials/indicators: tempo < 3s",
+                "path": "::materials::materials/indicators: tempo < 3s"
+              },
+              {
+                "name": "top-materials: status 2xx",
+                "path": "::materials::top-materials: status 2xx",
+                "id": "804102b6c5baa0615db7464b7a1d7228",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "id": "c2226096597dbbf736a21fd7469ce166",
+                "passes": 1,
+                "fails": 0,
+                "name": "top-materials: tempo < 3s",
+                "path": "::materials::top-materials: tempo < 3s"
+              },
+              {
+                "name": "cost-by-project: status 2xx",
+                "path": "::materials::cost-by-project: status 2xx",
+                "id": "af154cc17714454bfcf65d9c3e24f85c",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "name": "cost-by-project: tempo < 3s",
+                "path": "::materials::cost-by-project: tempo < 3s",
+                "id": "e48f740167273a37ce36dc6dea94a87e",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "name": "materials/filter-options: status 2xx",
+                "path": "::materials::materials/filter-options: status 2xx",
+                "id": "5a505fcf438ac36031c2ab67dc80b53a",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "name": "materials/filter-options: tempo < 3s",
+                "path": "::materials::materials/filter-options: tempo < 3s",
+                "id": "d18827bbef0fb3f98adb1375e1b86062",
+                "passes": 1,
+                "fails": 0
+              }
+            ]
+        },
+        {
+          "id": "b120b7b92f18cc0548ac36d6eab065a5",
+          "groups": [],
+          "checks": [
+              {
+                "path": "::technical-hours::horas-tecnicas: status 2xx",
+                "id": "9a2c9812555e652e8a0ccbfe22779339",
+                "passes": 1,
+                "fails": 0,
+                "name": "horas-tecnicas: status 2xx"
+              },
+              {
+                "name": "horas-tecnicas: tempo < 3s",
+                "path": "::technical-hours::horas-tecnicas: tempo < 3s",
+                "id": "9782ffdf9647de2cb2c4e31aba8bab90",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "id": "7364e453149660934b3da22382272ae8",
+                "passes": 1,
+                "fails": 0,
+                "name": "horas-tecnicas/periodo: status 2xx",
+                "path": "::technical-hours::horas-tecnicas/periodo: status 2xx"
+              },
+              {
+                "name": "horas-tecnicas/periodo: tempo < 3s",
+                "path": "::technical-hours::horas-tecnicas/periodo: tempo < 3s",
+                "id": "775cf42f32c06b46017e06e7719589b7",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "name": "horas-tecnicas/kpis: status 2xx",
+                "path": "::technical-hours::horas-tecnicas/kpis: status 2xx",
+                "id": "883244a7d47d81414ac9c28cfe70838d",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "id": "b3964ff5d9168cd1635a741d86c016d3",
+                "passes": 1,
+                "fails": 0,
+                "name": "horas-tecnicas/kpis: tempo < 3s",
+                "path": "::technical-hours::horas-tecnicas/kpis: tempo < 3s"
+              },
+              {
+                "name": "horas-tecnicas/temporal: status 2xx",
+                "path": "::technical-hours::horas-tecnicas/temporal: status 2xx",
+                "id": "3827cdffe9ee3f97a3af77bf46f02116",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "name": "horas-tecnicas/temporal: tempo < 3s",
+                "path": "::technical-hours::horas-tecnicas/temporal: tempo < 3s",
+                "id": "f2f9e0992636bea01fe759031990563f",
+                "passes": 1,
+                "fails": 0
+              }
+            ],
+          "name": "technical-hours",
+          "path": "::technical-hours"
+        },
+        {
+          "name": "budget",
+          "path": "::budget",
+          "id": "3123a55fc3c2ced3629b946ad4101da3",
+          "groups": [],
+          "checks": [
+              {
+                "name": "budget: status 2xx",
+                "path": "::budget::budget: status 2xx",
+                "id": "48504e76d6571defbba68b8514b8e4bb",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "passes": 1,
+                "fails": 0,
+                "name": "budget: tempo < 3s",
+                "path": "::budget::budget: tempo < 3s",
+                "id": "c73ec38c56ce276ec96a14584f91b643"
+              },
+              {
+                "name": "budget/indicators: status 2xx",
+                "path": "::budget::budget/indicators: status 2xx",
+                "id": "f1e979a54accf80372691d54bee540df",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "passes": 1,
+                "fails": 0,
+                "name": "budget/indicators: tempo < 3s",
+                "path": "::budget::budget/indicators: tempo < 3s",
+                "id": "1c850cc9d658d56788fd5b8fcc912ff4"
+              }
+            ]
+        },
+        {
+          "name": "costs",
+          "path": "::costs",
+          "id": "afb5c1edb6a9f72b2fddcb125293d2de",
+          "groups": [],
+          "checks": [
+              {
+                "path": "::costs::costs: status 2xx",
+                "id": "536ba37503dbf9ef2a03c4ff8e252c86",
+                "passes": 1,
+                "fails": 0,
+                "name": "costs: status 2xx"
+              },
+              {
+                "name": "costs: tempo < 3s",
+                "path": "::costs::costs: tempo < 3s",
+                "id": "2c36c55bbb2d6372d956ced86d42624d",
+                "passes": 1,
+                "fails": 0
+              }
+            ]
+        },
+        {
+          "name": "consolidated",
+          "path": "::consolidated",
+          "id": "2a66f60d7339b7656fa5759223a41db8",
+          "groups": [],
+          "checks": [
+              {
+                "fails": 0,
+                "name": "consolidated: status 2xx",
+                "path": "::consolidated::consolidated: status 2xx",
+                "id": "40e2760cc2d6868894a6b833f3f7d4f8",
+                "passes": 1
+              },
+              {
+                "name": "consolidated: tempo < 3s",
+                "path": "::consolidated::consolidated: tempo < 3s",
+                "id": "727c09a5325710e52bad7b712ddd79b5",
+                "passes": 1,
+                "fails": 0
+              },
+              {
+                "passes": 1,
+                "fails": 0,
+                "name": "consolidated/periodo: status 2xx",
+                "path": "::consolidated::consolidated/periodo: status 2xx",
+                "id": "5c464e891c0581aa5f1411cee4a64adf"
+              },
+              {
+                "id": "c7c11b484cc52f00612292ee20218a4f",
+                "passes": 1,
+                "fails": 0,
+                "name": "consolidated/periodo: tempo < 3s",
+                "path": "::consolidated::consolidated/periodo: tempo < 3s"
+              }
+            ]
+        }
+      ]
+  }
+}

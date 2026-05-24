@@ -1,5 +1,6 @@
 from decimal import ROUND_HALF_UP, Decimal
 
+from django.core.cache import cache
 from django.db.models import Avg, Count, Exists, OuterRef, Q, Sum
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
@@ -25,12 +26,20 @@ from sca_data.models import (
 )
 
 _CENTS = Decimal("0.01")
+_CACHE_TTL = 300
 
 
 def _to_brl(value):
     if value is None:
         return None
     return float(Decimal(str(value)).quantize(_CENTS, rounding=ROUND_HALF_UP))
+
+
+def _ck(prefix, params=None, **kwargs):
+    parts = sorted((params or {}).items())
+    extra = sorted(kwargs.items())
+    suffix = "&".join(f"{k}={v}" for k, v in parts + extra if v)
+    return f"{prefix}:{suffix}" if suffix else prefix
 
 
 class MaterialsTableView(generics.ListAPIView):
@@ -56,6 +65,15 @@ class MaterialsTableView(generics.ListAPIView):
     def get_queryset(self):
         return get_materials_queryset(self.request.query_params)
 
+    def list(self, request, *args, **kwargs):
+        key = _ck("materials_table", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+        response = super().list(request, *args, **kwargs)
+        cache.set(key, response.data, _CACHE_TTL)
+        return response
+
 
 class MaterialsTablePeriodoView(MaterialsTableView):
     """
@@ -77,6 +95,17 @@ class MaterialsTablePeriodoView(MaterialsTableView):
             "data_fim": str(ultimo_dia),
         }
         return get_materials_queryset(params)
+
+    def list(self, request, *args, **kwargs):
+        periodo = self.kwargs.get("periodo", "")
+        key = _ck("materials_table_p", request.query_params, periodo=periodo)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+        # skip MaterialsTableView.list() to avoid double caching
+        response = super(MaterialsTableView, self).list(request, *args, **kwargs)
+        cache.set(key, response.data, _CACHE_TTL)
+        return response
 
 
 class MaterialsIndicatorsView(generics.GenericAPIView):
@@ -135,6 +164,11 @@ class MaterialsIndicatorsView(generics.GenericAPIView):
         return qs
 
     def get(self, request):
+        key = _ck("materials_indicators", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+
         params = request.query_params
         qs = self._build_materiais_queryset(params)
 
@@ -151,6 +185,7 @@ class MaterialsIndicatorsView(generics.GenericAPIView):
                 "custo_medio": _to_brl(agg["custo_medio"]),
             }
         )
+        cache.set(key, serializer.data, _CACHE_TTL)
         return Response(serializer.data)
 
 
@@ -171,6 +206,11 @@ class TopMaterialsView(APIView):
     """
 
     def get(self, request):
+        key = _ck("top_materials", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+
         try:
             limit = int(request.query_params.get("limit", 10))
         except ValueError:
@@ -178,6 +218,7 @@ class TopMaterialsView(APIView):
 
         data = get_top_materials_by_financial_impact(request.query_params, limit=limit)
         serializer = TopMaterialsSerializer(data, many=True)
+        cache.set(key, serializer.data, _CACHE_TTL)
         return Response(serializer.data)
 
 
@@ -197,11 +238,17 @@ class CostByProjectView(APIView):
     """
 
     def get(self, request):
+        key = _ck("cost_by_project", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+
         qs = get_cost_by_project(request.query_params)
         data = [
             {"projeto": row["projeto"], "total_cost": float(row["total_cost"] or 0)}
             for row in qs
         ]
+        cache.set(key, data, _CACHE_TTL)
         return Response(data)
 
 
@@ -217,4 +264,9 @@ class FilterOptionsView(APIView):
     """
 
     def get(self, request):
-        return Response(get_filter_options())
+        cached = cache.get("filter_options")
+        if cached is not None:
+            return Response(cached)
+        data = get_filter_options()
+        cache.set("filter_options", data, _CACHE_TTL)
+        return Response(data)

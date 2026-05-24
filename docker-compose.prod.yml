@@ -9,6 +9,19 @@ services:
     depends_on:
       prometheus:
         condition: service_started
+    environment:
+      - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_multiproc
+    command: >
+      sh -c "
+      mkdir -p /tmp/prometheus_multiproc &&
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:8000
+      --worker-class gthread
+      --workers 4
+      --threads 8
+      --timeout 120
+      --max-requests 1000
+      --max-requests-jitter 100"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')"]
       interval: 10s
@@ -46,7 +59,7 @@ services:
       - app_net
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.2.0
     container_name: grafana
     volumes:
       - grafana_data:/var/lib/grafana

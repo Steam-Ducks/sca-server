@@ -3,6 +3,7 @@ import time as _time
 from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
+from django.core.cache import cache
 from django.db import connection
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -23,9 +24,17 @@ def health_check(request):
     return Response({"status": "ok"}, status=status.HTTP_200_OK)
 
 
+_STATUS_CACHE_KEY = "status_view"
+_STATUS_CACHE_TTL = 300
+
+
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def status_view(request):
+    cached = cache.get(_STATUS_CACHE_KEY)
+    if cached is not None:
+        return Response(cached)
+
     services = _check_services()
     processes = _get_recent_processes()
     last_updates = _get_last_updates()
@@ -39,20 +48,20 @@ def status_view(request):
     elif alerts or integrity.get("inconsistencies"):
         overall = "warning"
 
-    return Response(
-        {
-            "status": overall,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "environment": "development" if settings.DEBUG else "production",
-            "uptime_seconds": round(_time.time() - _SERVER_START),
-            "services": services,
-            "processes": processes,
-            "last_updates": last_updates,
-            "alerts": alerts,
-            "data_integrity": integrity,
-            "db_stats": db_stats,
-        }
-    )
+    data = {
+        "status": overall,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "environment": "development" if settings.DEBUG else "production",
+        "uptime_seconds": round(_time.time() - _SERVER_START),
+        "services": services,
+        "processes": processes,
+        "last_updates": last_updates,
+        "alerts": alerts,
+        "data_integrity": integrity,
+        "db_stats": db_stats,
+    }
+    cache.set(_STATUS_CACHE_KEY, data, _STATUS_CACHE_TTL)
+    return Response(data)
 
 
 def _check_services():

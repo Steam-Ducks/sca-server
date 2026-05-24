@@ -1,0 +1,159 @@
+{
+  "title": "K6 — Resultados dos Testes",
+  "uid": "K6-results",
+  "schemaVersion": 38,
+  "version": 3,
+  "refresh": false,
+  "graphTooltip": 1,
+  "time": { "from": "now-3h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "scenario",
+        "label": "Cenário",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(k6_http_reqs_total, scenario)",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 100, "type": "row", "title": "Pico do teste — selecione o intervalo de tempo em que o teste rodou",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 }, "collapsed": false
+    },
+    {
+      "id": 2, "type": "stat", "title": "Usuários simultâneos — máximo",
+      "description": "Pico de usuários virtuais ativos durante o teste",
+      "gridPos": { "x": 0, "y": 1, "w": 4, "h": 5 },
+      "options": { "reduceOptions": { "calcs": ["max"] }, "colorMode": "background", "textMode": "value_and_name", "orientation": "vertical" },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "blue" }, "unit": "short" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "max by (scenario) (k6_vus{scenario=~\"$scenario\"})", "legendFormat": "{{scenario}}" }]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Taxa de erro — pior momento",
+      "description": "Maior taxa de erro registrada. Verde: abaixo de 1% (passou). Vermelho: sistema não aguentou",
+      "gridPos": { "x": 4, "y": 1, "w": 4, "h": 5 },
+      "options": { "reduceOptions": { "calcs": ["max"] }, "colorMode": "background", "textMode": "value_and_name", "orientation": "vertical" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 0.01, "color": "orange" }, { "value": 0.05, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "rate(k6_http_req_failed_total{scenario=~\"$scenario\"}[2m]) / rate(k6_http_reqs_total{scenario=~\"$scenario\"}[2m])", "legendFormat": "{{scenario}}" }]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Tempo de resposta — pior P95",
+      "description": "Pior valor: 95% das requisições responderam em menos deste tempo durante o teste",
+      "gridPos": { "x": 8, "y": 1, "w": 4, "h": 5 },
+      "options": { "reduceOptions": { "calcs": ["max"] }, "colorMode": "background", "textMode": "value_and_name", "orientation": "vertical" },
+      "fieldConfig": { "defaults": { "unit": "ms", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 2000, "color": "orange" }, { "value": 5000, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "k6_http_req_duration_p95{scenario=~\"$scenario\"}", "legendFormat": "{{scenario}}" }]
+    },
+    {
+      "id": 7, "type": "stat", "title": "Tempo médio de resposta",
+      "description": "Mediana do tempo de resposta durante todo o teste",
+      "gridPos": { "x": 12, "y": 1, "w": 4, "h": 5 },
+      "options": { "reduceOptions": { "calcs": ["mean"] }, "colorMode": "background", "textMode": "value_and_name", "orientation": "vertical" },
+      "fieldConfig": { "defaults": { "unit": "ms", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 1000, "color": "orange" }, { "value": 3000, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "k6_http_req_duration_p50{scenario=~\"$scenario\"}", "legendFormat": "{{scenario}}" }]
+    },
+    {
+      "id": 5, "type": "stat", "title": "Ciclos completos",
+      "description": "Total de vezes que um usuário virtual completou o fluxo inteiro",
+      "gridPos": { "x": 16, "y": 1, "w": 4, "h": 5 },
+      "options": { "reduceOptions": { "calcs": ["max"] }, "colorMode": "value", "textMode": "value_and_name", "orientation": "vertical" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "max by (scenario) (k6_iterations_total{scenario=~\"$scenario\"})", "legendFormat": "{{scenario}}" }]
+    },
+    {
+      "id": 6, "type": "stat", "title": "Requisições totais",
+      "description": "Total de requisições HTTP enviadas ao servidor durante o teste",
+      "gridPos": { "x": 20, "y": 1, "w": 4, "h": 5 },
+      "options": { "reduceOptions": { "calcs": ["max"] }, "colorMode": "value", "textMode": "value_and_name", "orientation": "vertical" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "max by (scenario) (k6_http_reqs_total{scenario=~\"$scenario\"})", "legendFormat": "{{scenario}}" }]
+    },
+    {
+      "id": 101, "type": "row", "title": "Ponto de ruptura",
+      "gridPos": { "x": 0, "y": 6, "w": 24, "h": 1 }, "collapsed": false
+    },
+    {
+      "id": 8, "type": "timeseries", "title": "Usuários simultâneos vs taxa de erro",
+      "description": "O momento em que a linha vermelha (erros) sobe enquanto a azul (usuários) cresce é onde o sistema parou de aguentar. Use esse gráfico para identificar o limite de capacidade",
+      "gridPos": { "x": 0, "y": 7, "w": 24, "h": 10 },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byRegexp", "options": "Usuários.*" },
+            "properties": [
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } },
+              { "id": "custom.lineWidth", "value": 2 }
+            ]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "Taxa de erro.*" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } },
+              { "id": "custom.lineWidth", "value": 2 }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["max", "mean"] },
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "k6_vus{scenario=~\"$scenario\"}", "legendFormat": "Usuários — {{scenario}}" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "rate(k6_http_req_failed_total{scenario=~\"$scenario\"}[2m]) / rate(k6_http_reqs_total{scenario=~\"$scenario\"}[2m])", "legendFormat": "Taxa de erro — {{scenario}}" }
+      ]
+    },
+    {
+      "id": 102, "type": "row", "title": "Evolução durante o teste",
+      "gridPos": { "x": 0, "y": 17, "w": 24, "h": 1 }, "collapsed": false
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Tempo de resposta ao longo do teste",
+      "description": "O ideal é que as linhas fiquem estáveis mesmo com mais usuários. Se subirem junto com os usuários, há degradação de performance",
+      "gridPos": { "x": 0, "y": 18, "w": 12, "h": 8 },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["max", "mean"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "k6_http_req_duration_p50{scenario=~\"$scenario\"}", "legendFormat": "Mediana — {{scenario}}" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "k6_http_req_duration_p95{scenario=~\"$scenario\"}", "legendFormat": "95% — {{scenario}}" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "k6_http_req_duration_p99{scenario=~\"$scenario\"}", "legendFormat": "99% — {{scenario}}" }
+      ]
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Requisições por segundo ao longo do teste",
+      "description": "Queda nessa linha junto com aumento de usuários indica que o servidor parou de conseguir processar a demanda",
+      "gridPos": { "x": 12, "y": 18, "w": 12, "h": 8 },
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["max", "mean"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "rate(k6_http_reqs_total{scenario=~\"$scenario\"}[1m])", "legendFormat": "Req/s — {{scenario}}" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "rate(k6_http_req_failed_total{scenario=~\"$scenario\"}[1m])", "legendFormat": "Erros/s — {{scenario}}" }
+      ]
+    },
+    {
+      "id": 103, "type": "row", "title": "Por endpoint",
+      "gridPos": { "x": 0, "y": 26, "w": 24, "h": 1 }, "collapsed": false
+    },
+    {
+      "id": 11, "type": "timeseries", "title": "Endpoints mais lentos — 95% das requisições",
+      "description": "Quais endpoints ficaram mais lentos sob carga. Os que crescem mais rápido conforme os usuários aumentam são os gargalos do sistema",
+      "gridPos": { "x": 0, "y": 27, "w": 24, "h": 10 },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["max", "mean", "lastNotNull"] }, "tooltip": { "mode": "multi" } },
+      "fieldConfig": { "defaults": { "unit": "ms" } },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "k6_http_req_duration_p95{scenario=~\"$scenario\", name!=\"\"}", "legendFormat": "{{name}}" }
+      ]
+    }
+  ]
+}

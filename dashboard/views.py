@@ -1,4 +1,5 @@
 # dashboard/views.py
+from django.core.cache import cache
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -19,6 +20,15 @@ from dashboard.serializers import (
     CostEvolutionSerializer,
 )
 
+_CACHE_TTL = 300
+
+
+def _ck(prefix, params=None, **kwargs):
+    parts = sorted((params or {}).items())
+    extra = sorted(kwargs.items())
+    suffix = "&".join(f"{k}={v}" for k, v in parts + extra if v)
+    return f"{prefix}:{suffix}" if suffix else prefix
+
 
 def _normalize_dashboard_filters(query_params):
     """Normalize frontend query params to selector params."""
@@ -32,123 +42,74 @@ def _normalize_dashboard_filters(query_params):
 
 
 class DashboardKPIsView(APIView):
-    """
-    GET /api/dashboard/kpis/
-
-    Returns the main consolidated indicators of the analytics panel.
-
-    Query params (all optional):
-        start_date — YYYY-MM-DD
-        end_date   — YYYY-MM-DD
-        program    — codigo_programa (program name)
-        project    — nome_projeto (project name)
-        status     — project status
-    """
-
     def get(self, request):
+        key = _ck("dashboard_kpis", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
         kpis = get_dashboard_kpis(_normalize_dashboard_filters(request.query_params))
-        serializer = DashboardKPIsSerializer(kpis)
-        return Response(serializer.data)
+        data = DashboardKPIsSerializer(kpis).data
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)
 
 
 class MainDashboardView(APIView):
-    """
-    GET /api/main-dashboard/
-
-    Returns list of projects filtered by date range.
-
-    Query params (all optional):
-        start_date — YYYY-MM-DD
-        end_date   — YYYY-MM-DD
-    """
-
     def get(self, request):
+        key = _ck("main_dashboard", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
         start_date = request.query_params.get("start_date")
         end_date = request.query_params.get("end_date")
         qs = get_projects_by_period(start_date, end_date)
-        serializer = MainDashboardSerializer(qs, many=True)
-        return Response(serializer.data)
+        data = MainDashboardSerializer(qs, many=True).data
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)
 
 
 class SummaryTableView(APIView):
-    """
-    GET /api/main-dashboard/summary/
-
-    Returns cost aggregates grouped by program for the main dashboard
-    summary table.
-
-    Query params (all optional):
-        start_date — YYYY-MM-DD
-        end_date   — YYYY-MM-DD
-        programa   — program name
-        projeto    — project name
-    """
-
     def get(self, request):
+        key = _ck("summary_table", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
         rows = get_program_summary(_normalize_dashboard_filters(request.query_params))
-        serializer = ProgramSummarySerializer(rows, many=True)
-        return Response(serializer.data)
+        data = ProgramSummarySerializer(rows, many=True).data
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)
 
 
 class CostCompositionView(APIView):
-    """
-    GET /api/main-dashboard/composition/
-
-    Returns the overall cost composition split between materials and
-    technical hours, including percentage breakdown.
-
-    Query params (all optional):
-        start_date — YYYY-MM-DD
-        end_date   — YYYY-MM-DD
-        programa   — program name
-        projeto    — project name
-    """
-
     def get(self, request):
-        data = get_cost_composition(_normalize_dashboard_filters(request.query_params))
-        serializer = CostCompositionSerializer(data)
-        return Response(serializer.data)
+        key = _ck("cost_composition", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+        composition = get_cost_composition(_normalize_dashboard_filters(request.query_params))
+        data = CostCompositionSerializer(composition).data
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)
 
 
 class TopProjectsView(APIView):
-    """
-    GET /api/dashboard/top-projects/
-
-    Returns the top 10 projects ranked by total consolidated cost
-    (materials + technical hours).
-
-    Query params (all optional):
-        start_date — YYYY-MM-DD
-        end_date   — YYYY-MM-DD
-        program    — program name (case-insensitive)
-        project    — project name (case-insensitive)
-        status     — project status (case-insensitive)
-    """
-
     def get(self, request):
-        rows = get_top_projects_by_cost(
-            _normalize_dashboard_filters(request.query_params)
-        )
-        serializer = TopProjectSerializer(rows, many=True)
-        return Response(serializer.data)
+        key = _ck("top_projects", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+        rows = get_top_projects_by_cost(_normalize_dashboard_filters(request.query_params))
+        data = TopProjectSerializer(rows, many=True).data
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)
 
 
 class CostEvolutionView(APIView):
-    """
-    GET /api/dashboard/cost-evolution/
-
-    Returns consolidated cost grouped by month (YYYY-MM), ordered
-    chronologically. Used for the time-series chart on the main dashboard.
-
-    Query params (all optional):
-        start_date — YYYY-MM-DD
-        end_date   — YYYY-MM-DD
-        program    — program name (case-insensitive)
-        project    — project name (case-insensitive)
-        status     — project status (case-insensitive)
-    """
-
     def get(self, request):
+        key = _ck("cost_evolution", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
         rows = get_cost_evolution(request.query_params)
-        serializer = CostEvolutionSerializer(rows, many=True)
-        return Response(serializer.data)
+        data = CostEvolutionSerializer(rows, many=True).data
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)
