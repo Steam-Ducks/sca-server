@@ -53,7 +53,9 @@ class BudgetSnapshotView(APIView):
 
         data = {
             "data": serializer.data,
-            "last_updated_at": (last_updated_at.isoformat() if last_updated_at else None),
+            "last_updated_at": (
+                last_updated_at.isoformat() if last_updated_at else None
+            ),
         }
         cache.set(key, data, _CACHE_TTL)
         return Response(data)
@@ -89,7 +91,9 @@ class BudgetIndicatorsView(APIView):
 
         data = {
             "data": serializer.data,
-            "last_updated_at": (last_updated_at.isoformat() if last_updated_at else None),
+            "last_updated_at": (
+                last_updated_at.isoformat() if last_updated_at else None
+            ),
         }
         cache.set(key, data, _CACHE_TTL)
         return Response(data)

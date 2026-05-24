@@ -85,7 +85,9 @@ class CostCompositionView(APIView):
         cached = cache.get(key)
         if cached is not None:
             return Response(cached)
-        composition = get_cost_composition(_normalize_dashboard_filters(request.query_params))
+        composition = get_cost_composition(
+            _normalize_dashboard_filters(request.query_params)
+        )
         data = CostCompositionSerializer(composition).data
         cache.set(key, data, _CACHE_TTL)
         return Response(data)
@@ -97,7 +99,9 @@ class TopProjectsView(APIView):
         cached = cache.get(key)
         if cached is not None:
             return Response(cached)
-        rows = get_top_projects_by_cost(_normalize_dashboard_filters(request.query_params))
+        rows = get_top_projects_by_cost(
+            _normalize_dashboard_filters(request.query_params)
+        )
         data = TopProjectSerializer(rows, many=True).data
         cache.set(key, data, _CACHE_TTL)
         return Response(data)

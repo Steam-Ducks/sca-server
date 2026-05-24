@@ -198,9 +198,7 @@ class TechnicalHoursKpiView(TechnicalHoursTableView):
         data = {
             "custo_total": round(custo_total, 2),
             "total_horas": round(total_horas, 2),
-            "custo_medio": (
-                round(custo_total / total_horas, 2) if total_horas else 0
-            ),
+            "custo_medio": (round(custo_total / total_horas, 2) if total_horas else 0),
             "registros": agg["registros"] or 0,
         }
         cache.set(key, data, _CACHE_TTL)
