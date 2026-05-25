@@ -5,8 +5,10 @@ from rest_framework.test import APIClient
 
 
 def _auth_client():
+    user = MagicMock()
+    user.usuario_perfil.perfil.permissoes = "super_admin"
     client = APIClient()
-    client.force_authenticate(user=MagicMock())
+    client.force_authenticate(user=user)
     return client
 
 

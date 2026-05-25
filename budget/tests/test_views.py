@@ -6,9 +6,10 @@ from sca_data.models import GoldBudgetSnapshot, SilverPrograma, SilverProjeto
 
 
 def _auth_client():
-    """APIClient autenticado via force_authenticate (sem banco)."""
+    user = MagicMock()
+    user.usuario_perfil.perfil.permissoes = "super_admin"
     client = APIClient()
-    client.force_authenticate(user=MagicMock())
+    client.force_authenticate(user=user)
     return client
 
 
@@ -88,7 +89,7 @@ class TestBudgetSnapshotReturns200:
                 with patch(
                     "budget.views.get_budget_last_updated_at", return_value=updated_at
                 ):
-                    response = APIClient().get("/api/budget/")
+                    response = _auth_client().get("/api/budget/")
 
         assert response.status_code == 200
         assert response.data["last_updated_at"] == "2026-04-26T12:30:00+00:00"
@@ -107,7 +108,7 @@ class TestBudgetSnapshotReturns200:
             with patch(
                 "budget.views.get_budget_last_updated_at_gold", return_value=updated_at
             ):
-                response = APIClient().get("/api/budget/")
+                response = _auth_client().get("/api/budget/")
 
         assert response.status_code == 200
         assert response.data["data"][0]["projeto"] == "Projeto Gold"
@@ -125,7 +126,7 @@ class TestBudgetSnapshotReturns200:
                 "budget.views.get_budget_last_updated_at_gold", return_value=None
             ):
                 with patch("budget.views.get_budget_snapshot") as mock_silver:
-                    response = APIClient().get("/api/budget/")
+                    response = _auth_client().get("/api/budget/")
 
         assert response.status_code == 200
         mock_silver.assert_not_called()
@@ -138,7 +139,7 @@ class TestBudgetSnapshotReturns200:
                 with patch(
                     "budget.views.get_budget_last_updated_at", return_value=None
                 ):
-                    response = APIClient().get("/api/budget/")
+                    response = _auth_client().get("/api/budget/")
 
         assert response.data["last_updated_at"] is None
 
