@@ -12,6 +12,7 @@ from technical_hours.views import TechnicalHoursTemporalView
 @pytest.fixture(autouse=True)
 def patch_permissao(monkeypatch):
     from users import permissions as perm_mod
+
     monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "super_admin")
 
 
@@ -20,6 +21,7 @@ def _auth_client():
     client = APIClient()
     client.force_authenticate(user=user)
     return client
+
 
 URL = "/api/horas-tecnicas/temporal/"
 

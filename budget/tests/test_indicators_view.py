@@ -9,6 +9,7 @@ from rest_framework.test import APIClient
 @pytest.fixture(autouse=True)
 def patch_permissao(monkeypatch):
     from users import permissions as perm_mod
+
     monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "super_admin")
 
 
