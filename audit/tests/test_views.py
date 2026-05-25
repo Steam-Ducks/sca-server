@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 import datetime
+from django.contrib.auth import get_user_model
 from rest_framework.test import APIRequestFactory, force_authenticate
 
 from audit.views import AuditExecutionLogTableView
@@ -245,3 +246,31 @@ class TestAuditExecutionLogTableView:
 
         assert response.status_code == 400
         assert "data_inicio" in response.data
+
+    @patch("audit.views.AuditExecutionLog.objects")
+    def test_filtra_tabelas_por_perfil_nao_super_admin(
+        self, mock_objects, factory, view, monkeypatch
+    ):
+        import audit.views as audit_views_mod
+        from users import permissions as perm_mod
+
+        monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "compras")
+        monkeypatch.setattr(audit_views_mod, "_get_permissao", lambda u: "compras")
+
+        qs = MagicMock()
+        mock_objects.all.return_value = qs
+        qs.filter.return_value = qs
+        qs.order_by.return_value = []
+
+        user = get_user_model()(username="_compras", is_active=True)
+        request = factory.get("/api/audit/")
+        force_authenticate(request, user=user)
+        response = view(request)
+
+        from audit.views import _ALLOWED_TABLES_BY_PROFILE
+
+        assert response.status_code == 200
+        calls_as_text = [str(c) for c in qs.filter.call_args_list]
+        assert any(
+            "table_name__in" in c for c in calls_as_text
+        ), f"Expected filter by table_name__in for compras={_ALLOWED_TABLES_BY_PROFILE['compras']}, got: {calls_as_text}"

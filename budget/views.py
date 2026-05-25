@@ -1,6 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from users.permissions import CanAccessBudget
 from budget.selectors import (
     get_budget_indicators,
     get_budget_indicators_gold,
@@ -26,6 +27,8 @@ class BudgetSnapshotView(APIView):
     Reads from gold."budget_snapshot" when populated (fast pre-computed),
     falls back to live Silver queries when the gold table is empty.
     """
+
+    permission_classes = [CanAccessBudget]
 
     def get(self, request):
         gold_qs = get_budget_snapshot_gold(request.query_params)
@@ -59,6 +62,8 @@ class BudgetIndicatorsView(APIView):
     Reads from gold."budget_snapshot" when populated (fast pre-computed),
     falls back to live Silver queries when the gold table is empty.
     """
+
+    permission_classes = [CanAccessBudget]
 
     def get(self, request):
         indicators = get_budget_indicators_gold(request.query_params)

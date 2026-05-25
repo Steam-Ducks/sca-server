@@ -31,9 +31,10 @@ class TestUserListCreateIntegration:
     """
 
     @pytest.fixture(autouse=True)
-    def setup(self, db):
-        # Remove seed data so each test starts with an empty users table.
-        # force_authenticate uses an unsaved user to avoid affecting counts.
+    def setup(self, db, monkeypatch):
+        from users import permissions as perm_mod
+
+        monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "super_admin")
         User.objects.all().delete()
         auth_user = User(username="_auth", name="Auth User", is_active=True)
         self.client = APIClient()
