@@ -11,13 +11,9 @@ from users.serializers import LoginSerializer, UserSerializer
 
 
 class UserListCreateView(generics.ListCreateAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [CanAccessUsers]
     queryset = User.objects.all()
     serializer_class = UserSerializer
-<<<<<<< HEAD
-    permission_classes = [CanAccessUsers]
-=======
->>>>>>> dc902e2 (fix(SCA-318): clean up LoginView implementation and adjust permissions)
 
 
 class LoginView(APIView):

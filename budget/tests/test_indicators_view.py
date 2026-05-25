@@ -1,8 +1,6 @@
 import datetime
 from unittest.mock import MagicMock, patch
 
-import pytest
-from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
 

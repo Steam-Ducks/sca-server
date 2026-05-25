@@ -145,11 +145,19 @@ class TestGetBudgetSnapshotSaudeFilter:
             self._make_projeto("Crítico", 1000),
         ]
 
-        with patch("budget.selectors._apply_project_filters", return_value=self._mock_qs(fake_rows)):
-            with patch("budget.selectors._build_date_filters", return_value=(MagicMock(), MagicMock())):
+        with patch(
+            "budget.selectors._apply_project_filters",
+            return_value=self._mock_qs(fake_rows),
+        ):
+            with patch(
+                "budget.selectors._build_date_filters",
+                return_value=(MagicMock(), MagicMock()),
+            ):
                 with patch("budget.selectors._sum_subquery", return_value=MagicMock()):
                     with patch("budget.selectors.SilverProjeto") as mock_model:
-                        mock_model.objects.select_related.return_value.annotate.return_value = MagicMock()
+                        mock_model.objects.select_related.return_value.annotate.return_value = (
+                            MagicMock()
+                        )
                         rows = get_budget_snapshot({"saude": "Saudável"})
 
         assert all(r.saude_financeira == "Saudável" for r in rows)
@@ -160,11 +168,19 @@ class TestGetBudgetSnapshotSaudeFilter:
             self._make_projeto("Atenção", 1000),
         ]
 
-        with patch("budget.selectors._apply_project_filters", return_value=self._mock_qs(fake_rows)):
-            with patch("budget.selectors._build_date_filters", return_value=(MagicMock(), MagicMock())):
+        with patch(
+            "budget.selectors._apply_project_filters",
+            return_value=self._mock_qs(fake_rows),
+        ):
+            with patch(
+                "budget.selectors._build_date_filters",
+                return_value=(MagicMock(), MagicMock()),
+            ):
                 with patch("budget.selectors._sum_subquery", return_value=MagicMock()):
                     with patch("budget.selectors.SilverProjeto") as mock_model:
-                        mock_model.objects.select_related.return_value.annotate.return_value = MagicMock()
+                        mock_model.objects.select_related.return_value.annotate.return_value = (
+                            MagicMock()
+                        )
                         rows = get_budget_snapshot({})
 
         assert len(rows) == 2
