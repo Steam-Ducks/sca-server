@@ -1,20 +1,12 @@
 import datetime
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-import pytest
-from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
 
-@pytest.fixture(autouse=True)
-def patch_permissao(monkeypatch):
-    from users import permissions as perm_mod
-
-    monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "super_admin")
-
-
 def _auth_client():
-    user = get_user_model()(username="_test", is_active=True)
+    user = MagicMock()
+    user.usuario_perfil.perfil.permissoes = "super_admin"
     client = APIClient()
     client.force_authenticate(user=user)
     return client

@@ -11,9 +11,9 @@ from users.serializers import LoginSerializer, UserSerializer
 
 
 class UserListCreateView(generics.ListCreateAPIView):
+    permission_classes = [CanAccessUsers]
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [CanAccessUsers]
 
 
 class LoginView(APIView):
