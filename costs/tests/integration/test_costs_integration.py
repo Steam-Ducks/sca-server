@@ -17,7 +17,6 @@ Por que este conjunto existe:
 import os
 import pytest
 from datetime import datetime, timezone
-from rest_framework.test import APIClient
 
 from sca_data.models import GoldCosts
 
@@ -31,6 +30,11 @@ pytestmark = [
     pytest.mark.integration,
     pytest.mark.django_db,
 ]
+
+
+@pytest.fixture
+def client(api_client):
+    return api_client
 
 
 @pytest.fixture
@@ -73,23 +77,23 @@ class TestGoldCostsTableIntegration:
     Carga: 0–2 objetos GoldCosts por teste (banco limpo a cada teste).
     """
 
-    def test_lista_retorna_200(self):
+    def test_lista_retorna_200(self, client):
         # CTI-01 (mínimo): banco vazio → GET /api/costs/ retorna 200
         # Valida: rota registrada, view instanciada, resposta sem erro
-        response = APIClient().get("/api/costs/")
+        response = client.get("/api/costs/")
         assert response.status_code == 200
 
-    def test_lista_vazia_com_banco_vazio(self):
+    def test_lista_vazia_com_banco_vazio(self, client):
         # CTI-02 (mínimo): banco vazio → resposta é lista vazia
         # Valida: view não lança exceção quando gold.costs está sem registros
-        response = APIClient().get("/api/costs/")
+        response = client.get("/api/costs/")
         assert response.status_code == 200
         assert response.data == []
 
-    def test_retorna_custo_real_do_banco(self, custo_gold):
+    def test_retorna_custo_real_do_banco(self, custo_gold, client):
         # CTI-03 (mínimo): dado inserido → aparece na resposta com campos corretos
         # Valida: GoldCosts → GoldCostsSerializer → response (cadeia de leitura)
-        response = APIClient().get("/api/costs/")
+        response = client.get("/api/costs/")
 
         assert response.status_code == 200
         assert len(response.data) == 1
@@ -98,36 +102,34 @@ class TestGoldCostsTableIntegration:
         assert item["nome_programa"] == "MANSUP"
         assert float(item["custo"]) == 150_000.0
 
-    def test_data_serializada_em_formato_iso(self, custo_gold):
+    def test_data_serializada_em_formato_iso(self, custo_gold, client):
         # CTI-04 (adicional): campo data (DateTimeField) → serializado como YYYY-MM-DD
         # Valida: GoldCostsSerializer.get_data converte DateTimeField para date ISO
-        response = APIClient().get("/api/costs/")
+        response = client.get("/api/costs/")
         item = response.data[0]
         assert item["data"] == "2024-03-15"
 
-    def test_filtro_por_nome_programa(self, dois_custos):
+    def test_filtro_por_nome_programa(self, dois_custos, client):
         # CTI-05 (mínimo): ?nome_programa= → response contém só dados do programa
         # Valida: filtro ORM field lookup aplicado pela view antes da serialização
-        response = APIClient().get("/api/costs/?nome_programa=MANSUP")
+        response = client.get("/api/costs/?nome_programa=MANSUP")
 
         assert response.status_code == 200
         assert len(response.data) == 1
         assert response.data[0]["nome_programa"] == "MANSUP"
 
-    def test_filtro_por_nome_projeto(self, dois_custos):
+    def test_filtro_por_nome_projeto(self, dois_custos, client):
         # CTI-06 (mínimo): ?nome_projeto= → response contém só o projeto filtrado
-        response = APIClient().get("/api/costs/?nome_projeto=Proj INFRA")
+        response = client.get("/api/costs/?nome_projeto=Proj INFRA")
 
         assert response.status_code == 200
         assert len(response.data) == 1
         assert response.data[0]["nome_projeto"] == "Proj INFRA"
 
-    def test_filtro_por_intervalo_de_datas(self, dois_custos):
+    def test_filtro_por_intervalo_de_datas(self, dois_custos, client):
         # CTI-07 (adicional): ?data_gte + ?data_lte → só registros no intervalo
         # Valida: parse_date + make_aware + filter(data__gte/lte) na view
-        response = APIClient().get(
-            "/api/costs/?data_gte=2024-01-01&data_lte=2024-03-31"
-        )
+        response = client.get("/api/costs/?data_gte=2024-01-01&data_lte=2024-03-31")
 
         assert response.status_code == 200
         assert len(response.data) == 1
