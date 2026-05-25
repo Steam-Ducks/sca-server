@@ -121,7 +121,7 @@ class TestCT01Autenticacao:
             format="json",
         )
         assert response.status_code == 200
-        assert response.data["user"]["perfil"] == "Super Admin"
+        assert response.data["user"]["perfil"] == "super_admin"
 
     def test_login_retorna_dados_do_usuario(self, superadmin):
         client = APIClient()
@@ -159,7 +159,7 @@ class TestCT01Autenticacao:
             format="json",
         )
         assert response.status_code == 200
-        assert response.data["user"]["perfil"] == "Financeiro"
+        assert response.data["user"]["perfil"] == "financeiro"
 
 
 # ---------------------------------------------------------------------------
