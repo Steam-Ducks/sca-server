@@ -1,14 +1,32 @@
-import pytest
 from unittest.mock import MagicMock, patch
 
-from rest_framework.test import APIRequestFactory
+import pytest
+from django.contrib.auth import get_user_model
+from rest_framework.test import APIRequestFactory, force_authenticate
 
 from monitoring.views import ExecucaoCargaView
 
 
 @pytest.fixture
-def factory():
-    return APIRequestFactory()
+def factory(monkeypatch):
+    from users import permissions as perm_mod
+
+    monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "super_admin")
+    base = APIRequestFactory()
+    user = get_user_model()(username="_test", is_active=True)
+
+    class _AuthFactory:
+        def get(self, *args, **kwargs):
+            req = base.get(*args, **kwargs)
+            force_authenticate(req, user=user)
+            return req
+
+        def post(self, *args, **kwargs):
+            req = base.post(*args, **kwargs)
+            force_authenticate(req, user=user)
+            return req
+
+    return _AuthFactory()
 
 
 @pytest.fixture
@@ -165,3 +183,35 @@ class TestExecucaoCargaViewUrl:
         from django.urls import reverse
 
         assert reverse("monitoring-execucoes") == "/api/monitoring/execucoes/"
+
+
+class TestExecucaoCargaViewPerfilFilter:
+    """Profile-based table filtering (line 67 of views.py)."""
+
+    @patch("monitoring.views.get_execucoes_carga")
+    @patch("monitoring.views.FatoExecucaoCargaSerializer")
+    def test_filtra_tabelas_por_perfil_nao_super_admin(
+        self, mock_serializer, mock_selector, monkeypatch
+    ):
+        import monitoring.views as monitoring_views_mod
+        from users import permissions as perm_mod
+        from monitoring.views import _ALLOWED_TABLES_BY_PROFILE
+
+        monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "compras")
+        monkeypatch.setattr(monitoring_views_mod, "_get_permissao", lambda u: "compras")
+
+        qs = MagicMock()
+        qs.filter.return_value = qs
+        mock_selector.return_value = qs
+        mock_serializer.return_value.data = []
+
+        view = ExecucaoCargaView.as_view()
+        user = get_user_model()(username="_compras", is_active=True)
+        base = APIRequestFactory()
+        req = base.get("/api/monitoring/execucoes/")
+        force_authenticate(req, user=user)
+
+        response = view(req)
+
+        assert response.status_code == 200
+        qs.filter.assert_called_with(tabela__in=_ALLOWED_TABLES_BY_PROFILE["compras"])

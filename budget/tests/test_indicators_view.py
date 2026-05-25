@@ -1,7 +1,22 @@
 import datetime
 from unittest.mock import patch
 
+import pytest
+from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
+
+
+@pytest.fixture(autouse=True)
+def patch_permissao(monkeypatch):
+    from users import permissions as perm_mod
+    monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "super_admin")
+
+
+def _auth_client():
+    user = get_user_model()(username="_test", is_active=True)
+    client = APIClient()
+    client.force_authenticate(user=user)
+    return client
 
 
 def _indicators_gold():
@@ -37,7 +52,7 @@ class TestBudgetIndicatorsReturns200:
             with patch(
                 "budget.views.get_budget_last_updated_at_gold", return_value=updated_at
             ):
-                response = APIClient().get("/api/budget/indicators/")
+                response = _auth_client().get("/api/budget/indicators/")
 
         assert response.status_code == 200
 
@@ -49,7 +64,7 @@ class TestBudgetIndicatorsReturns200:
                 with patch(
                     "budget.views.get_budget_last_updated_at", return_value=None
                 ):
-                    response = APIClient().get("/api/budget/indicators/")
+                    response = _auth_client().get("/api/budget/indicators/")
 
         assert response.status_code == 200
 
@@ -65,7 +80,7 @@ class TestBudgetIndicatorsResponseShape:
             with patch(
                 "budget.views.get_budget_last_updated_at_gold", return_value=updated_at
             ):
-                response = APIClient().get("/api/budget/indicators/")
+                response = _auth_client().get("/api/budget/indicators/")
 
         data = response.data["data"]
         assert data["budgetTotal"] == 15000.0
@@ -86,7 +101,7 @@ class TestBudgetIndicatorsResponseShape:
                 with patch(
                     "budget.views.get_budget_last_updated_at", return_value=updated_at
                 ):
-                    response = APIClient().get("/api/budget/indicators/")
+                    response = _auth_client().get("/api/budget/indicators/")
 
         data = response.data["data"]
         assert data["budgetTotal"] == 8000.0
@@ -111,7 +126,7 @@ class TestBudgetIndicatorsResponseShape:
                 with patch(
                     "budget.views.get_budget_last_updated_at", return_value=None
                 ):
-                    response = APIClient().get("/api/budget/indicators/")
+                    response = _auth_client().get("/api/budget/indicators/")
 
         assert response.data["last_updated_at"] is None
         assert response.data["data"]["budgetTotal"] == 0.0
@@ -127,7 +142,7 @@ class TestBudgetIndicatorsGoldPriority:
                 "budget.views.get_budget_last_updated_at_gold", return_value=None
             ):
                 with patch("budget.views.get_budget_indicators") as mock_silver:
-                    response = APIClient().get("/api/budget/indicators/")
+                    response = _auth_client().get("/api/budget/indicators/")
 
         assert response.status_code == 200
         mock_silver.assert_not_called()
@@ -140,7 +155,7 @@ class TestBudgetIndicatorsGoldPriority:
                 with patch(
                     "budget.views.get_budget_last_updated_at", return_value=None
                 ):
-                    response = APIClient().get("/api/budget/indicators/")
+                    response = _auth_client().get("/api/budget/indicators/")
 
         assert response.status_code == 200
         mock_silver.assert_called_once()
@@ -155,7 +170,7 @@ class TestBudgetIndicatorsFilters:
             with patch(
                 "budget.views.get_budget_last_updated_at_gold", return_value=None
             ):
-                APIClient().get(
+                _auth_client().get(
                     "/api/budget/indicators/?programa=Alpha&projeto=P1&periodo=2026-01"
                 )
 
@@ -173,7 +188,7 @@ class TestBudgetIndicatorsFilters:
                 with patch(
                     "budget.views.get_budget_last_updated_at", return_value=None
                 ):
-                    APIClient().get(
+                    _auth_client().get(
                         "/api/budget/indicators/?saude=Saud%C3%A1vel&periodo=2026-02"
                     )
 

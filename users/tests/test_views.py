@@ -98,6 +98,35 @@ def test_login_returns_400_with_empty_body():
 
 
 @pytest.mark.django_db
+def test_login_retorna_perfil_nulo_quando_usuario_sem_perfil():
+    user = User.objects.create_user(username="semperfil", password="senha123")
+    client = APIClient()
+    response = client.post(
+        "/api/auth/login/",
+        {"username": "semperfil", "password": "senha123"},
+        format="json",
+    )
+    assert response.status_code == 200
+    assert response.data["user"]["perfil"] is None
+
+
+@pytest.mark.django_db
+def test_login_retorna_401_para_usuario_inativo(user_with_profile):
+    user_with_profile.is_active = False
+    user_with_profile.save()
+    client = APIClient()
+    response = client.post(
+        "/api/auth/login/",
+        {"username": "superadmin", "password": "superadmin123"},
+        format="json",
+    )
+    assert response.status_code == 401
+
+
+# --- Users list endpoint ---
+
+
+@pytest.mark.django_db
 def test_list_users_returns_401_without_authentication():
     client = APIClient()
     response = client.get("/api/users/")
