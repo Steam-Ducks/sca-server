@@ -38,7 +38,7 @@ class LoginView(APIView):
 
         perfil_nome = None
         try:
-            perfil_nome = user.usuario_perfil.perfil.nome
+            perfil_nome = user.usuario_perfil.perfil.permissoes
         except Exception:
             pass
 
