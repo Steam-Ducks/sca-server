@@ -99,7 +99,7 @@ def test_login_returns_400_with_empty_body():
 
 @pytest.mark.django_db
 def test_login_retorna_perfil_nulo_quando_usuario_sem_perfil():
-    user = User.objects.create_user(username="semperfil", password="senha123")
+    User.objects.create_user(username="semperfil", password="senha123")
     client = APIClient()
     response = client.post(
         "/api/auth/login/",
