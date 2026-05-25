@@ -16,4 +16,3 @@ requests
 sqlalchemy
 pandas
 python-dotenv
-djangorestframework-simplejwt==5.3.1
