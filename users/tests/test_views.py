@@ -54,7 +54,7 @@ def test_login_response_contains_user_info(user_with_profile):
     )
     assert response.data["user"]["username"] == "superadmin"
     assert response.data["user"]["name"] == "Super Admin"
-    assert response.data["user"]["perfil"] == "Super Admin"
+    assert response.data["user"]["perfil"] == "super_admin"
 
 
 @pytest.mark.django_db
