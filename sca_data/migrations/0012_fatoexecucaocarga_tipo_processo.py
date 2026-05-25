@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("sca_data", "0009_fatoexecucaocarga_erros_avisos"),
+        ("sca_data", "0011_merge_20260525_1442"),
     ]
 
     operations = [
