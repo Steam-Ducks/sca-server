@@ -2,6 +2,8 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from users.permissions import CanAccessDashboard
+
 from dashboard.selectors import (
     get_cost_composition,
     get_dashboard_kpis,
@@ -45,6 +47,8 @@ class DashboardKPIsView(APIView):
         status     — project status
     """
 
+    permission_classes = [CanAccessDashboard]
+
     def get(self, request):
         kpis = get_dashboard_kpis(_normalize_dashboard_filters(request.query_params))
         serializer = DashboardKPIsSerializer(kpis)
@@ -61,6 +65,8 @@ class MainDashboardView(APIView):
         start_date — YYYY-MM-DD
         end_date   — YYYY-MM-DD
     """
+
+    permission_classes = [CanAccessDashboard]
 
     def get(self, request):
         start_date = request.query_params.get("start_date")
@@ -84,6 +90,8 @@ class SummaryTableView(APIView):
         projeto    — project name
     """
 
+    permission_classes = [CanAccessDashboard]
+
     def get(self, request):
         rows = get_program_summary(_normalize_dashboard_filters(request.query_params))
         serializer = ProgramSummarySerializer(rows, many=True)
@@ -103,6 +111,8 @@ class CostCompositionView(APIView):
         programa   — program name
         projeto    — project name
     """
+
+    permission_classes = [CanAccessDashboard]
 
     def get(self, request):
         data = get_cost_composition(_normalize_dashboard_filters(request.query_params))
@@ -124,6 +134,8 @@ class TopProjectsView(APIView):
         project    — project name (case-insensitive)
         status     — project status (case-insensitive)
     """
+
+    permission_classes = [CanAccessDashboard]
 
     def get(self, request):
         rows = get_top_projects_by_cost(
@@ -147,6 +159,8 @@ class CostEvolutionView(APIView):
         project    — project name (case-insensitive)
         status     — project status (case-insensitive)
     """
+
+    permission_classes = [CanAccessDashboard]
 
     def get(self, request):
         rows = get_cost_evolution(request.query_params)

@@ -7,7 +7,15 @@ User = get_user_model()
 
 @pytest.fixture
 def api_user(db):
-    return User.objects.create_user(username="testuser", password="testpass123")
+    from users.models import Perfil, UsuarioPerfil
+
+    user = User.objects.create_user(username="testuser", password="testpass123")
+    perfil, _ = Perfil.objects.get_or_create(
+        nome="Super Admin",
+        defaults={"descricao": "Acesso total", "permissoes": "super_admin"},
+    )
+    UsuarioPerfil.objects.get_or_create(usuario=user, defaults={"perfil": perfil})
+    return user
 
 
 @pytest.fixture

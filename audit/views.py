@@ -7,10 +7,25 @@ from django.utils.dateparse import parse_datetime
 
 from audit.serializers import AuditExecutionLogSerializer
 from sca_data.models import AuditExecutionLog
+from users.permissions import CanAccessAudit, _get_permissao
+
+_ALLOWED_TABLES_BY_PROFILE: dict = {
+    "super_admin": None,
+    "financeiro": {"programas", "projetos", "tarefas_projeto", "tempo_tarefas"},
+    "compras": {
+        "fornecedores",
+        "pedidos_compra",
+        "solicitacoes_compra",
+        "compras_projeto",
+    },
+    "almoxarifado": {"materiais", "empenho_materiais", "estoque_materiais_projeto"},
+    "projetos": {"projetos", "tarefas_projeto", "tempo_tarefas"},
+}
 
 
 class AuditExecutionLogTableView(generics.ListAPIView):
     serializer_class = AuditExecutionLogSerializer
+    permission_classes = [CanAccessAudit]
 
     def _parse_periodo(self, raw: str) -> tuple[datetime.date, datetime.date]:
         try:
@@ -42,6 +57,12 @@ class AuditExecutionLogTableView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = AuditExecutionLog.objects.all()
+
+        perfil = _get_permissao(self.request.user)
+        allowed_tables = _ALLOWED_TABLES_BY_PROFILE.get(perfil)
+        if allowed_tables is not None:
+            queryset = queryset.filter(table_name__in=allowed_tables)
+
         params = self.request.query_params
 
         status = params.get("status")
