@@ -153,6 +153,32 @@ class TestExecucaoCargaViewSuccess:
             response = view(request)
             assert response.status_code == 200
 
+    @patch("monitoring.views.get_execucoes_carga")
+    @patch("monitoring.views.FatoExecucaoCargaSerializer")
+    def test_tabela_filter_passed_to_selector(
+        self, mock_serializer, mock_selector, factory
+    ):
+        mock_selector.return_value = []
+        mock_serializer.return_value.data = []
+        view = ExecucaoCargaView.as_view()
+        request = factory.get("/api/monitoring/execucoes/", {"tabela": "materiais"})
+        view(request)
+        _, kwargs = mock_selector.call_args
+        assert kwargs["tabela"] == "materiais"
+
+    @patch("monitoring.views.get_execucoes_carga")
+    @patch("monitoring.views.FatoExecucaoCargaSerializer")
+    def test_fonte_filter_passed_to_selector(
+        self, mock_serializer, mock_selector, factory
+    ):
+        mock_selector.return_value = []
+        mock_serializer.return_value.data = []
+        view = ExecucaoCargaView.as_view()
+        request = factory.get("/api/monitoring/execucoes/", {"fonte": "csv_upload"})
+        view(request)
+        _, kwargs = mock_selector.call_args
+        assert kwargs["fonte"] == "csv_upload"
+
 
 class TestExecucaoCargaViewUrl:
     def test_url_resolves(self):

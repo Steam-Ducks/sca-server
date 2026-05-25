@@ -65,7 +65,15 @@ def _validate_rows(df):
 
 
 def _register_execucao(
-    run_id, tabela, status, linhas, erros, avisos, detalhes, iniciado_em
+    run_id,
+    tabela,
+    status,
+    linhas,
+    erros,
+    avisos,
+    detalhes,
+    iniciado_em,
+    tipo_processo="COMPLETA",
 ):
     try:
         from sca_data.models import FatoExecucaoCarga
@@ -74,6 +82,7 @@ def _register_execucao(
             run_id=run_id,
             fonte="csv_upload",
             tabela=tabela,
+            tipo_processo=tipo_processo,
             status=status,
             linhas_processadas=linhas,
             erros=erros,

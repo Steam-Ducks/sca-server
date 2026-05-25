@@ -14,6 +14,8 @@ class ExecucaoCargaView(APIView):
         status = request.query_params.get("status")
         data_inicio = request.query_params.get("data_inicio")
         data_fim = request.query_params.get("data_fim")
+        tabela = request.query_params.get("tabela")
+        fonte = request.query_params.get("fonte")
 
         if status and status not in _VALID_STATUSES:
             return Response(
@@ -42,7 +44,11 @@ class ExecucaoCargaView(APIView):
                 )
 
         execucoes = get_execucoes_carga(
-            status=status, data_inicio=data_inicio, data_fim=data_fim
+            status=status,
+            data_inicio=data_inicio,
+            data_fim=data_fim,
+            tabela=tabela,
+            fonte=fonte,
         )
         serializer = FatoExecucaoCargaSerializer(execucoes, many=True)
         return Response({"count": len(serializer.data), "results": serializer.data})
