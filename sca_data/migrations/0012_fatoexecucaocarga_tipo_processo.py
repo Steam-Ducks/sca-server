@@ -8,6 +8,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AlterModelOptions(
+            name="fatoexecucaocarga",
+            options={"managed": True},
+        ),
+        migrations.AlterField(
+            model_name="fatoexecucaocarga",
+            name="id",
+            field=models.AutoField(primary_key=True, serialize=False),
+        ),
         migrations.AddField(
             model_name="fatoexecucaocarga",
             name="tipo_processo",
