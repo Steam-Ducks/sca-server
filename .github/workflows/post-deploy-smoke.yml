@@ -1,0 +1,36 @@
+name: post-deploy-smoke
+
+on:
+  workflow_run:
+    workflows: ['automatic-deploy']
+    types:
+      - completed
+
+jobs:
+  smoke-backend:
+    name: Backend (k6)
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run smoke test
+        env:
+          K6_BASE_URL: ${{ secrets.PROD_API_URL }}
+          K6_AUTH_USERNAME: ${{ secrets.K6_AUTH_USERNAME }}
+          K6_AUTH_PASSWORD: ${{ secrets.K6_AUTH_PASSWORD }}
+        run: k6 run k6/scenarios/smoke.js
+
+      - name: Upload k6 results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-smoke-results
+          path: k6-summary.json
+          if-no-files-found: ignore
