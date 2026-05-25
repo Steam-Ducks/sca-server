@@ -171,12 +171,9 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-<<<<<<< HEAD
 AUTH_USER_MODEL = "users.User"
 
-=======
 # Django REST Framework
->>>>>>> 082e9e6 (feat(SCA-318): add filters for budget snapshot and ensure query params are forwarded)
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -186,20 +183,11 @@ REST_FRAMEWORK = {
     ],
 }
 
-<<<<<<< HEAD
-from datetime import timedelta  # noqa: E402
-
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=8),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    "ROTATE_REFRESH_TOKENS": False,
-=======
 # Simple JWT
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=8),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ALGORITHM": "HS256",
->>>>>>> 082e9e6 (feat(SCA-318): add filters for budget snapshot and ensure query params are forwarded)
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 

@@ -1,6 +1,7 @@
 import datetime
 from unittest.mock import MagicMock, patch
 
+from rest_framework.test import APIClient
 from sca_data.models import GoldBudgetSnapshot, SilverPrograma, SilverProjeto
 
 
