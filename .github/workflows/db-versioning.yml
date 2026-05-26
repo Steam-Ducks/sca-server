@@ -8,9 +8,49 @@ on:
 
 jobs:
 
+  # ─── 1. Detecção de migrations destrutivas ──────────────────────────────────
+  # Roda primeiro e de forma independente. Se encontrar operações CRÍTICAS
+  # (DROP TABLE, TRUNCATE, DELETE sem WHERE), bloqueia o pipeline e exige
+  # revisão manual antes de continuar.
+  destructive-check:
+    name: Destructive Migration Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verificar migrations destrutivas no PR
+        # --changed-only analisa apenas arquivos alterados vs develop/main
+        # Em push direto (develop/main), analisa todas as migrations
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python scripts/check_destructive_migrations.py --changed-only
+          else
+            python scripts/check_destructive_migrations.py
+          fi
+
+      - name: Step Summary
+        if: always()
+        run: |
+          echo "## Destructive Migration Check" >> $GITHUB_STEP_SUMMARY
+          echo "| | |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Evento | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+
+  # ─── 2. Migration Lint ───────────────────────────────────────────────────────
   migration-lint:
     name: Migration Lint
     runs-on: ubuntu-latest
+    needs: destructive-check
 
     services:
       postgres:
@@ -69,6 +109,8 @@ jobs:
           path: migration_report.txt
           retention-days: 30
 
+  # ─── 3. Schema Snapshot ─────────────────────────────────────────────────────
+  # Gera snapshot do schema após cada merge na main para rastrear evolução
   schema-snapshot:
     name: Schema Snapshot
     runs-on: ubuntu-latest
