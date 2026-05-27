@@ -10,20 +10,112 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to VPS
+      - name: Deploy to VPS (with pre-deploy backup and migration safety)
         uses: appleboy/ssh-action@v1.2.5
-
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-
+          # Timeout: 10 min (migrations pesadas podem demorar)
+          command_timeout: 10m
           script: |
-            cd /home/deploy/app/sca-server
+            set -euo pipefail
+            APP_DIR=/home/deploy/app/sca-server
+            BACKUP_DIR=/home/deploy/backups
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+            BACKUP_FILE="${BACKUP_DIR}/pre_deploy_${TIMESTAMP}.dump"
 
+            mkdir -p "$BACKUP_DIR"
+
+            echo "=== [1/5] Carregando variáveis de ambiente ==="
+            set -a
+            source "${APP_DIR}/.env"
+            set +a
+
+            echo "=== [2/5] Backup do banco antes do deploy ==="
+            # Bug fix: PGSSLMODE=require obrigatório para DigitalOcean Managed PG (porta 25060)
+            PGPASSWORD="$DB_PASSWORD" PGSSLMODE="${DB_SSL_MODE:-require}" pg_dump \
+              --host="$DB_HOST" \
+              --port="${DB_PORT:-5432}" \
+              --username="$DB_USER" \
+              --dbname="$DB_NAME" \
+              --format=custom \
+              --no-password \
+              --file="$BACKUP_FILE"
+            echo "Backup salvo em: $BACKUP_FILE"
+
+            echo "=== [3/5] Atualizando código ==="
+            cd "$APP_DIR"
             git checkout main
-
             git pull origin main
 
+            echo "=== [4/5] Aplicando migrations com detecção de falha ==="
+            # Bug fix: build a imagem ANTES de rodar migrate para garantir que
+            # o código novo (models, imports) esteja disponível dentro do container.
+            # O container antigo continua rodando em paralelo até o `up -d` do passo 5.
+            docker compose -f docker-compose.prod.yml build backend
+
+            docker compose -f docker-compose.prod.yml run --rm \
+              -e DB_HOST="$DB_HOST" \
+              -e DB_PORT="$DB_PORT" \
+              -e DB_NAME="$DB_NAME" \
+              -e DB_USER="$DB_USER" \
+              -e DB_PASSWORD="$DB_PASSWORD" \
+              -e DB_SSL_MODE="${DB_SSL_MODE:-require}" \
+              -e SECRET_KEY="$SECRET_KEY" \
+              -e DEBUG="0" \
+              -e ALLOWED_HOSTS="$ALLOWED_HOSTS" \
+              backend python manage.py migrate --noinput \
+            || {
+                echo ""
+                echo "ERROR: migrate falhou. Iniciando restore do backup..."
+                # Bug fix: SSL + --no-owner para evitar erros de permissão no DO Managed PG
+                PGPASSWORD="$DB_PASSWORD" PGSSLMODE="${DB_SSL_MODE:-require}" pg_restore \
+                  --host="$DB_HOST" \
+                  --port="${DB_PORT:-5432}" \
+                  --username="$DB_USER" \
+                  --dbname="$DB_NAME" \
+                  --no-password \
+                  --clean \
+                  --if-exists \
+                  --no-owner \
+                  --no-privileges \
+                  "$BACKUP_FILE"
+                echo "Restore concluído. Deploy abortado."
+                exit 1
+              }
+
+            echo "=== [5/5] Subindo nova versão da aplicação ==="
             docker compose -f docker-compose.prod.yml up -d --build
+
+            echo ""
+            echo "Deploy concluído com sucesso. Backup disponível em: $BACKUP_FILE"
+
+  notify-on-failure:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: failure()
+    steps:
+      - name: Notificar falha no deploy
+        # Substitua pela integração de notificação do time (Slack, email, etc.)
+        # Exemplo com Slack webhook (configure SLACK_WEBHOOK_URL nos secrets):
+        run: |
+          curl -s -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "text": ":red_circle: *Deploy FALHOU* — `sca-server` branch `main`\nCommit: `${{ github.sha }}`\nAtor: `${{ github.actor }}`\nVer detalhes: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }' || true
+
+  notify-on-success:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: success()
+    steps:
+      - name: Notificar sucesso no deploy
+        run: |
+          curl -s -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "text": ":large_green_circle: *Deploy OK* — `sca-server` em produção\nCommit: `${{ github.sha }}`\nAtor: `${{ github.actor }}`"
+            }' || true
