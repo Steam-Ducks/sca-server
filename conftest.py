@@ -50,4 +50,3 @@ def api_client(super_admin_user):
     client = APIClient()
     client.force_authenticate(user=super_admin_user)
     return client
-    
