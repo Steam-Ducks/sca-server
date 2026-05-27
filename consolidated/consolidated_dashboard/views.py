@@ -11,9 +11,11 @@ from consolidated.consolidated_dashboard.serializers import (
     ConsolidatedDashboardSerializer,
 )
 from sca_data.models import SilverProjeto
+from users.permissions import CanAccessConsolidated
 
 
 class ConsolidatedDashboardView(generics.ListAPIView):
+    permission_classes = [CanAccessConsolidated]
     """
     Tabela consolidada por projeto - une custos de materiais e horas tecnicas.
 

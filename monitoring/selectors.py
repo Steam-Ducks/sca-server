@@ -3,10 +3,16 @@ import datetime
 from sca_data.models import FatoExecucaoCarga
 
 
-def get_execucoes_carga(status=None, data_inicio=None, data_fim=None):
+def get_execucoes_carga(
+    status=None, data_inicio=None, data_fim=None, tabela=None, fonte=None
+):
     qs = FatoExecucaoCarga.objects.all()
     if status:
         qs = qs.filter(status=status)
+    if tabela:
+        qs = qs.filter(tabela=tabela)
+    if fonte:
+        qs = qs.filter(fonte=fonte)
     if data_inicio:
         if isinstance(data_inicio, str):
             data_inicio = datetime.date.fromisoformat(data_inicio)

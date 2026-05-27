@@ -72,30 +72,22 @@ def _check_services():
 
 
 def _get_recent_processes():
-    from sca_data.models import AuditExecutionLog
+    from sca_data.models import FatoExecucaoCarga
 
     try:
-        logs = AuditExecutionLog.objects.order_by("-started_at")[:20]
+        logs = FatoExecucaoCarga.objects.order_by("-iniciado_em")[:20]
         return [
             {
                 "run_id": str(log.run_id),
-                "operation": log.operation,
+                "operation": log.fonte,
                 "status": log.status,
-                "table": (
-                    f"{log.table_schema}.{log.table_name}"
-                    if log.table_schema
-                    else log.table_name
-                ),
-                "affected_rows": log.affected_rows,
-                "started_at": log.started_at.isoformat() if log.started_at else None,
+                "table": log.tabela,
+                "affected_rows": log.linhas_processadas,
+                "started_at": log.iniciado_em.isoformat() if log.iniciado_em else None,
                 "finalized_at": (
-                    log.finalized_at.isoformat() if log.finalized_at else None
+                    log.finalizado_em.isoformat() if log.finalizado_em else None
                 ),
-                "duration_seconds": (
-                    round(log.operation_duration / 1000, 1)
-                    if log.operation_duration
-                    else None
-                ),
+                "duration_seconds": None,
             }
             for log in logs
         ]
@@ -144,7 +136,7 @@ def _get_last_updates():
 
 def _get_alerts():
     from sca_data.models import (
-        AuditExecutionLog,
+        FatoExecucaoCarga,
         GoldCosts,
         GoldIndicadoresMateriais,
         SilverFornecedor,
@@ -161,25 +153,21 @@ def _get_alerts():
     now = datetime.now(timezone.utc)
 
     try:
-        failed = AuditExecutionLog.objects.filter(status="failed").order_by(
-            "-started_at"
+        failed = FatoExecucaoCarga.objects.filter(status="failed").order_by(
+            "-iniciado_em"
         )[:10]
         for log in failed:
             alerts.append(
                 {
                     "level": "error",
                     "source": "etl_pipeline",
-                    "operation": log.operation,
-                    "table": (
-                        f"{log.table_schema}.{log.table_name}"
-                        if log.table_schema
-                        else log.table_name
-                    ),
+                    "operation": log.fonte,
+                    "table": log.tabela,
                     "timestamp": (
-                        log.started_at.isoformat() if log.started_at else None
+                        log.iniciado_em.isoformat() if log.iniciado_em else None
                     ),
                     "run_id": str(log.run_id),
-                    "message": None,
+                    "message": log.detalhes_falha,
                 }
             )
     except Exception:

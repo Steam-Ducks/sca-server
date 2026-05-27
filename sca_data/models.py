@@ -281,6 +281,7 @@ class FatoExecucaoCarga(models.Model):
     run_id = models.UUIDField()
     fonte = models.CharField(max_length=50)
     tabela = models.CharField(max_length=100)
+    tipo_processo = models.CharField(max_length=20, default="COMPLETA")
     status = models.CharField(max_length=20)
     linhas_processadas = models.IntegerField(null=True, blank=True)
     erros = models.IntegerField(default=0)

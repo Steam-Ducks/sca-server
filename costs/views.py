@@ -4,12 +4,14 @@ from django.utils.timezone import make_aware
 
 from costs.serializers import GoldCostsSerializer
 from sca_data.models import GoldCosts
+from users.permissions import CanAccessCosts
 
 from datetime import datetime, time
 
 
 class GoldCostsTableView(generics.ListAPIView):
     serializer_class = GoldCostsSerializer
+    permission_classes = [CanAccessCosts]
 
     def get_queryset(self):
         queryset = GoldCosts.objects.all()
