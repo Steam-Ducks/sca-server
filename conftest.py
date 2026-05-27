@@ -1,25 +1,54 @@
+"""
+conftest.py — fixtures compartilhadas para testes de integração (sca-server).
+
+IMPORTANTE: O backend agora usa JWT + perfis de acesso.
+Todos os testes de integração precisam de um cliente autenticado.
+Este conftest fornece `api_client` com perfil `super_admin` via
+`force_authenticate` — bypassa o JWT sem precisar gerar tokens.
+"""
+
+from datetime import datetime, timezone
+
 import pytest
-from django.contrib.auth import get_user_model
 from rest_framework.test import APIClient
 
-User = get_user_model()
+from users.models import Perfil, User, UsuarioPerfil
+
+
+# ── Usuário autenticado ───────────────────────────────────────────────────────
 
 
 @pytest.fixture
-def api_user(db):
-    from users.models import Perfil, UsuarioPerfil
-
-    user = User.objects.create_user(username="testuser", password="testpass123")
-    perfil, _ = Perfil.objects.get_or_create(
-        nome="Super Admin",
-        defaults={"descricao": "Acesso total", "permissoes": "super_admin"},
+def super_admin_user(db):
+    """
+    Cria um User com perfil super_admin para os testes de integração.
+    super_admin tem acesso a todos os endpoints — ideal para CTIs.
+    """
+    user = User.objects.create_user(
+        username="test_integration",
+        password="test_integration_pass",
+        name="Integration Tester",
+        is_active=True,
     )
-    UsuarioPerfil.objects.get_or_create(usuario=user, defaults={"perfil": perfil})
+    perfil = Perfil.objects.create(
+        nome="Super Admin Test",
+        permissoes="super_admin",
+    )
+    UsuarioPerfil.objects.create(usuario=user, perfil=perfil)
     return user
 
 
 @pytest.fixture
-def api_client(api_user):
+def api_client(super_admin_user):
+    """
+    APIClient autenticado com super_admin.
+    Substitui o `api_client` anterior (sem autenticação).
+
+    Uso nos testes:
+        def test_algo(self, api_client):
+            response = api_client.get("/api/dashboard/kpis/")
+            assert response.status_code == 200
+    """
     client = APIClient()
-    client.force_authenticate(user=api_user)
+    client.force_authenticate(user=super_admin_user)
     return client
