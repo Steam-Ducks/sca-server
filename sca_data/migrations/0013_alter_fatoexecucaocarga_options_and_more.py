@@ -6,17 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('sca_data', '0012_fatoexecucaocarga_tipo_processo'),
+        ("sca_data", "0012_fatoexecucaocarga_tipo_processo"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='fatoexecucaocarga',
-            options={'managed': True},
+            name="fatoexecucaocarga",
+            options={"managed": True},
         ),
         migrations.AlterField(
-            model_name='fatoexecucaocarga',
-            name='id',
+            model_name="fatoexecucaocarga",
+            name="id",
             field=models.AutoField(primary_key=True, serialize=False),
         ),
     ]
