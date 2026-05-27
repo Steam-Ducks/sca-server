@@ -37,6 +37,15 @@ def super_admin_user(db):
 
 
 @pytest.fixture
+def api_user(super_admin_user):
+    """
+    Alias de super_admin_user — mantém compatibilidade com testes
+    que usam o nome anterior da fixture (ex: audit/tests/test_views.py).
+    """
+    return super_admin_user
+
+
+@pytest.fixture
 def api_client(super_admin_user):
     """
     APIClient autenticado com super_admin.

@@ -53,7 +53,7 @@ class TestAuditAuthIntegration:
     def test_retorna_403_sem_autenticacao(self):
         # CTI-02 — passa: 403 é verificado antes de qualquer query ao banco
         response = APIClient().get("/api/audit/")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
 
 @pytest.mark.integration

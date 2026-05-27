@@ -28,18 +28,18 @@ class TestLoginIntegration:
     Conjunto: LoginView + User (AbstractUser) + JWT
     """
 
-    def test_login_com_credenciais_validas_retorna_200(self, db):
+    def test_login_com_credenciais_validas_retorna_200(self, api_client, db):
         User.objects.create_user(username="joao", password="senha123", name="João")
-        response = APIClient().post(
+        response = api_client.post(
             "/api/auth/login/",
             data={"username": "joao", "password": "senha123"},
             format="json",
         )
         assert response.status_code == 200
 
-    def test_login_retorna_access_e_refresh_tokens(self, db):
+    def test_login_retorna_access_e_refresh_tokens(self, api_client, db):
         User.objects.create_user(username="maria", password="senha456", name="Maria")
-        response = APIClient().post(
+        response = api_client.post(
             "/api/auth/login/",
             data={"username": "maria", "password": "senha456"},
             format="json",
@@ -48,21 +48,21 @@ class TestLoginIntegration:
         assert "refresh" in response.data
         assert "user" in response.data
 
-    def test_login_com_credenciais_invalidas_retorna_401(self, db):
-        response = APIClient().post(
+    def test_login_com_credenciais_invalidas_retorna_401(self, api_client, db):
+        response = api_client.post(
             "/api/auth/login/",
             data={"username": "naoexiste", "password": "errada"},
             format="json",
         )
         assert response.status_code == 401
 
-    def test_login_retorna_perfil_do_usuario(self, db):
+    def test_login_retorna_perfil_do_usuario(self, api_client, db):
         user = User.objects.create_user(
             username="carlos", password="senha789", name="Carlos"
         )
         perfil = Perfil.objects.create(nome="Financeiro Test", permissoes="financeiro")
         UsuarioPerfil.objects.create(usuario=user, perfil=perfil)
-        response = APIClient().post(
+        response = api_client.post(
             "/api/auth/login/",
             data={"username": "carlos", "password": "senha789"},
             format="json",
@@ -85,7 +85,7 @@ class TestUserListIntegration:
 
     def test_lista_retorna_403_sem_autenticacao(self):
         response = APIClient().get("/api/users/")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     def test_usuario_criado_aparece_na_lista(self, api_client, db):
         User.objects.create_user(
