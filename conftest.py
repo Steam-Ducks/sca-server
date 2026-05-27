@@ -7,8 +7,6 @@ Este conftest fornece `api_client` com perfil `super_admin` via
 `force_authenticate` — bypassa o JWT sem precisar gerar tokens.
 """
 
-from datetime import datetime, timezone
-
 import pytest
 from rest_framework.test import APIClient
 
@@ -52,3 +50,4 @@ def api_client(super_admin_user):
     client = APIClient()
     client.force_authenticate(user=super_admin_user)
     return client
+    
