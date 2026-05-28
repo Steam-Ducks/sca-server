@@ -8,7 +8,6 @@ name: DB Backup — Servidor
 #   SERVER_USER        — usuário SSH (ex: deploy)
 #   SERVER_SSH_KEY     — chave SSH privada
 #   SERVER_PORT        — porta SSH (geralmente 22)
-#   SLACK_WEBHOOK_URL  — webhook para notificações (opcional)
 
 on:
   schedule:
@@ -65,21 +64,3 @@ jobs:
             echo "=== Removendo backups com mais de 30 dias ==="
             find "$BACKUP_DIR" -name "sca_backup_*.dump" -mtime +30 -delete
             echo "Limpeza concluída."
-
-      - name: Notificar sucesso via Slack
-        if: success()
-        run: |
-          curl -s -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "text": ":floppy_disk: *Backup concluído* — sca-server\nBackup salvo no servidor com sucesso."
-            }' || true
-
-      - name: Notificar falha via Slack
-        if: failure()
-        run: |
-          curl -s -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "text": ":sos: *FALHA no backup* — sca-server\nVer: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            }' || true
