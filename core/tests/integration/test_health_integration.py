@@ -1,94 +1,97 @@
 """
-Conjunto de integração: Core / Health Check
+Conjunto de integração: Core
 
 Funções do conjunto:
-    health_check (views.py) — GET /api/health/ → {"status": "ok"}
-    receive_log (views.py)  — POST /api/log/
-    receive_metric          — POST /api/metric/
+    health_check (views.py)  — GET /api/health/ → {"status": "ok"} (AllowAny)
+    status_view (views.py)   — GET /api/status/ → diagnóstico completo (AllowAny)
 
 Registrado em config/urls.py: path("api/", include("core.urls"))
+
+/api/log/ e /api/metric/ não existem em core/urls.py — xfail documentado.
+
+CTI-01 ao CTI-06
 """
 
-import json
 import pytest
+from rest_framework.test import APIClient
 
 
 @pytest.mark.integration
+@pytest.mark.django_db
 class TestHealthCheckIntegration:
     """
     CTI-01 ao CTI-03
     Conjunto: health_check view + URL routing + DRF Response
-
-    Carga: sem dados — endpoint é stateless (não lê banco).
+    Endpoint AllowAny — não requer autenticação.
     """
 
     def test_health_retorna_200(self, api_client):
-        # CTI-01 (mínimo): GET /api/health/ → 200
-        # Valida: URL registrada, view responde sem erro
+        # CTI-01
         response = api_client.get("/api/health/")
         assert response.status_code == 200
 
     def test_health_retorna_status_ok(self, api_client):
-        # CTI-02 (mínimo): corpo da resposta contém {"status": "ok"}
-        # Valida: serialização da view até o cliente
+        # CTI-02
         response = api_client.get("/api/health/")
         assert response.data == {"status": "ok"}
 
     def test_health_so_aceita_get(self, api_client):
-        # CTI-03 (adicional): POST → 405 Method Not Allowed
+        # CTI-03
         response = api_client.post("/api/health/")
         assert response.status_code == 405
 
 
 @pytest.mark.integration
-@pytest.mark.xfail(
-    reason="/api/log/ not registered in core/urls.py — endpoint not yet implemented",
-)
-class TestReceiveLogIntegration:
+@pytest.mark.django_db
+class TestStatusViewIntegration:
     """
-    CT-INT-CORE-02
-    Conjunto: receive_log view + URL routing + JSON parsing
+    CTI-04 ao CTI-06
+    Conjunto: status_view + _check_services + _get_recent_processes + _get_db_stats
+    Endpoint AllowAny — retorna diagnóstico completo do sistema.
     """
 
-    def test_receive_log_aceita_post_com_payload(self, api_client):
-        payload = {"level": "info", "message": "teste de integração", "context": {}}
-        response = api_client.post(
-            "/api/log/",
-            data=json.dumps(payload),
-            content_type="application/json",
-        )
-        assert response.status_code == 200
-        assert response.json()["status"] == "ok"
-
-    def test_receive_log_aceita_payload_vazio(self, api_client):
-        response = api_client.post(
-            "/api/log/",
-            data="{}",
-            content_type="application/json",
-        )
+    def test_status_retorna_200(self, api_client):
+        # CTI-04
+        response = api_client.get("/api/status/")
         assert response.status_code == 200
 
-    def test_receive_log_nao_aceita_get(self, api_client):
-        response = api_client.get("/api/log/")
-        assert response.status_code == 405
+    def test_status_contem_campos_obrigatorios(self, api_client):
+        # CTI-05
+        response = api_client.get("/api/status/")
+        for campo in ["status", "timestamp", "services", "data_integrity"]:
+            assert campo in response.data, f"Campo ausente: {campo}"
+
+    def test_status_verifica_conexao_banco(self, api_client):
+        # CTI-06 — com PostgreSQL real, database deve estar "ok"
+        response = api_client.get("/api/status/")
+        assert response.data["services"]["database"]["status"] == "ok"
 
 
 @pytest.mark.integration
 @pytest.mark.xfail(
-    reason="/api/metric/ not registered in core/urls.py — endpoint not yet implemented",
+    reason="/api/log/ não registrado em core/urls.py — endpoint não implementado",
 )
-class TestReceiveMetricIntegration:
-    """
-    CT-INT-CORE-03
-    Conjunto: receive_metric view + URL routing + JSON parsing
-    """
+class TestReceiveLogIntegration:
+    """CTI-07 — xfail: endpoint não existe ainda."""
 
-    def test_receive_metric_aceita_post(self, api_client):
-        payload = {"name": "page_load", "value": 320, "unit": "ms"}
+    def test_receive_log_aceita_post(self, api_client):
         response = api_client.post(
-            "/api/metric/",
-            data=json.dumps(payload),
-            content_type="application/json",
+            "/api/log/", data={"level": "info", "message": "test"},
+            format="json",
         )
         assert response.status_code == 200
-        assert response.json()["status"] == "ok"
+
+
+@pytest.mark.integration
+@pytest.mark.xfail(
+    reason="/api/metric/ não registrado em core/urls.py — endpoint não implementado",
+)
+class TestReceiveMetricIntegration:
+    """CTI-08 — xfail: endpoint não existe ainda."""
+
+    def test_receive_metric_aceita_post(self, api_client):
+        response = api_client.post(
+            "/api/metric/", data={"name": "page_load", "value": 320},
+            format="json",
+        )
+        assert response.status_code == 200
