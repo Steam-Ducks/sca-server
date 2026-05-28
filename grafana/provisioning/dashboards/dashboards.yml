@@ -17,10 +17,3 @@ providers:
     options:
       path: /etc/grafana/provisioning/dashboards/json/sca
 
-  - name: db
-    folder: DB
-    type: file
-    disableDeletion: false
-    updateIntervalSeconds: 30
-    options:
-      path: /etc/grafana/provisioning/dashboards/json/db

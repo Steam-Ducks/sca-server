@@ -1,7 +1,7 @@
 {
   "title": "SCA — Visão Geral",
   "uid": "sca-overview",
-  "version": 6,
+  "version": 7,
   "schemaVersion": 38,
   "refresh": "30s",
   "graphTooltip": 1,
@@ -20,7 +20,7 @@
       "gridPos": { "x": 6, "y": 0, "w": 6, "h": 5 },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area", "textMode": "auto" },
       "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 0.1, "color": "orange" }, { "value": 1, "color": "red" }] } } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(django_http_responses_total_by_status_total{status=~\"5..\"}[5m]))", "legendFormat": "" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(django_http_responses_total_by_status_view_method_total{status=~\"5..\"}[5m]))", "legendFormat": "" }]
     },
     {
       "id": 3, "type": "stat", "title": "Tempo de resposta — p95",
@@ -54,7 +54,7 @@
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum by (status) (rate(django_http_responses_total_by_status_total[5m]))", "legendFormat": "{{status}}" }
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum by (status) (rate(django_http_responses_total_by_status_view_method_total[5m]))", "legendFormat": "{{status}}" }
       ]
     },
     {
@@ -78,9 +78,47 @@
       ]
     },
     {
+      "id": 8, "type": "row", "title": "Banco de Dados",
+      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Queries ao banco / s",
+      "description": "Taxa de execução de queries por alias de banco. Picos podem indicar N+1 ou cache miss",
+      "gridPos": { "x": 0, "y": 15, "w": 12, "h": 9 },
+      "fieldConfig": { "defaults": { "unit": "ops", "fillOpacity": 8, "lineWidth": 2 } },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max", "mean"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum by (alias) (rate(django_db_execute_total[5m]))", "legendFormat": "{{alias}}" }
+      ]
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Duração de query — p50 / p95",
+      "description": "Tempo de execução das queries no banco. Se subir sob carga, avaliar índices ou N+1",
+      "gridPos": { "x": 12, "y": 15, "w": 12, "h": 9 },
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "fillOpacity": 8, "lineWidth": 2 },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Mediana (p50)" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Lento (p95)" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max", "mean"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.50, sum(rate(django_db_execute_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "Mediana (p50)" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum(rate(django_db_execute_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "Lento (p95)" }
+      ]
+    },
+    {
       "id": 7, "type": "timeseries", "title": "Todos os endpoints — req/s",
       "description": "Volume de requisições por endpoint. Endpoints com pico mais alto têm maior impacto na carga do servidor",
-      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 10 },
+      "gridPos": { "x": 0, "y": 24, "w": 24, "h": 10 },
       "fieldConfig": { "defaults": { "unit": "reqps", "fillOpacity": 6, "lineWidth": 2 } },
       "options": {
         "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max", "mean"] },

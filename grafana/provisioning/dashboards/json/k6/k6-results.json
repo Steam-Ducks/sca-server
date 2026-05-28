@@ -2,10 +2,10 @@
   "title": "K6 — Resultados dos Testes",
   "uid": "K6-results",
   "schemaVersion": 38,
-  "version": 5,
+  "version": 6,
   "refresh": false,
   "graphTooltip": 1,
-  "time": { "from": "now-3h", "to": "now" },
+  "time": { "from": "now-24h", "to": "now" },
   "templating": {
     "list": [
       {

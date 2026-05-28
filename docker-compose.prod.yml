@@ -50,10 +50,13 @@ services:
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
+    entrypoint: ["/bin/sh", "/etc/prometheus/entrypoint.sh"]
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--config.file=/tmp/prometheus.runtime.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.enable-remote-write-receiver'
+    env_file:
+      - .env
     restart: always
     networks:
       - app_net
