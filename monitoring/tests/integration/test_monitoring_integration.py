@@ -11,8 +11,10 @@ Funções do conjunto:
 NOTA: FatoExecucaoCarga tem managed=True → tabela criada pelas migrations.
 Nenhum xfail necessário — conjunto completo.
 
+A view retorna {"count": N, "results": [...]} — acesse via response.data["results"].
+Sem autenticação o DRF retorna 401 (não 403) pois user não está autenticado.
+
 CTI-01 ao CTI-08
-Referência Jira: SCA-356
 """
 
 import uuid
@@ -45,6 +47,7 @@ class TestMonitoringListIntegration:
     """
     CTI-01 ao CTI-04
     Conjunto: ExecucaoCargaView + FatoExecucaoCargaSerializer + CanAccessMonitoring
+    Resposta paginada: {"count": N, "results": [...]}
     """
 
     def test_retorna_200_com_banco_vazio(self, api_client):
@@ -52,27 +55,37 @@ class TestMonitoringListIntegration:
         response = api_client.get("/api/monitoring/execucoes/")
         assert response.status_code == 200
 
-    def test_retorna_403_sem_autenticacao(self):
-        # CTI-02
+    def test_retorna_401_sem_autenticacao(self):
+        # CTI-02 — DRF retorna 401 (não autenticado) antes de verificar permissão
         response = APIClient().get("/api/monitoring/execucoes/")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     def test_retorna_campos_corretos(self, api_client, execucao_base):
         # CTI-03
         response = api_client.get("/api/monitoring/execucoes/")
-        assert len(response.data) >= 1
-        item = response.data[0]
-        for campo in ["id", "run_id", "fonte", "tabela", "status",
-                      "linhas_processadas", "erros", "duracao_segundos"]:
-            assert campo in item, f"Campo ausente: {campo}"
+        assert response.status_code == 200
+        results = response.data["results"]
+        assert len(results) >= 1
+        item = results[0]
+        for campo in [
+            "id",
+            "run_id",
+            "fonte",
+            "tabela",
+            "status",
+            "linhas_processadas",
+            "erros",
+            "duracao_segundos",
+        ]:
+            assert campo in item, f"Campo ausente na resposta: {campo}"
 
-    def test_duracao_segundos_calculada_pelo_serializer(self, api_client, execucao_base):
-        # CTI-04 — campo computado: 10:05 - 10:00 = 300s
+    def test_duracao_segundos_calculada_pelo_serializer(
+        self, api_client, execucao_base
+    ):
+        # CTI-04 — campo computado pelo serializer: 10:05 - 10:00 = 300s
         response = api_client.get("/api/monitoring/execucoes/")
-        item = next(
-            i for i in response.data
-            if str(i["run_id"]) == str(execucao_base.run_id)
-        )
+        results = response.data["results"]
+        item = next(i for i in results if str(i["run_id"]) == str(execucao_base.run_id))
         assert item["duracao_segundos"] == 300
 
 
@@ -87,17 +100,24 @@ class TestMonitoringFiltrosIntegration:
     def test_filtro_por_status_retorna_apenas_status_correto(self, api_client, db):
         # CTI-05
         FatoExecucaoCarga.objects.create(
-            run_id=uuid.uuid4(), fonte="etl", tabela="projetos",
-            status="SUCCESS", iniciado_em=datetime.now(tz=timezone.utc),
+            run_id=uuid.uuid4(),
+            fonte="etl",
+            tabela="projetos",
+            status="SUCCESS",
+            iniciado_em=datetime.now(tz=timezone.utc),
         )
         FatoExecucaoCarga.objects.create(
-            run_id=uuid.uuid4(), fonte="etl", tabela="materiais",
-            status="FAILED", iniciado_em=datetime.now(tz=timezone.utc),
+            run_id=uuid.uuid4(),
+            fonte="etl",
+            tabela="materiais",
+            status="FAILED",
+            iniciado_em=datetime.now(tz=timezone.utc),
         )
         response = api_client.get("/api/monitoring/execucoes/?status=SUCCESS")
         assert response.status_code == 200
-        assert len(response.data) >= 1
-        for item in response.data:
+        results = response.data["results"]
+        assert len(results) >= 1
+        for item in results:
             assert item["status"] == "SUCCESS"
 
     def test_filtro_status_invalido_retorna_400(self, api_client):
@@ -108,21 +128,26 @@ class TestMonitoringFiltrosIntegration:
     def test_filtro_por_tabela(self, api_client, db):
         # CTI-07
         FatoExecucaoCarga.objects.create(
-            run_id=uuid.uuid4(), fonte="etl", tabela="projetos",
-            status="SUCCESS", iniciado_em=datetime.now(tz=timezone.utc),
+            run_id=uuid.uuid4(),
+            fonte="etl",
+            tabela="projetos",
+            status="SUCCESS",
+            iniciado_em=datetime.now(tz=timezone.utc),
         )
         FatoExecucaoCarga.objects.create(
-            run_id=uuid.uuid4(), fonte="etl", tabela="materiais",
-            status="SUCCESS", iniciado_em=datetime.now(tz=timezone.utc),
+            run_id=uuid.uuid4(),
+            fonte="etl",
+            tabela="materiais",
+            status="SUCCESS",
+            iniciado_em=datetime.now(tz=timezone.utc),
         )
         response = api_client.get("/api/monitoring/execucoes/?tabela=projetos")
         assert response.status_code == 200
-        for item in response.data:
+        results = response.data["results"]
+        for item in results:
             assert item["tabela"] == "projetos"
 
     def test_data_inicio_invalida_retorna_400(self, api_client):
         # CTI-08
-        response = api_client.get(
-            "/api/monitoring/execucoes/?data_inicio=nao-eh-data"
-        )
+        response = api_client.get("/api/monitoring/execucoes/?data_inicio=nao-eh-data")
         assert response.status_code == 400

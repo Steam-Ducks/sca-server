@@ -13,7 +13,6 @@ CTI-01 ao CTI-06
 """
 
 import pytest
-from rest_framework.test import APIClient
 
 
 @pytest.mark.integration
@@ -76,7 +75,8 @@ class TestReceiveLogIntegration:
 
     def test_receive_log_aceita_post(self, api_client):
         response = api_client.post(
-            "/api/log/", data={"level": "info", "message": "test"},
+            "/api/log/",
+            data={"level": "info", "message": "test"},
             format="json",
         )
         assert response.status_code == 200
@@ -91,7 +91,8 @@ class TestReceiveMetricIntegration:
 
     def test_receive_metric_aceita_post(self, api_client):
         response = api_client.post(
-            "/api/metric/", data={"name": "page_load", "value": 320},
+            "/api/metric/",
+            data={"name": "page_load", "value": 320},
             format="json",
         )
         assert response.status_code == 200
