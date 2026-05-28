@@ -12,7 +12,7 @@
       "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area", "textMode": "auto" },
       "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 50, "color": "orange" }, { "value": 200, "color": "red" }] } } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(django_http_requests_latency_including_middlewares_seconds_count[5m]))", "legendFormat": "" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "sum(rate(django_http_requests_latency_including_middlewares_seconds_count[5m]))", "legendFormat": "" }]
     },
     {
       "id": 2, "type": "stat", "title": "Erros 5xx / s",
@@ -20,7 +20,7 @@
       "gridPos": { "x": 6, "y": 0, "w": 6, "h": 5 },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area", "textMode": "auto" },
       "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 0.1, "color": "orange" }, { "value": 1, "color": "red" }] } } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(django_http_responses_total_by_status_view_method_total{status=~\"5..\"}[5m]))", "legendFormat": "" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "sum(rate(django_http_responses_total_by_status_view_method_total{status=~\"5..\"}[5m]))", "legendFormat": "" }]
     },
     {
       "id": 3, "type": "stat", "title": "Tempo de resposta — p95",
@@ -28,14 +28,15 @@
       "gridPos": { "x": 12, "y": 0, "w": 6, "h": 5 },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area", "textMode": "auto" },
       "fieldConfig": { "defaults": { "unit": "ms", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 500, "color": "orange" }, { "value": 2000, "color": "red" }] } } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "histogram_quantile(0.95, sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "" }]
     },
     {
-      "id": 4, "type": "stat", "title": "Consultas ao banco / s",
+      "id": 4, "type": "stat", "title": "Conexões ativas ao banco",
+      "description": "Conexões de backend ativas no PostgreSQL agora",
       "gridPos": { "x": 18, "y": 0, "w": 6, "h": 5 },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area", "textMode": "auto" },
-      "fieldConfig": { "defaults": { "unit": "ops", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 500, "color": "orange" }, { "value": 2000, "color": "red" }] } } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(django_db_execute_total[5m]))", "legendFormat": "" }]
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 10, "color": "orange" }, { "value": 50, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "sum(pg_stat_activity_count{state=\"active\"})", "legendFormat": "" }]
     },
     {
       "id": 5, "type": "timeseries", "title": "Requisições por código HTTP",
@@ -54,7 +55,7 @@
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum by (status) (rate(django_http_responses_total_by_status_view_method_total[5m]))", "legendFormat": "{{status}}" }
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "sum by (status) (rate(django_http_responses_total_by_status_view_method_total[5m]))", "legendFormat": "{{status}}" }
       ]
     },
     {
@@ -73,8 +74,8 @@
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.50, sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "Mediana (p50)" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "Lento (p95)" }
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "histogram_quantile(0.50, sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "Mediana (p50)" },
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "histogram_quantile(0.95, sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "Lento (p95)" }
       ]
     },
     {
@@ -83,36 +84,43 @@
       "collapsed": false
     },
     {
-      "id": 9, "type": "timeseries", "title": "Queries ao banco / s",
-      "description": "Taxa de execução de queries por alias de banco. Picos podem indicar N+1 ou cache miss",
+      "id": 9, "type": "timeseries", "title": "Conexões ao banco por estado",
+      "description": "active = query em execução · idle = conexão aberta sem uso · idle in transaction = transação aberta parada",
       "gridPos": { "x": 0, "y": 15, "w": 12, "h": 9 },
-      "fieldConfig": { "defaults": { "unit": "ops", "fillOpacity": 8, "lineWidth": 2 } },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max", "mean"] },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum by (alias) (rate(django_db_execute_total[5m]))", "legendFormat": "{{alias}}" }
-      ]
-    },
-    {
-      "id": 10, "type": "timeseries", "title": "Duração de query — p50 / p95",
-      "description": "Tempo de execução das queries no banco. Se subir sob carga, avaliar índices ou N+1",
-      "gridPos": { "x": 12, "y": 15, "w": 12, "h": 9 },
       "fieldConfig": {
-        "defaults": { "unit": "ms", "fillOpacity": 8, "lineWidth": 2 },
+        "defaults": { "unit": "short", "fillOpacity": 8, "lineWidth": 2 },
         "overrides": [
-          { "matcher": { "id": "byName", "options": "Mediana (p50)" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
-          { "matcher": { "id": "byName", "options": "Lento (p95)" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
+          { "matcher": { "id": "byRegexp", "options": ".*active.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*idle in transaction.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "^idle$" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] }
         ]
       },
       "options": {
-        "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max", "mean"] },
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"] },
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.50, sum(rate(django_db_execute_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "Mediana (p50)" },
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum(rate(django_db_execute_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "Lento (p95)" }
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "sum by (state) (pg_stat_activity_count{state!=\"\"})", "legendFormat": "{{state}}" }
+      ]
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Tamanho do banco e locks",
+      "description": "Tamanho do banco (eixo esquerdo) e locks ativos (eixo direito). Locks acumulados podem indicar queries bloqueadas",
+      "gridPos": { "x": 12, "y": 15, "w": 12, "h": 9 },
+      "fieldConfig": {
+        "defaults": { "fillOpacity": 8, "lineWidth": 2 },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Tamanho (bytes)" }, "properties": [{ "id": "unit", "value": "bytes" }, { "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Locks ativos" }, "properties": [{ "id": "unit", "value": "short" }, { "id": "custom.axisPlacement", "value": "right" }, { "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "pg_database_size_bytes{datname!~\"template.*|postgres\"}", "legendFormat": "Tamanho (bytes)" },
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "sum(pg_locks_count{datname!~\"template.*|postgres\"})", "legendFormat": "Locks ativos" }
       ]
     },
     {
@@ -125,7 +133,7 @@
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum by (view) (rate(django_http_requests_latency_including_middlewares_seconds_count[5m]))", "legendFormat": "{{view}}" }
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "sum by (view) (rate(django_http_requests_latency_including_middlewares_seconds_count[5m]))", "legendFormat": "{{view}}" }
       ]
     }
   ]

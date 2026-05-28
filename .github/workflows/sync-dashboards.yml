@@ -25,9 +25,7 @@ jobs:
           set -e
 
           # Busca o UID do data source Prometheus gerenciado pelo Grafana Cloud
-          DS_UID=$(curl -sf \
-            -H "Authorization: Bearer $GRAFANA_TOKEN" \
-            "$GRAFANA_URL/api/datasources/name/grafanacloud-mariinetic-prom" | jq -r '.uid')
+          DS_UID="grafanacloud-prom"
 
           echo "Data source UID: $DS_UID"
 

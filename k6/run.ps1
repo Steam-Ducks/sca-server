@@ -107,8 +107,23 @@ $toRun = if ($Scenarios.Count -gt 0) { $Scenarios } else { $allScenarios }
 $scenariosDir = Join-Path $PSScriptRoot 'scenarios'
 $failed = @()
 
-$env:K6_PROMETHEUS_RW_TREND_STATS = "p(50),p(95),p(99)"
+$env:K6_PROMETHEUS_RW_TREND_STATS = "p(50),p(95),p(99),max"
 $env:K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM = "false"
+
+# Credenciais Grafana Cloud (lidas do .env)
+$rwUrl  = (Get-Content $envFile | Where-Object { $_ -match '^GF_CLOUD_METRICS_URL=' }  | Select-Object -First 1) -replace '^GF_CLOUD_METRICS_URL=', ''
+$rwUser = (Get-Content $envFile | Where-Object { $_ -match '^GF_CLOUD_METRICS_USER=' } | Select-Object -First 1) -replace '^GF_CLOUD_METRICS_USER=', ''
+$rwPass = (Get-Content $envFile | Where-Object { $_ -match '^GF_CLOUD_METRICS_API_KEY=' } | Select-Object -First 1) -replace '^GF_CLOUD_METRICS_API_KEY=', ''
+
+if ($rwUrl -and $rwUser -and $rwPass) {
+    $env:K6_PROMETHEUS_RW_SERVER_URL = $rwUrl
+    $env:K6_PROMETHEUS_RW_USERNAME   = $rwUser
+    $env:K6_PROMETHEUS_RW_PASSWORD   = $rwPass
+    Write-Host "Metricas enviadas para Grafana Cloud." -ForegroundColor DarkGray
+} else {
+    $env:K6_PROMETHEUS_RW_SERVER_URL = "http://localhost:9090/api/v1/write"
+    Write-Host "Credenciais Grafana Cloud nao encontradas - usando Prometheus local." -ForegroundColor Yellow
+}
 
 foreach ($name in $toRun) {
     $file = Join-Path $scenariosDir "$name.js"
@@ -123,7 +138,7 @@ foreach ($name in $toRun) {
     Write-Host "========================================`n" -ForegroundColor Cyan
 
     k6 run @envArgs `
-      --out experimental-prometheus-rw=http://localhost:9090/api/v1/write `
+      --out experimental-prometheus-rw `
       $file
 
     if ($LASTEXITCODE -ne 0) {
