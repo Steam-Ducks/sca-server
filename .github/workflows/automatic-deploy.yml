@@ -40,15 +40,22 @@ jobs:
             set +a
 
             echo "=== [2/5] Backup do banco antes do deploy ==="
-            # Bug fix: PGSSLMODE=require obrigatório para DigitalOcean Managed PG (porta 25060)
-            PGPASSWORD="$DB_PASSWORD" PGSSLMODE="${DB_SSL_MODE:-require}" pg_dump \
-              --host="$DB_HOST" \
-              --port="${DB_PORT:-5432}" \
-              --username="$DB_USER" \
-              --dbname="$DB_NAME" \
-              --format=custom \
-              --no-password \
-              --file="$BACKUP_FILE"
+            # pg_dump roda dentro do container postgres (o client não está
+            # instalado na VPS). A tag deve casar com a major do Postgres
+            # gerenciado. PGSSLMODE=require: obrigatório no DO Managed PG (porta 25060).
+            docker run --rm \
+              -e PGPASSWORD="$DB_PASSWORD" \
+              -e PGSSLMODE="${DB_SSL_MODE:-require}" \
+              -v "$BACKUP_DIR:$BACKUP_DIR" \
+              postgres:16-alpine \
+              pg_dump \
+                --host="$DB_HOST" \
+                --port="${DB_PORT:-5432}" \
+                --username="$DB_USER" \
+                --dbname="$DB_NAME" \
+                --format=custom \
+                --no-password \
+                --file="$BACKUP_FILE"
             echo "Backup salvo em: $BACKUP_FILE"
 
             echo "=== [3/5] Atualizando código ==="
@@ -76,18 +83,24 @@ jobs:
             || {
                 echo ""
                 echo "ERROR: migrate falhou. Iniciando restore do backup..."
-                # Bug fix: SSL + --no-owner para evitar erros de permissão no DO Managed PG
-                PGPASSWORD="$DB_PASSWORD" PGSSLMODE="${DB_SSL_MODE:-require}" pg_restore \
-                  --host="$DB_HOST" \
-                  --port="${DB_PORT:-5432}" \
-                  --username="$DB_USER" \
-                  --dbname="$DB_NAME" \
-                  --no-password \
-                  --clean \
-                  --if-exists \
-                  --no-owner \
-                  --no-privileges \
-                  "$BACKUP_FILE"
+                # SSL + --no-owner para evitar erros de permissão no DO Managed PG.
+                # pg_restore também roda no container postgres.
+                docker run --rm \
+                  -e PGPASSWORD="$DB_PASSWORD" \
+                  -e PGSSLMODE="${DB_SSL_MODE:-require}" \
+                  -v "$BACKUP_DIR:$BACKUP_DIR" \
+                  postgres:16-alpine \
+                  pg_restore \
+                    --host="$DB_HOST" \
+                    --port="${DB_PORT:-5432}" \
+                    --username="$DB_USER" \
+                    --dbname="$DB_NAME" \
+                    --no-password \
+                    --clean \
+                    --if-exists \
+                    --no-owner \
+                    --no-privileges \
+                    "$BACKUP_FILE"
                 echo "Restore concluído. Deploy abortado."
                 exit 1
               }

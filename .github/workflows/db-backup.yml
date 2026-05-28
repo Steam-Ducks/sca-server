@@ -49,14 +49,21 @@ jobs:
             set +a
 
             echo "=== Gerando backup: $BACKUP_FILE ==="
-            PGPASSWORD="$DB_PASSWORD" PGSSLMODE="${DB_SSL_MODE:-require}" pg_dump \
-              --host="$DB_HOST" \
-              --port="${DB_PORT:-5432}" \
-              --username="$DB_USER" \
-              --dbname="$DB_NAME" \
-              --format=custom \
-              --no-password \
-              --file="$BACKUP_FILE"
+            # pg_dump roda dentro do container postgres (o client não está
+            # instalado na VPS). A tag deve casar com a major do Postgres gerenciado.
+            docker run --rm \
+              -e PGPASSWORD="$DB_PASSWORD" \
+              -e PGSSLMODE="${DB_SSL_MODE:-require}" \
+              -v "$BACKUP_DIR:$BACKUP_DIR" \
+              postgres:16-alpine \
+              pg_dump \
+                --host="$DB_HOST" \
+                --port="${DB_PORT:-5432}" \
+                --username="$DB_USER" \
+                --dbname="$DB_NAME" \
+                --format=custom \
+                --no-password \
+                --file="$BACKUP_FILE"
 
             BACKUP_SIZE=$(du -sh "$BACKUP_FILE" | cut -f1)
             echo "Backup gerado: $BACKUP_FILE ($BACKUP_SIZE)"
