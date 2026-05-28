@@ -1,16 +1,21 @@
 name: post-deploy-smoke
 
+# Roda DEPOIS do automatic-deploy concluir, não em paralelo com ele.
+# Disparar direto no push testava a versão antiga, pois o build+deploy
+# na VPS ainda não havia terminado.
 on:
   workflow_run:
-    workflows: ['automatic-deploy']
+    workflows: ["automatic-deploy"]
     types:
       - completed
+  workflow_dispatch:
 
 jobs:
   smoke-backend:
     name: Backend (k6)
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Só roda se o deploy passou (ou em disparo manual).
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
