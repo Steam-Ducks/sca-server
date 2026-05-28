@@ -2,6 +2,7 @@ from django.core.cache import cache
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from users.permissions import CanAccessBudget
 from budget.selectors import (
     get_budget_indicators,
     get_budget_indicators_gold,
@@ -34,6 +35,8 @@ class BudgetSnapshotView(APIView):
     Reads from gold."budget_snapshot" when populated (fast pre-computed),
     falls back to live Silver queries when the gold table is empty.
     """
+
+    permission_classes = [CanAccessBudget]
 
     def get(self, request):
         key = _ck("budget_snapshot", request.query_params)
@@ -72,6 +75,8 @@ class BudgetIndicatorsView(APIView):
     Reads from gold."budget_snapshot" when populated (fast pre-computed),
     falls back to live Silver queries when the gold table is empty.
     """
+
+    permission_classes = [CanAccessBudget]
 
     def get(self, request):
         key = _ck("budget_indicators", request.query_params)

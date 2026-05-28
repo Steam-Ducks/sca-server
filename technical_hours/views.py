@@ -9,6 +9,7 @@ from rest_framework.response import Response
 
 from sca_data.models import SilverTempoTarefa
 from technical_hours.serializers import TechnicalHoursTableSerializer
+from users.permissions import CanAccessTechnicalHours
 
 _CACHE_TTL = 300
 
@@ -38,6 +39,7 @@ class TechnicalHoursTableView(generics.ListAPIView):
     """
 
     serializer_class = TechnicalHoursTableSerializer
+    permission_classes = [CanAccessTechnicalHours]
 
     def _parse_date(self, raw: str, param_name: str) -> datetime.date:
         try:

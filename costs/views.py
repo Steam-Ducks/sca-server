@@ -6,6 +6,7 @@ from rest_framework.response import Response
 
 from costs.serializers import GoldCostsSerializer
 from sca_data.models import GoldCosts
+from users.permissions import CanAccessCosts
 
 from datetime import datetime, time
 
@@ -19,6 +20,7 @@ def _ck(prefix, params=None):
 
 class GoldCostsTableView(generics.ListAPIView):
     serializer_class = GoldCostsSerializer
+    permission_classes = [CanAccessCosts]
 
     def get_queryset(self):
         queryset = GoldCosts.objects.all()

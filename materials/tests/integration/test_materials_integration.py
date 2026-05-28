@@ -11,7 +11,6 @@ Funções do conjunto:
 import os
 import pytest
 from datetime import date, datetime, timezone
-from rest_framework.test import APIClient
 
 from sca_data.models import (
     SilverComprasProjeto,
@@ -33,6 +32,11 @@ pytestmark = [
     pytest.mark.integration,
     pytest.mark.django_db,
 ]
+
+
+@pytest.fixture
+def client(api_client):
+    return api_client
 
 
 @pytest.fixture
@@ -132,17 +136,17 @@ class TestMaterialsTableIntegration:
     Conjunto: get_materials_queryset + MaterialsTableView + MaterialsTableSerializer
     """
 
-    def test_lista_retorna_200(self):
+    def test_lista_retorna_200(self, client):
         # CTI-01 (mínimo): banco vazio → GET /api/compras/ retorna 200
-        response = APIClient().get("/api/compras/")
+        response = client.get("/api/compras/")
         assert response.status_code == 200
 
-    def test_lista_vazia_com_banco_vazio(self):
+    def test_lista_vazia_com_banco_vazio(self, client):
         # CTI-02 (mínimo): banco vazio → resposta é lista vazia
-        response = APIClient().get("/api/compras/")
+        response = client.get("/api/compras/")
         assert response.data == []
 
-    def test_lista_retorna_pedidos_reais(self, projeto, pedido_marco):
+    def test_lista_retorna_pedidos_reais(self, projeto, pedido_marco, client):
         SilverComprasProjeto.objects.create(
             id=700,
             projeto=projeto,
@@ -150,11 +154,11 @@ class TestMaterialsTableIntegration:
             pedido_compra=pedido_marco,
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
-        response = APIClient().get("/api/compras/")
+        response = client.get("/api/compras/")
         assert len(response.data) >= 1
 
     def test_filtro_por_projeto_retorna_apenas_dados_do_projeto(
-        self, programa, pedido_marco, fornecedor
+        self, programa, pedido_marco, fornecedor, client
     ):
         proj_a = SilverProjeto.objects.create(
             id=710,
@@ -218,7 +222,7 @@ class TestMaterialsTableIntegration:
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
 
-        response = APIClient().get("/api/compras/?projeto=Projeto A")
+        response = client.get("/api/compras/?projeto=Projeto A")
         assert response.status_code == 200
         projetos_retornados = {item.get("projeto") for item in response.data}
         assert "Projeto A" in projetos_retornados
@@ -231,19 +235,19 @@ class TestMaterialsTablePeriodoIntegration:
     Conjunto: _parse_periodo + get_materials_queryset + MaterialsTablePeriodoView
     """
 
-    def test_periodo_valido_retorna_200(self):
+    def test_periodo_valido_retorna_200(self, client):
         # CTI-05 (mínimo): período válido no path → 200
-        response = APIClient().get("/api/compras/periodo/2024-03/")
+        response = client.get("/api/compras/periodo/2024-03/")
         assert response.status_code == 200
 
-    def test_periodo_invalido_retorna_400(self):
+    def test_periodo_invalido_retorna_400(self, client):
         # CTI-06 (adicional): formato de período inválido → 400
         # Valida: _parse_periodo levanta ValidationError propagada pela view
-        response = APIClient().get("/api/compras/periodo/2024-13/")
+        response = client.get("/api/compras/periodo/2024-13/")
         assert response.status_code == 400
 
     def test_periodo_retorna_apenas_compras_do_mes(
-        self, projeto, pedido_marco, pedido_junho
+        self, projeto, pedido_marco, pedido_junho, client
     ):
         SilverComprasProjeto.objects.create(
             id=720,
@@ -260,7 +264,7 @@ class TestMaterialsTablePeriodoIntegration:
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
 
-        response = APIClient().get("/api/compras/periodo/2024-03/")
+        response = client.get("/api/compras/periodo/2024-03/")
         assert response.status_code == 200
         assert len(response.data) >= 1
         # periodo may be a string "YYYY-MM" or date object — str() handles both

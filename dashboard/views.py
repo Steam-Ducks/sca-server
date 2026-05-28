@@ -3,6 +3,8 @@ from django.core.cache import cache
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from users.permissions import CanAccessDashboard
+
 from dashboard.selectors import (
     get_cost_composition,
     get_dashboard_kpis,
@@ -42,6 +44,21 @@ def _normalize_dashboard_filters(query_params):
 
 
 class DashboardKPIsView(APIView):
+    """
+    GET /api/dashboard/kpis/
+
+    Returns the main consolidated indicators of the analytics panel.
+
+    Query params (all optional):
+        start_date — YYYY-MM-DD
+        end_date   — YYYY-MM-DD
+        program    — codigo_programa (program name)
+        project    — nome_projeto (project name)
+        status     — project status
+    """
+
+    permission_classes = [CanAccessDashboard]
+
     def get(self, request):
         key = _ck("dashboard_kpis", request.query_params)
         cached = cache.get(key)
@@ -54,6 +71,18 @@ class DashboardKPIsView(APIView):
 
 
 class MainDashboardView(APIView):
+    """
+    GET /api/main-dashboard/
+
+    Returns list of projects filtered by date range.
+
+    Query params (all optional):
+        start_date — YYYY-MM-DD
+        end_date   — YYYY-MM-DD
+    """
+
+    permission_classes = [CanAccessDashboard]
+
     def get(self, request):
         key = _ck("main_dashboard", request.query_params)
         cached = cache.get(key)
@@ -68,6 +97,21 @@ class MainDashboardView(APIView):
 
 
 class SummaryTableView(APIView):
+    """
+    GET /api/main-dashboard/summary/
+
+    Returns cost aggregates grouped by program for the main dashboard
+    summary table.
+
+    Query params (all optional):
+        start_date — YYYY-MM-DD
+        end_date   — YYYY-MM-DD
+        programa   — program name
+        projeto    — project name
+    """
+
+    permission_classes = [CanAccessDashboard]
+
     def get(self, request):
         key = _ck("summary_table", request.query_params)
         cached = cache.get(key)
@@ -80,6 +124,21 @@ class SummaryTableView(APIView):
 
 
 class CostCompositionView(APIView):
+    """
+    GET /api/main-dashboard/composition/
+
+    Returns the overall cost composition split between materials and
+    technical hours, including percentage breakdown.
+
+    Query params (all optional):
+        start_date — YYYY-MM-DD
+        end_date   — YYYY-MM-DD
+        programa   — program name
+        projeto    — project name
+    """
+
+    permission_classes = [CanAccessDashboard]
+
     def get(self, request):
         key = _ck("cost_composition", request.query_params)
         cached = cache.get(key)
@@ -94,6 +153,22 @@ class CostCompositionView(APIView):
 
 
 class TopProjectsView(APIView):
+    """
+    GET /api/dashboard/top-projects/
+
+    Returns the top 10 projects ranked by total consolidated cost
+    (materials + technical hours).
+
+    Query params (all optional):
+        start_date — YYYY-MM-DD
+        end_date   — YYYY-MM-DD
+        program    — program name (case-insensitive)
+        project    — project name (case-insensitive)
+        status     — project status (case-insensitive)
+    """
+
+    permission_classes = [CanAccessDashboard]
+
     def get(self, request):
         key = _ck("top_projects", request.query_params)
         cached = cache.get(key)
@@ -108,6 +183,22 @@ class TopProjectsView(APIView):
 
 
 class CostEvolutionView(APIView):
+    """
+    GET /api/dashboard/cost-evolution/
+
+    Returns consolidated cost grouped by month (YYYY-MM), ordered
+    chronologically. Used for the time-series chart on the main dashboard.
+
+    Query params (all optional):
+        start_date — YYYY-MM-DD
+        end_date   — YYYY-MM-DD
+        program    — program name (case-insensitive)
+        project    — project name (case-insensitive)
+        status     — project status (case-insensitive)
+    """
+
+    permission_classes = [CanAccessDashboard]
+
     def get(self, request):
         key = _ck("cost_evolution", request.query_params)
         cached = cache.get(key)

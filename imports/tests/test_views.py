@@ -1,8 +1,9 @@
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
+from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
-from rest_framework.test import APIRequestFactory
+from rest_framework.test import APIRequestFactory, force_authenticate
 
 from imports.views import (
     ComprasProjetoUploadView,
@@ -21,8 +22,25 @@ from imports.schemas import REQUIRED_COLUMNS
 
 
 @pytest.fixture
-def factory():
-    return APIRequestFactory()
+def factory(monkeypatch):
+    from users import permissions as perm_mod
+
+    monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "super_admin")
+    base = APIRequestFactory()
+    user = get_user_model()(username="_test", is_active=True)
+
+    class _AuthFactory:
+        def get(self, *args, **kwargs):
+            req = base.get(*args, **kwargs)
+            force_authenticate(req, user=user)
+            return req
+
+        def post(self, *args, **kwargs):
+            req = base.post(*args, **kwargs)
+            force_authenticate(req, user=user)
+            return req
+
+    return _AuthFactory()
 
 
 def _csv_bytes(csv_type, rows=2):
@@ -361,4 +379,55 @@ class TestEachEndpointAcceptsItsOwnType:
             format="multipart",
         )
         response = view(request)
+        assert response.status_code == 200
+
+
+class TestPerfilImportRestriction:
+    """Profile-based CSV upload restrictions (lines 112-114 of views.py)."""
+
+    def test_perfil_sem_permissao_para_csv_type_retorna_403(self, monkeypatch):
+        import imports.views as imports_views_mod
+        from users import permissions as perm_mod
+
+        monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "almoxarifado")
+        monkeypatch.setattr(
+            imports_views_mod, "_get_permissao", lambda u: "almoxarifado"
+        )
+
+        user = get_user_model()(username="_almox", is_active=True)
+        base = APIRequestFactory()
+        req = base.post("/api/import/programas/", {}, format="multipart")
+        force_authenticate(req, user=user)
+
+        view = ProgramasUploadView.as_view()
+        response = view(req)
+
+        assert response.status_code == 403
+
+    def test_perfil_com_permissao_nao_e_bloqueado(self, monkeypatch):
+        import imports.views as imports_views_mod
+        from users import permissions as perm_mod
+
+        monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "financeiro")
+        monkeypatch.setattr(imports_views_mod, "_get_permissao", lambda u: "financeiro")
+
+        user = get_user_model()(username="_fin", is_active=True)
+        base = APIRequestFactory()
+        req = base.post(
+            "/api/import/programas/",
+            {"file": _csv_file("programas")},
+            format="multipart",
+        )
+        force_authenticate(req, user=user)
+
+        with (
+            patch("imports.views._get_engine"),
+            patch("imports.views.audit_mod"),
+            patch("sca_data.db.bronze.ingestion._ensure_schema"),
+            patch("sca_data.db.bronze.ingestion._create_table"),
+            patch("sca_data.db.silver.ingestion_silver.PIPELINE", []),
+        ):
+            view = ProgramasUploadView.as_view()
+            response = view(req)
+
         assert response.status_code == 200

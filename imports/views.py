@@ -10,7 +10,22 @@ from rest_framework.response import Response
 from sca_data.db.enums import OperationStatus, OperationType, LayerSchema
 from imports.schemas import REQUIRED_COLUMNS
 
+from users.permissions import CanAccessImports, _get_permissao
+
 logger = logging.getLogger(__name__)
+
+_ALLOWED_IMPORTS_BY_PROFILE: dict = {
+    "super_admin": None,
+    "financeiro": {"programas", "projetos", "tarefas_projeto", "tempo_tarefas"},
+    "compras": {
+        "fornecedores",
+        "pedidos_compra",
+        "solicitacoes_compra",
+        "compras_projeto",
+    },
+    "almoxarifado": {"materiais", "empenho_materiais", "estoque_materiais_projeto"},
+    "projetos": {"projetos", "tarefas_projeto", "tempo_tarefas"},
+}
 
 _MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
 
@@ -88,8 +103,18 @@ def _register_execucao(
 
 class CSVUploadView(APIView):
     csv_type: str = None
+    permission_classes = [CanAccessImports]
 
     def post(self, request):
+        perfil = _get_permissao(request.user)
+        allowed = _ALLOWED_IMPORTS_BY_PROFILE.get(perfil)
+        if allowed is not None and self.csv_type not in allowed:
+            from rest_framework.exceptions import PermissionDenied
+
+            raise PermissionDenied(
+                "Seu perfil não tem permissão para importar este arquivo."
+            )
+
         file = request.FILES.get("file")
         if not file:
             return Response({"error": "Nenhum arquivo enviado."}, status=400)

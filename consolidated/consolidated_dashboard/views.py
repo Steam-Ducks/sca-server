@@ -12,6 +12,7 @@ from consolidated.consolidated_dashboard.serializers import (
     ConsolidatedDashboardSerializer,
 )
 from sca_data.models import SilverProjeto
+from users.permissions import CanAccessConsolidated
 
 _CACHE_TTL = 300
 
@@ -24,6 +25,7 @@ def _ck(prefix, params=None, **kwargs):
 
 
 class ConsolidatedDashboardView(generics.ListAPIView):
+    permission_classes = [CanAccessConsolidated]
     """
     Tabela consolidada por projeto - une custos de materiais e horas tecnicas.
 

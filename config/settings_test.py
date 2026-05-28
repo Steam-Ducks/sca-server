@@ -1,5 +1,10 @@
 import os
 
+# Prevent load_dotenv() in settings.py from overriding DB_HOST when no
+# real test database is explicitly configured. setdefault does not touch
+# an already-set value, so a CI-provided DB_HOST is still respected.
+os.environ.setdefault("DB_HOST", "")
+
 from config.settings import *  # noqa: F401,F403
 
 # Em CI (DB_HOST setado) usa o Postgres herdado do settings.py — testes

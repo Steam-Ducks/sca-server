@@ -14,7 +14,6 @@ Funções do conjunto:
 import os
 import pytest
 from datetime import date, datetime, timezone
-from rest_framework.test import APIClient
 
 from sca_data.models import (
     SilverFornecedor,
@@ -39,6 +38,11 @@ pytestmark = [
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def client(api_client):
+    return api_client
 
 
 @pytest.fixture
@@ -114,14 +118,14 @@ class TestDashboardKPIsIntegration:
     Conjunto: build_filters + get_dashboard_kpis + DashboardKPIsView + serializer
     """
 
-    def test_kpis_retornam_200_com_banco_vazio(self):
+    def test_kpis_retornam_200_com_banco_vazio(self, client):
         # CTI-01 (mínimo): banco vazio → KPIs retornam 200 com zeros
-        response = APIClient().get("/api/dashboard/kpis/")
+        response = client.get("/api/dashboard/kpis/")
         assert response.status_code == 200
 
-    def test_kpis_contem_todos_os_campos_esperados(self):
+    def test_kpis_contem_todos_os_campos_esperados(self, client):
         # CTI-02 (mínimo): estrutura de campos da resposta de KPIs
-        response = APIClient().get("/api/dashboard/kpis/")
+        response = client.get("/api/dashboard/kpis/")
         campos = [
             "total_consolidated_cost",
             "total_materials_cost",
@@ -132,7 +136,9 @@ class TestDashboardKPIsIntegration:
         for campo in campos:
             assert campo in response.data, f"Campo ausente: {campo}"
 
-    def test_custo_materiais_reflete_soma_real_do_banco(self, projeto, pedido_compra):
+    def test_custo_materiais_reflete_soma_real_do_banco(
+        self, projeto, pedido_compra, client
+    ):
         SilverComprasProjeto.objects.create(
             id=1,
             projeto=projeto,
@@ -148,11 +154,11 @@ class TestDashboardKPIsIntegration:
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
 
-        response = APIClient().get("/api/dashboard/kpis/")
+        response = client.get("/api/dashboard/kpis/")
         assert float(response.data["total_materials_cost"]) == 100_000.0
 
     def test_filtro_por_programa_isola_dados(
-        self, programa, projeto, pedido_compra, fornecedor
+        self, programa, projeto, pedido_compra, fornecedor, client
     ):
         outro_programa = SilverPrograma.objects.create(
             id=200,
@@ -193,11 +199,11 @@ class TestDashboardKPIsIntegration:
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
 
-        response = APIClient().get("/api/dashboard/kpis/?program=MANSUP")
+        response = client.get("/api/dashboard/kpis/?program=MANSUP")
         assert response.status_code == 200
         assert float(response.data["total_materials_cost"]) == 50_000.0
 
-    def test_custo_horas_reflete_horas_trabalhadas_reais(self, projeto, tarefa):
+    def test_custo_horas_reflete_horas_trabalhadas_reais(self, projeto, tarefa, client):
         SilverTempoTarefa.objects.create(
             id=1,
             tarefa=tarefa,
@@ -215,7 +221,7 @@ class TestDashboardKPIsIntegration:
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
 
-        response = APIClient().get("/api/dashboard/kpis/")
+        response = client.get("/api/dashboard/kpis/")
         assert float(response.data["total_hours_cost"]) == 200.0 * 18.0
 
 
@@ -228,12 +234,14 @@ class TestTopProjectsIntegration:
     Conjunto: build_filters + get_top_projects_by_cost + TopProjectsView + serializer
     """
 
-    def test_top_projects_retornam_200(self):
+    def test_top_projects_retornam_200(self, client):
         # CTI-06 (mínimo): banco vazio → top-projects retorna 200
-        response = APIClient().get("/api/dashboard/top-projects/")
+        response = client.get("/api/dashboard/top-projects/")
         assert response.status_code == 200
 
-    def test_top_projects_ordenados_por_custo_decrescente(self, programa, fornecedor):
+    def test_top_projects_ordenados_por_custo_decrescente(
+        self, programa, fornecedor, client
+    ):
         proj_barato = SilverProjeto.objects.create(
             id=301,
             codigo_projeto="P301",
@@ -281,11 +289,11 @@ class TestTopProjectsIntegration:
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
 
-        response = APIClient().get("/api/dashboard/top-projects/")
+        response = client.get("/api/dashboard/top-projects/")
         assert len(response.data) >= 2
         assert response.data[0]["project_name"] == "Projeto Caro"
 
-    def test_top_projects_limita_a_10_resultados(self, programa, fornecedor):
+    def test_top_projects_limita_a_10_resultados(self, programa, fornecedor, client):
         for i in range(15):
             proj = SilverProjeto.objects.create(
                 id=400 + i,
@@ -311,7 +319,7 @@ class TestTopProjectsIntegration:
                 silver_ingested_at=datetime.now(tz=timezone.utc),
             )
 
-        response = APIClient().get("/api/dashboard/top-projects/")
+        response = client.get("/api/dashboard/top-projects/")
         assert len(response.data) <= 10
 
 
@@ -324,18 +332,18 @@ class TestCostEvolutionIntegration:
     Conjunto: get_cost_evolution + CostEvolutionView + CostEvolutionSerializer
     """
 
-    def test_cost_evolution_retornam_200(self):
+    def test_cost_evolution_retornam_200(self, client):
         # CTI-09 (mínimo): banco vazio → cost-evolution retorna 200 com lista vazia
-        response = APIClient().get("/api/dashboard/cost-evolution/")
+        response = client.get("/api/dashboard/cost-evolution/")
         assert response.status_code == 200
 
-    def test_cost_evolution_retorna_lista(self):
+    def test_cost_evolution_retorna_lista(self, client):
         # CTI-10 (mínimo): resposta é sempre lista (nunca null ou objeto)
-        response = APIClient().get("/api/dashboard/cost-evolution/")
+        response = client.get("/api/dashboard/cost-evolution/")
         assert isinstance(response.data, list)
 
     def test_filtro_por_data_retorna_apenas_periodo_correto(
-        self, programa, projeto, fornecedor
+        self, programa, projeto, fornecedor, client
     ):
         pc_jan = SilverPedidoCompra.objects.create(
             id=501,
@@ -366,7 +374,7 @@ class TestCostEvolutionIntegration:
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
 
-        response = APIClient().get(
+        response = client.get(
             "/api/dashboard/cost-evolution/?start_date=2024-01-01&end_date=2024-03-31"
         )
         assert response.status_code == 200

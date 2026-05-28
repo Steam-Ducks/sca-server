@@ -19,6 +19,7 @@ from materials.serializers import (
     MaterialsTableSerializer,
     TopMaterialsSerializer,
 )
+from users.permissions import CanAccessMaterials
 from sca_data.models import (
     SilverMaterial,
     SilverPedidoCompra,
@@ -46,6 +47,7 @@ class MaterialsTableView(generics.ListAPIView):
     """
     Tabela de pedidos de compra com materiais.
 
+
     Query params
     ------------
     periodo     : YYYY-MM    — mês completo
@@ -61,6 +63,7 @@ class MaterialsTableView(generics.ListAPIView):
     """
 
     serializer_class = MaterialsTableSerializer
+    permission_classes = [CanAccessMaterials]
 
     def get_queryset(self):
         return get_materials_queryset(self.request.query_params)
@@ -110,6 +113,7 @@ class MaterialsTablePeriodoView(MaterialsTableView):
 
 class MaterialsIndicatorsView(generics.GenericAPIView):
     serializer_class = MaterialsIndicatorsSerializer
+    permission_classes = [CanAccessMaterials]
 
     def _build_materiais_queryset(self, params):
         qs = SilverMaterial.objects.filter(status="Ativo")
@@ -193,6 +197,7 @@ class TopMaterialsView(APIView):
     """
     Retorna o ranking dos materiais com maior impacto financeiro.
 
+
     Query params
     ------------
     periodo     : YYYY-MM    — mês completo
@@ -204,6 +209,8 @@ class TopMaterialsView(APIView):
     fornecedor  : str
     limit       : int        — máximo de itens (padrão: 10)
     """
+
+    permission_classes = [CanAccessMaterials]
 
     def get(self, request):
         key = _ck("top_materials", request.query_params)
@@ -237,6 +244,8 @@ class CostByProjectView(APIView):
     fornecedor  : str
     """
 
+    permission_classes = [CanAccessMaterials]
+
     def get(self, request):
         key = _ck("cost_by_project", request.query_params)
         cached = cache.get(key)
@@ -262,6 +271,8 @@ class FilterOptionsView(APIView):
 
     GET /api/materials/filter-options/
     """
+
+    permission_classes = [CanAccessMaterials]
 
     def get(self, request):
         cached = cache.get("filter_options")

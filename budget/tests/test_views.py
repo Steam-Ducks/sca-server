@@ -1,7 +1,16 @@
 import datetime
 from unittest.mock import MagicMock, patch
 
+from rest_framework.test import APIClient
 from sca_data.models import GoldBudgetSnapshot, SilverPrograma, SilverProjeto
+
+
+def _auth_client():
+    user = MagicMock()
+    user.usuario_perfil.perfil.permissoes = "super_admin"
+    client = APIClient()
+    client.force_authenticate(user=user)
+    return client
 
 
 def _make_silver_project():
@@ -62,6 +71,7 @@ class TestBudgetSnapshotReturns200:
                 with patch(
                     "budget.views.get_budget_last_updated_at", return_value=None
                 ):
+                    response = _auth_client().get("/api/budget/")
                     response = api_client.get("/api/budget/")
 
         assert response.status_code == 200
@@ -79,7 +89,7 @@ class TestBudgetSnapshotReturns200:
                 with patch(
                     "budget.views.get_budget_last_updated_at", return_value=updated_at
                 ):
-                    response = api_client.get("/api/budget/")
+                    response = _auth_client().get("/api/budget/")
 
         assert response.status_code == 200
         assert response.data["last_updated_at"] == "2026-04-26T12:30:00+00:00"
@@ -98,7 +108,7 @@ class TestBudgetSnapshotReturns200:
             with patch(
                 "budget.views.get_budget_last_updated_at_gold", return_value=updated_at
             ):
-                response = api_client.get("/api/budget/")
+                response = _auth_client().get("/api/budget/")
 
         assert response.status_code == 200
         assert response.data["data"][0]["projeto"] == "Projeto Gold"
@@ -116,7 +126,7 @@ class TestBudgetSnapshotReturns200:
                 "budget.views.get_budget_last_updated_at_gold", return_value=None
             ):
                 with patch("budget.views.get_budget_snapshot") as mock_silver:
-                    response = api_client.get("/api/budget/")
+                    response = _auth_client().get("/api/budget/")
 
         assert response.status_code == 200
         mock_silver.assert_not_called()
@@ -129,6 +139,47 @@ class TestBudgetSnapshotReturns200:
                 with patch(
                     "budget.views.get_budget_last_updated_at", return_value=None
                 ):
-                    response = api_client.get("/api/budget/")
+                    response = _auth_client().get("/api/budget/")
 
         assert response.data["last_updated_at"] is None
+
+
+class TestBudgetSnapshotFiltersForwarded:
+    """CT02/CT03/CT04 — query params repassados aos selectors."""
+
+    def test_query_params_forwarded_to_gold_selector(self):
+        with patch(
+            "budget.views.get_budget_snapshot_gold",
+            return_value=_gold_qs_with(_make_gold_row()),
+        ) as mock_gold:
+            with patch(
+                "budget.views.get_budget_last_updated_at_gold", return_value=None
+            ):
+                _auth_client().get(
+                    "/api/budget/?programa=Alpha&projeto=P1&periodo=2026-01&saude=Cr%C3%ADtico"
+                )
+
+        params = mock_gold.call_args[0][0]
+        assert params.get("programa") == "Alpha"
+        assert params.get("projeto") == "P1"
+        assert params.get("periodo") == "2026-01"
+        assert params.get("saude") == "Crítico"
+
+    def test_query_params_forwarded_to_silver_selector_on_fallback(self):
+        with patch(
+            "budget.views.get_budget_snapshot_gold", return_value=_empty_gold_qs()
+        ):
+            with patch(
+                "budget.views.get_budget_snapshot", return_value=[]
+            ) as mock_silver:
+                with patch(
+                    "budget.views.get_budget_last_updated_at", return_value=None
+                ):
+                    _auth_client().get(
+                        "/api/budget/?programa=Beta&saude=Saud%C3%A1vel&periodo=2026-02"
+                    )
+
+        params = mock_silver.call_args[0][0]
+        assert params.get("programa") == "Beta"
+        assert params.get("saude") == "Saudável"
+        assert params.get("periodo") == "2026-02"
