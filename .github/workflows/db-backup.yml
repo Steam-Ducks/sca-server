@@ -8,7 +8,6 @@ name: DB Backup — Servidor
 #   SERVER_USER        — usuário SSH (ex: deploy)
 #   SERVER_SSH_KEY     — chave SSH privada
 #   SERVER_PORT        — porta SSH (geralmente 22)
-#   SLACK_WEBHOOK_URL  — webhook para notificações (opcional)
 
 on:
   schedule:
@@ -50,14 +49,21 @@ jobs:
             set +a
 
             echo "=== Gerando backup: $BACKUP_FILE ==="
-            PGPASSWORD="$DB_PASSWORD" PGSSLMODE="${DB_SSL_MODE:-require}" pg_dump \
-              --host="$DB_HOST" \
-              --port="${DB_PORT:-5432}" \
-              --username="$DB_USER" \
-              --dbname="$DB_NAME" \
-              --format=custom \
-              --no-password \
-              --file="$BACKUP_FILE"
+            # pg_dump roda dentro do container postgres (o client não está
+            # instalado na VPS). A tag deve casar com a major do Postgres gerenciado.
+            docker run --rm \
+              -e PGPASSWORD="$DB_PASSWORD" \
+              -e PGSSLMODE="${DB_SSL_MODE:-require}" \
+              -v "$BACKUP_DIR:$BACKUP_DIR" \
+              postgres:16-alpine \
+              pg_dump \
+                --host="$DB_HOST" \
+                --port="${DB_PORT:-5432}" \
+                --username="$DB_USER" \
+                --dbname="$DB_NAME" \
+                --format=custom \
+                --no-password \
+                --file="$BACKUP_FILE"
 
             BACKUP_SIZE=$(du -sh "$BACKUP_FILE" | cut -f1)
             echo "Backup gerado: $BACKUP_FILE ($BACKUP_SIZE)"
@@ -65,21 +71,3 @@ jobs:
             echo "=== Removendo backups com mais de 30 dias ==="
             find "$BACKUP_DIR" -name "sca_backup_*.dump" -mtime +30 -delete
             echo "Limpeza concluída."
-
-      - name: Notificar sucesso via Slack
-        if: success()
-        run: |
-          curl -s -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "text": ":floppy_disk: *Backup concluído* — sca-server\nBackup salvo no servidor com sucesso."
-            }' || true
-
-      - name: Notificar falha via Slack
-        if: failure()
-        run: |
-          curl -s -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "text": ":sos: *FALHA no backup* — sca-server\nVer: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            }' || true

@@ -6,7 +6,7 @@ on:
 
 jobs:
 
-  # ─── 1. Lint 
+  # ─── 1. Lint ─────────────────────────────────────────────────────────────────
   lint:
     name: Lint & Format
     runs-on: ubuntu-latest
@@ -22,7 +22,7 @@ jobs:
       - name: Black check
         run: black --check .
 
-  # ─── 2. Unit Tests 
+  # ─── 2. Unit Tests ───────────────────────────────────────────────────────────
   # Usa patch()/MagicMock. Sem DB_HOST → settings_test.py usa SQLite.
   unit-tests:
     name: Unit Tests
@@ -70,7 +70,7 @@ jobs:
           tail -8 unit-output.txt >> $GITHUB_STEP_SUMMARY || true
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
-  # ─── 3. Integration Tests 
+  # ─── 3. Integration Tests ────────────────────────────────────────────────────
   # Com DB_HOST → settings_test.py usa PostgreSQL + mantém sca_data.
   # Nenhum mock — dados reais entram e saem do banco.
   integration-tests:
@@ -161,19 +161,77 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "> Relatório HTML: **Actions → Artifacts → integration-test-report**" >> $GITHUB_STEP_SUMMARY
 
-  # ─── 4. Auto-merge 
-  auto-merge:
-    name: Auto-merge PR
+  # ─── 4. Branch & Commit Policy ──────────────────────────────────────────────
+  # Precisam estar neste workflow (não em branch-commit-policy.yml) para que o
+  # auto-merge consiga depender deles via `needs` — `needs` não enxerga jobs de
+  # outro workflow. Sem isso o merge automático não era bloqueado.
+  branch-name:
+    name: Validate branch name
     runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests]
+    steps:
+      - name: Check branch name pattern
+        uses: deepakputhraya/action-branch-name@master
+        with:
+          regex: '^(SCA|DEVOPS|FIX)-[0-9]+-[A-Za-z0-9._-]+$'
+          ignore: develop,main
+          min_length: 7
+          max_length: 80
+
+  commit-messages:
+    name: Validate commit messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check commit message format
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          header_regex='^(feat|fix|chore|docs|refactor|test|perf|ci|build|style|revert)\((SCA|DEVOPS)-[0-9]+\): .+$'
+          max_len=100
+          fail=0
+          for sha in $(git rev-list "$BASE_SHA".."$HEAD_SHA"); do
+            subject=$(git log -1 --format=%s "$sha")
+            parents=$(git log -1 --format=%P "$sha" | wc -w)
+            if [ "$parents" -gt 1 ]; then
+              echo "skip merge $sha: $subject"
+              continue
+            fi
+            if [[ ! "$subject" =~ $header_regex ]]; then
+              echo "::error::Invalid format ($sha): $subject"
+              echo "  expected: <type>(SCA-NNN|DEVOPS-NNN): <description>"
+              echo "  types: feat|fix|chore|docs|refactor|test|perf|ci|build|style|revert"
+              fail=1
+              continue
+            fi
+            if [ "${#subject}" -gt "$max_len" ]; then
+              echo "::error::Subject too long (${#subject} > $max_len) ($sha): $subject"
+              fail=1
+            fi
+            if [[ "$subject" == *. ]]; then
+              echo "::error::Subject ends with period ($sha): $subject"
+              fail=1
+            fi
+            echo "ok $sha: $subject"
+          done
+          exit $fail
+
+  # ─── 5. Auto-merge ──────────────────────────────────────────────────────────
+  auto-merge:
+    name: Auto Merge PR
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, branch-name, commit-messages]
     if: success()
     permissions:
       contents: write
       pull-requests: write
     steps:
-      - name: Enable auto-merge
-        uses: peter-evans/enable-pull-request-automerge@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          pull-request-number: ${{ github.event.pull_request.number }}
-          merge-method: squash
+      - uses: actions/checkout@v4
+      - name: Enable Auto Merge
+        run: gh pr merge ${{ github.event.pull_request.number }} --squash --auto
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
