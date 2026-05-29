@@ -17,7 +17,7 @@ jobs:
           username: ${{ secrets.DO_DEPLOY_USER }}
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
           script: |
-            cd /opt/sca-server
+            cd /home/deploy/sca-server
             git pull origin main
             docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
             docker image prune -f
