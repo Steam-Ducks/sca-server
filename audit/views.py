@@ -7,10 +7,25 @@ from django.utils.dateparse import parse_datetime
 
 from audit.serializers import AuditExecutionLogSerializer
 from sca_data.models import AuditExecutionLog
+from users.permissions import CanAccessAudit, _get_permissao
+
+_ALLOWED_TABLES_BY_PROFILE: dict = {
+    "super_admin": None,
+    "financeiro": {"programas", "projetos", "tarefas_projeto", "tempo_tarefas"},
+    "compras": {
+        "fornecedores",
+        "pedidos_compra",
+        "solicitacoes_compra",
+        "compras_projeto",
+    },
+    "almoxarifado": {"materiais", "empenho_materiais", "estoque_materiais_projeto"},
+    "projetos": {"projetos", "tarefas_projeto", "tempo_tarefas"},
+}
 
 
 class AuditExecutionLogTableView(generics.ListAPIView):
     serializer_class = AuditExecutionLogSerializer
+    permission_classes = [CanAccessAudit]
 
     def _parse_periodo(self, raw: str) -> tuple[datetime.date, datetime.date]:
         try:
@@ -42,6 +57,12 @@ class AuditExecutionLogTableView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = AuditExecutionLog.objects.all()
+
+        perfil = _get_permissao(self.request.user)
+        allowed_tables = _ALLOWED_TABLES_BY_PROFILE.get(perfil)
+        if allowed_tables is not None:
+            queryset = queryset.filter(table_name__in=allowed_tables)
+
         params = self.request.query_params
 
         status = params.get("status")
@@ -72,20 +93,20 @@ class AuditExecutionLogTableView(generics.ListAPIView):
                 | Q(operation_metadata__nome_projeto__iexact=projeto)
             )
 
-        if periodo and not data_inicio and not data_fim:
+        if data_inicio or data_fim:
+            if data_inicio:
+                queryset = queryset.filter(
+                    started_at__date__gte=self._parse_date(data_inicio, "data_inicio")
+                )
+            if data_fim:
+                queryset = queryset.filter(
+                    started_at__date__lte=self._parse_date(data_fim, "data_fim")
+                )
+        elif periodo:
             primeiro_dia, ultimo_dia = self._parse_periodo(periodo)
             queryset = queryset.filter(
                 started_at__date__gte=primeiro_dia,
                 started_at__date__lte=ultimo_dia,
-            )
-
-        if data_inicio:
-            queryset = queryset.filter(
-                started_at__date__gte=self._parse_date(data_inicio, "data_inicio")
-            )
-        if data_fim:
-            queryset = queryset.filter(
-                started_at__date__lte=self._parse_date(data_fim, "data_fim")
             )
 
         if started_at_gte:

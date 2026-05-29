@@ -1,13 +1,20 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from users.permissions import CanAccessBudget
 from budget.selectors import (
+    get_budget_indicators,
+    get_budget_indicators_gold,
     get_budget_last_updated_at,
     get_budget_last_updated_at_gold,
     get_budget_snapshot,
     get_budget_snapshot_gold,
 )
-from budget.serializers import BudgetProjectSerializer, GoldBudgetSnapshotSerializer
+from budget.serializers import (
+    BudgetIndicatorsSerializer,
+    BudgetProjectSerializer,
+    GoldBudgetSnapshotSerializer,
+)
 
 
 class BudgetSnapshotView(APIView):
@@ -21,6 +28,8 @@ class BudgetSnapshotView(APIView):
     falls back to live Silver queries when the gold table is empty.
     """
 
+    permission_classes = [CanAccessBudget]
+
     def get(self, request):
         gold_qs = get_budget_snapshot_gold(request.query_params)
 
@@ -31,6 +40,41 @@ class BudgetSnapshotView(APIView):
             rows = get_budget_snapshot(request.query_params)
             serializer = BudgetProjectSerializer(rows, many=True)
             last_updated_at = get_budget_last_updated_at(request.query_params)
+
+        return Response(
+            {
+                "data": serializer.data,
+                "last_updated_at": (
+                    last_updated_at.isoformat() if last_updated_at else None
+                ),
+            }
+        )
+
+
+class BudgetIndicatorsView(APIView):
+    """
+    GET /api/budget/indicators/
+
+    Returns pre-aggregated KPI indicators for budget and financial health.
+    Accepts the same query-param filters as BudgetSnapshotView:
+    periodo, programa, projeto, saude.
+
+    Reads from gold."budget_snapshot" when populated (fast pre-computed),
+    falls back to live Silver queries when the gold table is empty.
+    """
+
+    permission_classes = [CanAccessBudget]
+
+    def get(self, request):
+        indicators = get_budget_indicators_gold(request.query_params)
+
+        if indicators is not None:
+            last_updated_at = get_budget_last_updated_at_gold()
+        else:
+            indicators = get_budget_indicators(request.query_params)
+            last_updated_at = get_budget_last_updated_at(request.query_params)
+
+        serializer = BudgetIndicatorsSerializer(indicators)
 
         return Response(
             {

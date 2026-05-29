@@ -1,6 +1,8 @@
 import datetime
 
 from django.db.models import ExpressionWrapper, F, FloatField, Max, Q, Sum
+from django.utils import timezone
+
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
@@ -9,9 +11,11 @@ from consolidated.consolidated_dashboard.serializers import (
     ConsolidatedDashboardSerializer,
 )
 from sca_data.models import SilverProjeto
+from users.permissions import CanAccessConsolidated
 
 
 class ConsolidatedDashboardView(generics.ListAPIView):
+    permission_classes = [CanAccessConsolidated]
     """
     Tabela consolidada por projeto - une custos de materiais e horas tecnicas.
 
@@ -191,7 +195,19 @@ class ConsolidatedDashboardView(generics.ListAPIView):
         )
 
         timestamps = [value for value in aggregated.values() if value is not None]
-        return max(timestamps) if timestamps else None
+
+        if not timestamps:
+            return None
+
+        normalized = []
+        for ts in timestamps:
+            if timezone.is_naive(ts):
+                # Assume UTC para datetimes sem fuso
+                normalized.append(ts.replace(tzinfo=datetime.timezone.utc))
+            else:
+                normalized.append(ts)
+
+        return max(normalized)
 
     def get_queryset(self):
         data_inicio, data_fim = self._get_date_range()

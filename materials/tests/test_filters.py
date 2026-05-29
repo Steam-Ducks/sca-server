@@ -16,7 +16,6 @@ import pytest
 from unittest.mock import patch
 
 from django.utils import timezone
-from rest_framework.test import APIClient
 
 from materials.views import MaterialsTableView
 from sca_data.models import (
@@ -100,25 +99,22 @@ def _criar_pedido(
 # ---------------------------------------------------------------------------
 
 
-def test_materials_table_retorna_200():
+def test_materials_table_retorna_200(api_client):
     with patch.object(MaterialsTableView, "get_queryset", return_value=[]):
-        client = APIClient()
-        response = client.get("/api/compras/")
+        response = api_client.get("/api/compras/")
         assert response.status_code == 200
 
 
-def test_materials_table_retorna_lista_vazia():
+def test_materials_table_retorna_lista_vazia(api_client):
     with patch.object(MaterialsTableView, "get_queryset", return_value=[]):
-        client = APIClient()
-        response = client.get("/api/compras/")
+        response = api_client.get("/api/compras/")
         assert response.data == []
 
 
-def test_materials_table_retorna_campos_corretos():
+def test_materials_table_retorna_campos_corretos(api_client):
     pedido = _criar_pedido()
     with patch.object(MaterialsTableView, "get_queryset", return_value=[pedido]):
-        client = APIClient()
-        response = client.get("/api/compras/")
+        response = api_client.get("/api/compras/")
         item = response.data[0]
         assert item["material"] == "Cabo de aço"
         assert item["projeto"] == "Projeto Alpha"
@@ -135,12 +131,11 @@ def test_materials_table_retorna_campos_corretos():
 # ---------------------------------------------------------------------------
 
 
-def test_ct01_filtro_por_material_retorna_resultado_correto():
+def test_ct01_filtro_por_material_retorna_resultado_correto(api_client):
     """CT01: validar filtro por material."""
     pedido_cabo = _criar_pedido(id=1, descricao_material="Cabo de aço")
     pedido_parafuso = _criar_pedido(id=2, descricao_material="Parafuso inox")
 
-    # Busca parcial (icontains): "cabo" deve retornar apenas o pedido de cabo
     def mock_queryset_cabo(params):
         material = params.get("material", "").lower()
         todos = [pedido_cabo, pedido_parafuso]
@@ -151,22 +146,20 @@ def test_ct01_filtro_por_material_retorna_resultado_correto():
     with patch(
         "materials.views.get_materials_queryset", side_effect=mock_queryset_cabo
     ):
-        client = APIClient()
-        response = client.get("/api/compras/", {"material": "cabo"})
+        response = api_client.get("/api/compras/", {"material": "cabo"})
         assert response.status_code == 200
         assert len(response.data) == 1
         assert response.data[0]["material"] == "Cabo de aço"
 
 
-def test_ct01_filtro_por_material_sem_resultado():
+def test_ct01_filtro_por_material_sem_resultado(api_client):
     """CT01: filtro por material que não existe retorna lista vazia."""
 
     def mock_vazio(params):
         return []
 
     with patch("materials.views.get_materials_queryset", side_effect=mock_vazio):
-        client = APIClient()
-        response = client.get("/api/compras/", {"material": "inexistente"})
+        response = api_client.get("/api/compras/", {"material": "inexistente"})
         assert response.status_code == 200
         assert response.data == []
 
@@ -176,7 +169,7 @@ def test_ct01_filtro_por_material_sem_resultado():
 # ---------------------------------------------------------------------------
 
 
-def test_ct02_filtro_por_fornecedor_retorna_resultado_correto():
+def test_ct02_filtro_por_fornecedor_retorna_resultado_correto(api_client):
     """CT02: validar filtro por fornecedor."""
     pedido_forn1 = _criar_pedido(id=1, razao_social_fornecedor="Metalúrgica SA")
     pedido_forn2 = _criar_pedido(id=2, razao_social_fornecedor="Eletro Peças Ltda")
@@ -190,22 +183,20 @@ def test_ct02_filtro_por_fornecedor_retorna_resultado_correto():
         "materials.views.get_materials_queryset",
         side_effect=mock_queryset_fornecedor,
     ):
-        client = APIClient()
-        response = client.get("/api/compras/", {"fornecedor": "metalúrgica"})
+        response = api_client.get("/api/compras/", {"fornecedor": "metalúrgica"})
         assert response.status_code == 200
         assert len(response.data) == 1
         assert response.data[0]["fornecedor"] == "Metalúrgica SA"
 
 
-def test_ct02_filtro_por_fornecedor_sem_resultado():
+def test_ct02_filtro_por_fornecedor_sem_resultado(api_client):
     """CT02: fornecedor inexistente retorna lista vazia."""
 
     def mock_vazio(params):
         return []
 
     with patch("materials.views.get_materials_queryset", side_effect=mock_vazio):
-        client = APIClient()
-        response = client.get("/api/compras/", {"fornecedor": "inexistente"})
+        response = api_client.get("/api/compras/", {"fornecedor": "inexistente"})
         assert response.status_code == 200
         assert response.data == []
 
@@ -215,7 +206,7 @@ def test_ct02_filtro_por_fornecedor_sem_resultado():
 # ---------------------------------------------------------------------------
 
 
-def test_ct03_filtro_por_categoria_retorna_resultado_correto():
+def test_ct03_filtro_por_categoria_retorna_resultado_correto(api_client):
     """CT03: validar filtro por categoria."""
     pedido_estrutural = _criar_pedido(id=1, categoria="Estrutural")
     pedido_eletrico = _criar_pedido(id=2, categoria="Elétrico")
@@ -231,22 +222,20 @@ def test_ct03_filtro_por_categoria_retorna_resultado_correto():
         "materials.views.get_materials_queryset",
         side_effect=mock_queryset_categoria,
     ):
-        client = APIClient()
-        response = client.get("/api/compras/", {"categoria": "Estrutural"})
+        response = api_client.get("/api/compras/", {"categoria": "Estrutural"})
         assert response.status_code == 200
         assert len(response.data) == 1
         assert response.data[0]["categoria"] == "Estrutural"
 
 
-def test_ct03_filtro_por_categoria_sem_resultado():
+def test_ct03_filtro_por_categoria_sem_resultado(api_client):
     """CT03: categoria inexistente retorna lista vazia."""
 
     def mock_vazio(params):
         return []
 
     with patch("materials.views.get_materials_queryset", side_effect=mock_vazio):
-        client = APIClient()
-        response = client.get("/api/compras/", {"categoria": "Inexistente"})
+        response = api_client.get("/api/compras/", {"categoria": "Inexistente"})
         assert response.status_code == 200
         assert response.data == []
 
@@ -256,7 +245,7 @@ def test_ct03_filtro_por_categoria_sem_resultado():
 # ---------------------------------------------------------------------------
 
 
-def test_ct04_combinacao_material_e_fornecedor():
+def test_ct04_combinacao_material_e_fornecedor(api_client):
     """CT04: combinação de material + fornecedor."""
     pedido_match = _criar_pedido(
         id=1,
@@ -281,8 +270,7 @@ def test_ct04_combinacao_material_e_fornecedor():
         ]
 
     with patch("materials.views.get_materials_queryset", side_effect=mock_multi):
-        client = APIClient()
-        response = client.get(
+        response = api_client.get(
             "/api/compras/",
             {"material": "cabo", "fornecedor": "metalúrgica"},
         )
@@ -292,7 +280,7 @@ def test_ct04_combinacao_material_e_fornecedor():
         assert response.data[0]["fornecedor"] == "Metalúrgica SA"
 
 
-def test_ct04_combinacao_categoria_e_projeto():
+def test_ct04_combinacao_categoria_e_projeto(api_client):
     """CT04: combinação de categoria + projeto."""
     pedido_match = _criar_pedido(
         id=1, categoria="Elétrico", nome_projeto="Projeto Elétrico"
@@ -313,8 +301,7 @@ def test_ct04_combinacao_categoria_e_projeto():
         ]
 
     with patch("materials.views.get_materials_queryset", side_effect=mock_multi):
-        client = APIClient()
-        response = client.get(
+        response = api_client.get(
             "/api/compras/",
             {"categoria": "Elétrico", "projeto": "Projeto Elétrico"},
         )
@@ -324,7 +311,7 @@ def test_ct04_combinacao_categoria_e_projeto():
         assert response.data[0]["projeto"] == "Projeto Elétrico"
 
 
-def test_ct04_combinacao_todos_os_filtros():
+def test_ct04_combinacao_todos_os_filtros(api_client):
     """CT04: todos os filtros ativos simultaneamente."""
     pedido_match = _criar_pedido(
         id=1,
@@ -378,8 +365,7 @@ def test_ct04_combinacao_todos_os_filtros():
         return resultado
 
     with patch("materials.views.get_materials_queryset", side_effect=mock_multi):
-        client = APIClient()
-        response = client.get(
+        response = api_client.get(
             "/api/compras/",
             {
                 "material": "cabo",
@@ -394,17 +380,16 @@ def test_ct04_combinacao_todos_os_filtros():
         assert response.data[0]["material"] == "Cabo de aço"
 
 
-def test_ct04_filtros_sem_interseccao_retorna_vazio():
+def test_ct04_filtros_sem_interseccao_retorna_vazio(api_client):
     """CT04: filtros conflitantes não retornam resultado."""
 
     def mock_vazio(params):
         return []
 
     with patch("materials.views.get_materials_queryset", side_effect=mock_vazio):
-        client = APIClient()
-        response = client.get(
+        response = api_client.get(
             "/api/compras/",
-            {"material": "cabo", "categoria": "Elétrico"},  # cabo é Estrutural
+            {"material": "cabo", "categoria": "Elétrico"},
         )
         assert response.status_code == 200
         assert response.data == []
@@ -415,7 +400,7 @@ def test_ct04_filtros_sem_interseccao_retorna_vazio():
 # ---------------------------------------------------------------------------
 
 
-def test_filtro_por_periodo_retorna_pedidos_do_mes():
+def test_filtro_por_periodo_retorna_pedidos_do_mes(api_client):
     """Filtro periodo=YYYY-MM retorna apenas pedidos do mês."""
     pedido_marco = _criar_pedido(id=1, data_pedido=datetime.date(2024, 3, 15))
     pedido_abril = _criar_pedido(id=2, data_pedido=datetime.date(2024, 4, 10))
@@ -427,13 +412,12 @@ def test_filtro_por_periodo_retorna_pedidos_do_mes():
         return [pedido_marco, pedido_abril]
 
     with patch("materials.views.get_materials_queryset", side_effect=mock_periodo):
-        client = APIClient()
-        response = client.get("/api/compras/", {"periodo": "2024-03"})
+        response = api_client.get("/api/compras/", {"periodo": "2024-03"})
         assert response.status_code == 200
         assert len(response.data) == 1
 
 
-def test_filtro_por_data_inicio_e_data_fim():
+def test_filtro_por_data_inicio_e_data_fim(api_client):
     """Filtro data_inicio + data_fim retorna pedidos no intervalo."""
     pedido_dentro = _criar_pedido(id=1, data_pedido=datetime.date(2024, 3, 15))
     pedido_fora = _criar_pedido(id=2, data_pedido=datetime.date(2024, 5, 10))
@@ -449,8 +433,7 @@ def test_filtro_por_data_inicio_e_data_fim():
         return todos
 
     with patch("materials.views.get_materials_queryset", side_effect=mock_range):
-        client = APIClient()
-        response = client.get(
+        response = api_client.get(
             "/api/compras/",
             {"data_inicio": "2024-03-01", "data_fim": "2024-03-31"},
         )
@@ -463,7 +446,7 @@ def test_filtro_por_data_inicio_e_data_fim():
 # ---------------------------------------------------------------------------
 
 
-def test_filtro_por_programa():
+def test_filtro_por_programa(api_client):
     pedido_alpha = _criar_pedido(id=1, nome_programa="Programa Alpha")
     pedido_beta = _criar_pedido(id=2, nome_programa="Programa Beta")
 
@@ -477,14 +460,13 @@ def test_filtro_por_programa():
         ]
 
     with patch("materials.views.get_materials_queryset", side_effect=mock_programa):
-        client = APIClient()
-        response = client.get("/api/compras/", {"programa": "Programa Alpha"})
+        response = api_client.get("/api/compras/", {"programa": "Programa Alpha"})
         assert response.status_code == 200
         assert len(response.data) == 1
         assert response.data[0]["programa"] == "Programa Alpha"
 
 
-def test_filtro_por_projeto():
+def test_filtro_por_projeto(api_client):
     pedido_alpha = _criar_pedido(id=1, nome_projeto="Projeto Alpha")
     pedido_beta = _criar_pedido(id=2, nome_projeto="Projeto Beta")
 
@@ -496,8 +478,7 @@ def test_filtro_por_projeto():
         ]
 
     with patch("materials.views.get_materials_queryset", side_effect=mock_projeto):
-        client = APIClient()
-        response = client.get("/api/compras/", {"projeto": "Projeto Alpha"})
+        response = api_client.get("/api/compras/", {"projeto": "Projeto Alpha"})
         assert response.status_code == 200
         assert len(response.data) == 1
         assert response.data[0]["projeto"] == "Projeto Alpha"
@@ -508,33 +489,28 @@ def test_filtro_por_projeto():
 # ---------------------------------------------------------------------------
 
 
-def test_periodo_invalido_retorna_400():
-    client = APIClient()
-    response = client.get("/api/compras/", {"periodo": "2024-13"})
+def test_periodo_invalido_retorna_400(api_client):
+    response = api_client.get("/api/compras/", {"periodo": "2024-13"})
     assert response.status_code == 400
 
 
-def test_periodo_formato_errado_retorna_400():
-    client = APIClient()
-    response = client.get("/api/compras/", {"periodo": "03-2024"})
+def test_periodo_formato_errado_retorna_400(api_client):
+    response = api_client.get("/api/compras/", {"periodo": "03-2024"})
     assert response.status_code == 400
 
 
-def test_data_inicio_invalida_retorna_400():
-    client = APIClient()
-    response = client.get("/api/compras/", {"data_inicio": "31-03-2024"})
+def test_data_inicio_invalida_retorna_400(api_client):
+    response = api_client.get("/api/compras/", {"data_inicio": "31-03-2024"})
     assert response.status_code == 400
 
 
-def test_data_fim_invalida_retorna_400():
-    client = APIClient()
-    response = client.get("/api/compras/", {"data_fim": "não-é-data"})
+def test_data_fim_invalida_retorna_400(api_client):
+    response = api_client.get("/api/compras/", {"data_fim": "não-é-data"})
     assert response.status_code == 400
 
 
-def test_data_inicio_maior_que_data_fim_retorna_400():
-    client = APIClient()
-    response = client.get(
+def test_data_inicio_maior_que_data_fim_retorna_400(api_client):
+    response = api_client.get(
         "/api/compras/",
         {"data_inicio": "2024-04-01", "data_fim": "2024-03-01"},
     )

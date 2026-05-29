@@ -1,0 +1,73 @@
+name: DB Backup — Servidor
+
+# Backup diário automático do PostgreSQL de produção.
+# Armazena no próprio servidor em /home/deploy/backups com retenção de 30 dias.
+#
+# Secrets necessários (configurar em Settings → Secrets and variables → Actions):
+#   SERVER_HOST        — IP ou domínio do servidor
+#   SERVER_USER        — usuário SSH (ex: deploy)
+#   SERVER_SSH_KEY     — chave SSH privada
+#   SERVER_PORT        — porta SSH (geralmente 22)
+
+on:
+  schedule:
+    # Toda madrugada às 03:00 UTC (00:00 Brasília)
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Motivo do backup manual"
+        required: false
+        default: "manual"
+
+jobs:
+  backup:
+    name: PostgreSQL → Servidor
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Executar backup no servidor via SSH
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+            APP_DIR=/home/deploy/app/sca-server
+            BACKUP_DIR=/home/deploy/backups
+            TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+            BACKUP_FILE="${BACKUP_DIR}/sca_backup_${TIMESTAMP}.dump"
+
+            mkdir -p "$BACKUP_DIR"
+
+            echo "=== Carregando variáveis de ambiente ==="
+            set -a
+            source "${APP_DIR}/.env"
+            set +a
+
+            echo "=== Gerando backup: $BACKUP_FILE ==="
+            # pg_dump roda dentro do container postgres (o client não está
+            # instalado na VPS). A tag deve casar com a major do Postgres gerenciado.
+            docker run --rm \
+              -e PGPASSWORD="$DB_PASSWORD" \
+              -e PGSSLMODE="${DB_SSL_MODE:-require}" \
+              -v "$BACKUP_DIR:$BACKUP_DIR" \
+              postgres:16-alpine \
+              pg_dump \
+                --host="$DB_HOST" \
+                --port="${DB_PORT:-5432}" \
+                --username="$DB_USER" \
+                --dbname="$DB_NAME" \
+                --format=custom \
+                --no-password \
+                --file="$BACKUP_FILE"
+
+            BACKUP_SIZE=$(du -sh "$BACKUP_FILE" | cut -f1)
+            echo "Backup gerado: $BACKUP_FILE ($BACKUP_SIZE)"
+
+            echo "=== Removendo backups com mais de 30 dias ==="
+            find "$BACKUP_DIR" -name "sca_backup_*.dump" -mtime +30 -delete
+            echo "Limpeza concluída."

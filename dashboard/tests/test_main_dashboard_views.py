@@ -1,7 +1,6 @@
 # dashboard/tests/test_main_dashboard_views.py
 import pytest
 from unittest.mock import patch
-from rest_framework.test import APIClient
 
 COMPOSITION_MOCK = {
     "custo_materiais": 450000.0,
@@ -17,12 +16,10 @@ COMPOSITION_MOCK = {
 
 @pytest.mark.django_db
 @patch("dashboard.views.get_projects_by_period")
-def test_main_dashboard_endpoint_filters_by_period(mock_selector):
-    client = APIClient()
-
+def test_main_dashboard_endpoint_filters_by_period(mock_selector, api_client):
     mock_selector.return_value = []
 
-    response = client.get(
+    response = api_client.get(
         "/api/dashboard/projects/?start_date=2026-01-01&end_date=2026-12-31"
     )
 
@@ -35,8 +32,7 @@ def test_main_dashboard_endpoint_filters_by_period(mock_selector):
 
 @pytest.mark.django_db
 @patch("dashboard.views.get_program_summary")
-def test_summary_table_returns_200_with_correct_fields(mock_selector):
-    client = APIClient()
+def test_summary_table_returns_200_with_correct_fields(mock_selector, api_client):
     mock_selector.return_value = [
         {
             "programa": "Programa A",
@@ -47,7 +43,7 @@ def test_summary_table_returns_200_with_correct_fields(mock_selector):
         }
     ]
 
-    response = client.get("/api/dashboard/summary/")
+    response = api_client.get("/api/dashboard/summary/")
 
     assert response.status_code == 200
     assert len(response.data) == 1
@@ -61,11 +57,10 @@ def test_summary_table_returns_200_with_correct_fields(mock_selector):
 
 @pytest.mark.django_db
 @patch("dashboard.views.get_program_summary")
-def test_summary_table_returns_empty_list_when_no_data(mock_selector):
-    client = APIClient()
+def test_summary_table_returns_empty_list_when_no_data(mock_selector, api_client):
     mock_selector.return_value = []
 
-    response = client.get("/api/dashboard/summary/")
+    response = api_client.get("/api/dashboard/summary/")
 
     assert response.status_code == 200
     assert response.data == []
@@ -73,8 +68,7 @@ def test_summary_table_returns_empty_list_when_no_data(mock_selector):
 
 @pytest.mark.django_db
 @patch("dashboard.views.get_program_summary")
-def test_summary_table_returns_multiple_programs(mock_selector):
-    client = APIClient()
+def test_summary_table_returns_multiple_programs(mock_selector, api_client):
     mock_selector.return_value = [
         {
             "programa": "Programa A",
@@ -92,7 +86,7 @@ def test_summary_table_returns_multiple_programs(mock_selector):
         },
     ]
 
-    response = client.get("/api/dashboard/summary/")
+    response = api_client.get("/api/dashboard/summary/")
 
     assert response.status_code == 200
     assert len(response.data) == 2
@@ -103,11 +97,10 @@ def test_summary_table_returns_multiple_programs(mock_selector):
 
 @pytest.mark.django_db
 @patch("dashboard.views.get_program_summary")
-def test_summary_table_passes_all_filters_to_selector(mock_selector):
-    client = APIClient()
+def test_summary_table_passes_all_filters_to_selector(mock_selector, api_client):
     mock_selector.return_value = []
 
-    client.get(
+    api_client.get(
         "/api/dashboard/summary/"
         "?start_date=2026-01-01&end_date=2026-12-31"
         "&programa=Programa+A&projeto=Projeto+X"
@@ -123,11 +116,12 @@ def test_summary_table_passes_all_filters_to_selector(mock_selector):
 
 @pytest.mark.django_db
 @patch("dashboard.views.get_program_summary")
-def test_summary_table_with_no_filters_calls_selector_with_empty_params(mock_selector):
-    client = APIClient()
+def test_summary_table_with_no_filters_calls_selector_with_empty_params(
+    mock_selector, api_client
+):
     mock_selector.return_value = []
 
-    client.get("/api/dashboard/summary/")
+    api_client.get("/api/dashboard/summary/")
 
     mock_selector.assert_called_once()
     params = mock_selector.call_args[0][0]
@@ -140,8 +134,7 @@ def test_summary_table_with_no_filters_calls_selector_with_empty_params(mock_sel
 
 @pytest.mark.django_db
 @patch("dashboard.views.get_program_summary")
-def test_summary_table_preserves_selector_order(mock_selector):
-    client = APIClient()
+def test_summary_table_preserves_selector_order(mock_selector, api_client):
     mock_selector.return_value = [
         {
             "programa": "Maior Custo",
@@ -159,7 +152,7 @@ def test_summary_table_preserves_selector_order(mock_selector):
         },
     ]
 
-    response = client.get("/api/dashboard/summary/")
+    response = api_client.get("/api/dashboard/summary/")
 
     assert response.data[0]["programa"] == "Maior Custo"
     assert response.data[1]["programa"] == "Menor Custo"
@@ -172,11 +165,10 @@ def test_summary_table_preserves_selector_order(mock_selector):
 
 @pytest.mark.django_db
 @patch("dashboard.views.get_cost_composition")
-def test_composition_returns_percentage_fields(mock_selector):
-    client = APIClient()
+def test_composition_returns_percentage_fields(mock_selector, api_client):
     mock_selector.return_value = COMPOSITION_MOCK
 
-    response = client.get("/api/dashboard/composition/")
+    response = api_client.get("/api/dashboard/composition/")
 
     assert response.status_code == 200
     assert response.data["pct_materiais"] == pytest.approx(60.0)
@@ -185,8 +177,7 @@ def test_composition_returns_percentage_fields(mock_selector):
 
 @pytest.mark.django_db
 @patch("dashboard.views.get_cost_composition")
-def test_composition_percentages_are_present_in_response(mock_selector):
-    client = APIClient()
+def test_composition_percentages_are_present_in_response(mock_selector, api_client):
     mock_selector.return_value = {
         "custo_materiais": 250.0,
         "custo_horas": 750.0,
@@ -195,7 +186,7 @@ def test_composition_percentages_are_present_in_response(mock_selector):
         "pct_horas": 75.0,
     }
 
-    response = client.get("/api/dashboard/composition/")
+    response = api_client.get("/api/dashboard/composition/")
 
     assert "pct_materiais" in response.data
     assert "pct_horas" in response.data
@@ -208,11 +199,10 @@ def test_composition_percentages_are_present_in_response(mock_selector):
 
 @pytest.mark.django_db
 @patch("dashboard.views.get_cost_composition")
-def test_composition_returns_absolute_cost_fields(mock_selector):
-    client = APIClient()
+def test_composition_returns_absolute_cost_fields(mock_selector, api_client):
     mock_selector.return_value = COMPOSITION_MOCK
 
-    response = client.get("/api/dashboard/composition/")
+    response = api_client.get("/api/dashboard/composition/")
 
     assert response.data["custo_materiais"] == pytest.approx(450000.0)
     assert response.data["custo_horas"] == pytest.approx(300000.0)
@@ -221,11 +211,10 @@ def test_composition_returns_absolute_cost_fields(mock_selector):
 
 @pytest.mark.django_db
 @patch("dashboard.views.get_cost_composition")
-def test_composition_returns_all_five_fields(mock_selector):
-    client = APIClient()
+def test_composition_returns_all_five_fields(mock_selector, api_client):
     mock_selector.return_value = COMPOSITION_MOCK
 
-    response = client.get("/api/dashboard/composition/")
+    response = api_client.get("/api/dashboard/composition/")
 
     for field in (
         "custo_materiais",
@@ -242,11 +231,10 @@ def test_composition_returns_all_five_fields(mock_selector):
 
 @pytest.mark.django_db
 @patch("dashboard.views.get_cost_composition")
-def test_composition_passes_filters_to_selector(mock_selector):
-    client = APIClient()
+def test_composition_passes_filters_to_selector(mock_selector, api_client):
     mock_selector.return_value = COMPOSITION_MOCK
 
-    client.get(
+    api_client.get(
         "/api/dashboard/composition/"
         "?start_date=2026-01-01&end_date=2026-06-30"
         "&programa=Programa+X&projeto=Projeto+Y"
@@ -262,8 +250,7 @@ def test_composition_passes_filters_to_selector(mock_selector):
 
 @pytest.mark.django_db
 @patch("dashboard.views.get_cost_composition")
-def test_composition_with_no_filters_still_returns_200(mock_selector):
-    client = APIClient()
+def test_composition_with_no_filters_still_returns_200(mock_selector, api_client):
     mock_selector.return_value = {
         "custo_materiais": 0.0,
         "custo_horas": 0.0,
@@ -272,7 +259,7 @@ def test_composition_with_no_filters_still_returns_200(mock_selector):
         "pct_horas": 0.0,
     }
 
-    response = client.get("/api/dashboard/composition/")
+    response = api_client.get("/api/dashboard/composition/")
 
     assert response.status_code == 200
     assert response.data["pct_materiais"] == pytest.approx(0.0)

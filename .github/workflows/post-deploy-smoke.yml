@@ -1,0 +1,41 @@
+name: post-deploy-smoke
+
+# Roda DEPOIS do automatic-deploy concluir, não em paralelo com ele.
+# Disparar direto no push testava a versão antiga, pois o build+deploy
+# na VPS ainda não havia terminado.
+on:
+  workflow_run:
+    workflows: ["automatic-deploy"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  smoke-backend:
+    name: Backend (k6)
+    runs-on: ubuntu-latest
+    # Só roda se o deploy passou (ou em disparo manual).
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run smoke test
+        env:
+          K6_BASE_URL: ${{ secrets.PROD_API_URL }}
+          K6_AUTH_USERNAME: ${{ secrets.K6_AUTH_USERNAME }}
+          K6_AUTH_PASSWORD: ${{ secrets.K6_AUTH_PASSWORD }}
+        run: k6 run k6/scenarios/smoke.js
+
+      - name: Upload k6 results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-smoke-results
+          path: k6-summary.json
+          if-no-files-found: ignore

@@ -11,51 +11,31 @@ on:
   workflow_dispatch:
 
 jobs:
-  check-year:
-    name: Verify scheduled year
+  check-date:
+    name: Verify Scheduled Date
     runs-on: ubuntu-latest
     outputs:
-      should_run: ${{ steps.check.outputs.run }}
+      should_run: ${{ steps.check.outputs.should_run }}
+
     steps:
-      - name: Check if current year is 2026
+      - name: Check if today is a scheduled merge date
         id: check
         run: |
-          YEAR=$(date +%Y)
-          if [ "$YEAR" = "2026" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "run=true" >> "$GITHUB_OUTPUT"
+          TODAY=$(date -u +%Y-%m-%d)
+          if [[ "$TODAY" == "2026-04-05" || "$TODAY" == "2026-05-03" || "$TODAY" == "2026-05-31" || "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
           else
-            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
           fi
 
-  lint:
-    name: Lint & Format
+  # Lint, unit e integration tests já rodam nos PRs feature → develop (ci.yml).
+  # develop → main é o mesmo código, então aqui só geramos o coverage e
+  # rodamos o SonarCloud — num único job, como no sca-client.
+  sonarcloud:
+    name: SonarCloud Analysis
     runs-on: ubuntu-latest
-    needs: check-year
-    if: needs.check-year.outputs.should_run == 'true'
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: develop
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: pip install ruff==0.6.9 black==24.8.0
-
-      - name: Ruff check
-        run: ruff check .
-
-      - name: Black check
-        run: black --check .
-
-  test:
-    name: Tests & Coverage
-    runs-on: ubuntu-latest
-    needs: check-year
-    if: needs.check-year.outputs.should_run == 'true'
+    needs: check-date
+    if: needs.check-date.outputs.should_run == 'true'
 
     services:
       postgres:
@@ -73,6 +53,7 @@ jobs:
           --health-retries=5
 
     env:
+      DJANGO_SETTINGS_MODULE: config.settings_test
       DB_NAME: test_db
       DB_USER: test_user
       DB_PASSWORD: test_password
@@ -86,6 +67,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: develop
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -96,39 +78,22 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
 
+      # Os modelos silver/gold/audit precisam dos schemas antes das migrations
+      - name: Create PostgreSQL schemas
+        run: |
+          PGPASSWORD=${{ env.DB_PASSWORD }} psql \
+            -h ${{ env.DB_HOST }} -U ${{ env.DB_USER }} -d ${{ env.DB_NAME }} \
+            -c "CREATE SCHEMA IF NOT EXISTS silver;
+                CREATE SCHEMA IF NOT EXISTS gold;
+                CREATE SCHEMA IF NOT EXISTS audit;"
+
       - name: Run migrations
         run: python manage.py migrate
 
-      - name: Run tests with coverage
-        run: coverage run -m pytest
-
-      - name: Coverage report
-        run: coverage report
-
-      - name: Generate coverage XML
-        run: coverage xml
-
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage.xml
-
-  sonar:
-    name: SonarCloud Analysis
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: develop
-          fetch-depth: 0
-
-      - name: Download coverage artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: coverage-report
+      - name: Generate coverage for Sonar
+        run: |
+          coverage run -m pytest
+          coverage xml
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v3
@@ -136,9 +101,9 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
   merge-to-main:
-    name: Merge develop → main
+    name: Merge develop into main
     runs-on: ubuntu-latest
-    needs: [lint, test, sonar]
+    needs: sonarcloud
     if: success()
 
     permissions:
@@ -151,7 +116,7 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.PAT_TOKEN }}
 
-      - name: Configure git
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -159,5 +124,5 @@ jobs:
       - name: Merge develop into main
         run: |
           git fetch origin develop
-          git merge origin/develop --no-edit
+          git merge origin/develop --no-ff -m "chore: scheduled merge develop into main [$(date -u +%Y-%m-%d)]"
           git push origin main

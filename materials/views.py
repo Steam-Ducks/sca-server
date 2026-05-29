@@ -1,4 +1,3 @@
-import datetime
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.db.models import Avg, Count, Exists, OuterRef, Q, Sum
@@ -19,6 +18,7 @@ from materials.serializers import (
     MaterialsTableSerializer,
     TopMaterialsSerializer,
 )
+from users.permissions import CanAccessMaterials
 from sca_data.models import (
     SilverMaterial,
     SilverPedidoCompra,
@@ -38,6 +38,7 @@ class MaterialsTableView(generics.ListAPIView):
     """
     Tabela de pedidos de compra com materiais.
 
+
     Query params
     ------------
     periodo     : YYYY-MM    — mês completo
@@ -53,6 +54,7 @@ class MaterialsTableView(generics.ListAPIView):
     """
 
     serializer_class = MaterialsTableSerializer
+    permission_classes = [CanAccessMaterials]
 
     def get_queryset(self):
         return get_materials_queryset(self.request.query_params)
@@ -82,6 +84,7 @@ class MaterialsTablePeriodoView(MaterialsTableView):
 
 class MaterialsIndicatorsView(generics.GenericAPIView):
     serializer_class = MaterialsIndicatorsSerializer
+    permission_classes = [CanAccessMaterials]
 
     def _build_materiais_queryset(self, params):
         qs = SilverMaterial.objects.filter(status="Ativo")
@@ -171,6 +174,8 @@ class TopMaterialsView(APIView):
     limit       : int        — máximo de itens (padrão: 10)
     """
 
+    permission_classes = [CanAccessMaterials]
+
     def get(self, request):
         try:
             limit = int(request.query_params.get("limit", 10))
@@ -197,6 +202,8 @@ class CostByProjectView(APIView):
     fornecedor  : str
     """
 
+    permission_classes = [CanAccessMaterials]
+
     def get(self, request):
         qs = get_cost_by_project(request.query_params)
         data = [
@@ -216,6 +223,8 @@ class FilterOptionsView(APIView):
 
     GET /api/materials/filter-options/
     """
+
+    permission_classes = [CanAccessMaterials]
 
     def get(self, request):
         return Response(get_filter_options())

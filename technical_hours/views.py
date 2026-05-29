@@ -1,12 +1,14 @@
 import datetime
 
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum
+from django.db.models.functions import TruncMonth
 from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from sca_data.models import SilverTempoTarefa
 from technical_hours.serializers import TechnicalHoursTableSerializer
+from users.permissions import CanAccessTechnicalHours
 
 
 class TechnicalHoursTableView(generics.ListAPIView):
@@ -27,6 +29,7 @@ class TechnicalHoursTableView(generics.ListAPIView):
     """
 
     serializer_class = TechnicalHoursTableSerializer
+    permission_classes = [CanAccessTechnicalHours]
 
     def _parse_date(self, raw: str, param_name: str) -> datetime.date:
         try:
@@ -111,6 +114,18 @@ class TechnicalHoursTableView(generics.ListAPIView):
         if projeto:
             queryset = queryset.filter(tarefa__projeto__nome_projeto__iexact=projeto)
 
+        colaborador = params.get("colaborador")
+        if colaborador:
+            queryset = queryset.filter(usuario__iexact=colaborador)
+
+        tarefa = params.get("tarefa")
+        if tarefa:
+            queryset = queryset.filter(tarefa__titulo__iexact=tarefa)
+
+        funcao = params.get("funcao")
+        if funcao:
+            queryset = queryset.filter(tarefa__responsavel__iexact=funcao)
+
         return queryset
 
     def get_queryset(self):
@@ -191,3 +206,44 @@ class TechnicalHoursTablePeriodoView(TechnicalHoursTableView):
             "data__gte": primeiro_dia,
             "data__lte": ultimo_dia,
         }
+
+
+class TechnicalHoursTemporalView(TechnicalHoursTableView):
+    """
+    Evolução temporal de horas — total de horas por período.
+
+    Rota: GET /api/horas-tecnicas/temporal/
+
+    Aceita os filtros de dimensão (programa, projeto) mas ignora filtros
+    de período para expor a série histórica completa.
+
+    Retorna
+    -------
+    lista de {"periodo": "YYYY-MM", "total_horas": float, "total_custo": float}
+    ordenada cronologicamente.
+    """
+
+    def _build_period_filters(self):
+        return {}
+
+    def get(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        agg = (
+            qs.annotate(mes=TruncMonth("data"))
+            .values("mes")
+            .annotate(
+                total_horas=Sum("horas_trabalhadas"),
+                total_custo=Sum("custo_total"),
+            )
+            .order_by("mes")
+        )
+        return Response(
+            [
+                {
+                    "periodo": row["mes"].strftime("%Y-%m"),
+                    "total_horas": round(float(row["total_horas"] or 0), 2),
+                    "total_custo": round(float(row["total_custo"] or 0), 2),
+                }
+                for row in agg
+            ]
+        )
