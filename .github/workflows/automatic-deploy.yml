@@ -16,6 +16,7 @@ jobs:
           host: ${{ secrets.DO_DROPLET_IP }}
           username: ${{ secrets.DO_DEPLOY_USER }}
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
           script: |
             cd /home/deploy/sca-server
             git pull origin main
