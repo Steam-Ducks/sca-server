@@ -162,7 +162,6 @@ class TopMaterialsView(APIView):
     """
     Retorna o ranking dos materiais com maior impacto financeiro.
 
-
     Query params
     ------------
     periodo     : YYYY-MM    — mês completo
