@@ -56,6 +56,19 @@ jobs:
           AUTH_USERNAME: ${{ secrets.K6_AUTH_USERNAME }}
           AUTH_PASSWORD: ${{ secrets.K6_AUTH_PASSWORD }}
 
+      - name: Instalar k6
+        uses: grafana/setup-k6-action@v1
+
+      - name: Load test staging → métricas no Prometheus
+        run: |
+          k6 run --tag environment=staging tests/load/load_test.js
+        env:
+          BASE_URL: http://${{ secrets.DO_DROPLET_IP }}:8001
+          AUTH_USERNAME: ${{ secrets.K6_AUTH_USERNAME }}
+          AUTH_PASSWORD: ${{ secrets.K6_AUTH_PASSWORD }}
+          K6_PROMETHEUS_RW_SERVER_URL: http://${{ secrets.DO_DROPLET_IP }}:9090/api/v1/write
+          K6_PROMETHEUS_RW_PUSH_INTERVAL: 5s
+
       - name: Step Summary
         if: always()
         run: |

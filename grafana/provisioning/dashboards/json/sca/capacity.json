@@ -5,8 +5,26 @@
   "tags": ["sca", "capacity"],
   "timezone": "browser",
   "schemaVersion": 38,
-  "version": 1,
+  "version": 2,
   "refresh": "1h",
+  "templating": {
+    "list": [
+      {
+        "name": "env",
+        "label": "Ambiente",
+        "type": "custom",
+        "query": "sca_prod,sca_staging",
+        "current": { "selected": true, "text": "prod", "value": "sca_prod" },
+        "options": [
+          { "selected": true,  "text": "prod",    "value": "sca_prod" },
+          { "selected": false, "text": "staging", "value": "sca_staging" }
+        ],
+        "hide": 0,
+        "includeAll": false,
+        "multi": false
+      }
+    ]
+  },
   "panels": [
     {
       "id": 1,
@@ -192,7 +210,7 @@
       "gridPos": { "x": 16, "y": 16, "w": 8, "h": 6 },
       "targets": [
         {
-          "expr": "predict_linear(rate(django_http_requests_total_by_method_total{job='sca_prod'}[1h])[7d:1h], 30 * 24 * 3600) / rate(django_http_requests_total_by_method_total{job='sca_prod'}[1h])",
+          "expr": "predict_linear(rate(django_http_requests_total_by_method_total{job=\"$env\"}[1h])[7d:1h], 30 * 24 * 3600) / rate(django_http_requests_total_by_method_total{job=\"$env\"}[1h])",
           "legendFormat": "fator de crescimento 30d",
           "refId": "A"
         }

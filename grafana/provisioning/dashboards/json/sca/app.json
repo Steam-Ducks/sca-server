@@ -5,8 +5,26 @@
   "tags": ["sca", "app"],
   "timezone": "browser",
   "schemaVersion": 38,
-  "version": 1,
+  "version": 2,
   "refresh": "30s",
+  "templating": {
+    "list": [
+      {
+        "name": "env",
+        "label": "Ambiente",
+        "type": "custom",
+        "query": "sca_prod,sca_staging",
+        "current": { "selected": true, "text": "prod", "value": "sca_prod" },
+        "options": [
+          { "selected": true,  "text": "prod",    "value": "sca_prod" },
+          { "selected": false, "text": "staging", "value": "sca_staging" }
+        ],
+        "hide": 0,
+        "includeAll": false,
+        "multi": false
+      }
+    ]
+  },
   "panels": [
     {
       "id": 1,
@@ -15,14 +33,9 @@
       "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
       "targets": [
         {
-          "expr": "rate(django_http_requests_total_by_method_total{job='sca_prod'}[5m])",
-          "legendFormat": "prod — {{method}}",
+          "expr": "rate(django_http_requests_total_by_method_total{job=\"$env\"}[5m])",
+          "legendFormat": "{{method}}",
           "refId": "A"
-        },
-        {
-          "expr": "rate(django_http_requests_total_by_method_total{job='sca_staging'}[5m])",
-          "legendFormat": "staging — {{method}}",
-          "refId": "B"
         }
       ]
     },
@@ -33,14 +46,9 @@
       "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket{job='sca_prod'}[5m])) * 1000",
-          "legendFormat": "prod p95",
+          "expr": "histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket{job=\"$env\"}[5m])) * 1000",
+          "legendFormat": "p95",
           "refId": "A"
-        },
-        {
-          "expr": "histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket{job='sca_staging'}[5m])) * 1000",
-          "legendFormat": "staging p95",
-          "refId": "B"
         }
       ],
       "fieldConfig": {
@@ -64,14 +72,9 @@
       "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
       "targets": [
         {
-          "expr": "rate(django_http_responses_total_by_status_total{job='sca_prod',status=~'5..'}[5m]) / rate(django_http_responses_total_by_status_total{job='sca_prod'}[5m]) * 100",
-          "legendFormat": "prod erros 5xx %",
+          "expr": "rate(django_http_responses_total_by_status_total{job=\"$env\",status=~\"5..\"}[5m]) / rate(django_http_responses_total_by_status_total{job=\"$env\"}[5m]) * 100",
+          "legendFormat": "erros 5xx %",
           "refId": "A"
-        },
-        {
-          "expr": "rate(django_http_responses_total_by_status_total{job='sca_staging',status=~'5..'}[5m]) / rate(django_http_responses_total_by_status_total{job='sca_staging'}[5m]) * 100",
-          "legendFormat": "staging erros 5xx %",
-          "refId": "B"
         }
       ],
       "fieldConfig": {
@@ -95,8 +98,8 @@
       "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
       "targets": [
         {
-          "expr": "rate(django_db_execute_total{job='sca_prod'}[5m])",
-          "legendFormat": "prod — {{vendor}}",
+          "expr": "rate(django_db_execute_total{job=\"$env\"}[5m])",
+          "legendFormat": "{{vendor}}",
           "refId": "A"
         }
       ]
@@ -108,7 +111,7 @@
       "gridPos": { "x": 0, "y": 16, "w": 8, "h": 6 },
       "targets": [
         {
-          "expr": "rate(django_cache_hits_total{job='sca_prod'}[5m]) / (rate(django_cache_hits_total{job='sca_prod'}[5m]) + rate(django_cache_misses_total{job='sca_prod'}[5m])) * 100",
+          "expr": "rate(django_cache_hits_total{job=\"$env\"}[5m]) / (rate(django_cache_hits_total{job=\"$env\"}[5m]) + rate(django_cache_misses_total{job=\"$env\"}[5m])) * 100",
           "legendFormat": "hit rate %",
           "refId": "A"
         }
@@ -134,7 +137,7 @@
       "gridPos": { "x": 8, "y": 16, "w": 8, "h": 6 },
       "targets": [
         {
-          "expr": "sum by (status) (rate(django_http_responses_total_by_status_total{job='sca_prod'}[5m]))",
+          "expr": "sum by (status) (rate(django_http_responses_total_by_status_total{job=\"$env\"}[5m]))",
           "legendFormat": "{{status}}",
           "refId": "A"
         }
@@ -147,7 +150,7 @@
       "gridPos": { "x": 16, "y": 16, "w": 8, "h": 6 },
       "targets": [
         {
-          "expr": "avg_over_time(up{job='sca_prod'}[24h]) * 100",
+          "expr": "avg_over_time(up{job=\"$env\"}[24h]) * 100",
           "legendFormat": "uptime %",
           "refId": "A"
         }
