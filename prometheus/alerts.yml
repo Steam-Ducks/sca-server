@@ -73,3 +73,42 @@ groups:
         annotations:
           summary: "Aplicação de produção fora do ar"
           description: "O job sca_prod está down há mais de 1 minuto."
+
+  - name: sca_inspection
+    rules:
+
+      - alert: InspecaoSemanalSCA
+        expr: up{job="node"} == 1
+        for: 0m
+        labels:
+          severity: inspection
+        annotations:
+          summary: "Sistema operacional — inspeção semanal SCA"
+          description: "VPS respondendo normalmente. Acesse o dashboard de Capacity Planning para ver tendências de disco, RAM e CPU."
+
+      - alert: DiscoCapacityAviso
+        expr: (1 - node_filesystem_avail_bytes{mountpoint='/'} / node_filesystem_size_bytes{mountpoint='/'}) * 100 > 40
+        for: 30m
+        labels:
+          severity: inspection
+        annotations:
+          summary: "Capacity — disco acima de 40%"
+          description: "Disco em {{ $value | printf \"%.1f\" }}%. Monitorar tendência de crescimento no dashboard."
+
+      - alert: RAMCapacityAviso
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 > 55
+        for: 30m
+        labels:
+          severity: inspection
+        annotations:
+          summary: "Capacity — RAM acima de 55%"
+          description: "RAM em {{ $value | printf \"%.1f\" }}%. Verificar processos no VPS."
+
+      - alert: CPUCapacityAviso
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode='idle'}[1h])) * 100) > 50
+        for: 1h
+        labels:
+          severity: inspection
+        annotations:
+          summary: "Capacity — CPU média acima de 50% (última hora)"
+          description: "CPU em {{ $value | printf \"%.1f\" }}% na última hora. Avaliar se há pico de carga recorrente."
