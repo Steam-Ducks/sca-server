@@ -27,6 +27,7 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           script: |
             set -e
+            docker network inspect sca_app_net >/dev/null 2>&1 || docker network create sca_app_net
             cd /home/deploy/sca-server
 
             git fetch origin
