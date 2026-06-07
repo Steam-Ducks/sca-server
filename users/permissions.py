@@ -1,4 +1,4 @@
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.permissions import BasePermission
 
 
@@ -16,7 +16,7 @@ class _ProfilePermission(BasePermission):
 
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
-            return False
+            raise NotAuthenticated()
         permissao = _get_permissao(request.user)
         if permissao is None:
             raise PermissionDenied("Perfil de usuário não encontrado. Acesso negado.")

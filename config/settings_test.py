@@ -17,6 +17,12 @@ REST_FRAMEWORK = {  # noqa: F405
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+    }
+}
+
 if not os.environ.get("DB_HOST"):
     DATABASES = {
         "default": {

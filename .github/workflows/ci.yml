@@ -34,6 +34,7 @@ jobs:
       DEBUG: "0"
       ALLOWED_HOSTS: localhost,127.0.0.1
       # SEM DB_HOST → settings_test.py cai para SQLite in-memory
+      # CACHES → DummyCache em settings_test.py (sem Redis necessário)
 
     steps:
       - uses: actions/checkout@v4
@@ -219,6 +220,18 @@ jobs:
                 CREATE SCHEMA IF NOT EXISTS audit;"
       - name: Rodar migrations
         run: python manage.py migrate
+      - name: Criar usuário de teste
+        run: |
+          python manage.py shell -c "
+          from django.contrib.auth import get_user_model
+          from users.models import Perfil, UsuarioPerfil
+          User = get_user_model()
+          user, _ = User.objects.get_or_create(username='ci_smoke', defaults={'email': 'ci@test.com', 'is_superuser': True, 'is_staff': True})
+          user.set_password('CiSmoke@2025')
+          user.save()
+          perfil, _ = Perfil.objects.get_or_create(nome='Super Admin', defaults={'descricao': 'CI', 'permissoes': 'super_admin'})
+          UsuarioPerfil.objects.get_or_create(usuario=user, defaults={'perfil': perfil})
+          "
       - name: Iniciar servidor Django
         run: python manage.py runserver 0.0.0.0:8000 &
       - name: Aguardar app subir
@@ -232,6 +245,8 @@ jobs:
         run: python tests/smoke/smoke_test.py
         env:
           BASE_URL: http://localhost:8000
+          AUTH_USERNAME: ci_smoke
+          AUTH_PASSWORD: CiSmoke@2025
       - name: Step Summary
         if: always()
         run: |
@@ -292,15 +307,7 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
       - name: Instalar k6
-        run: |
-          sudo gpg --no-default-keyring \
-            --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
-            --keyserver hkp://keyserver.ubuntu.com \
-            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
-          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] \
-            https://dl.k6.io/deb stable main" \
-            | sudo tee /etc/apt/sources.list.d/k6.list
-          sudo apt-get update && sudo apt-get install k6 -y
+        uses: grafana/setup-k6-action@v1
       - name: Criar schemas PostgreSQL
         run: |
           PGPASSWORD=test_password psql \
@@ -310,6 +317,18 @@ jobs:
                 CREATE SCHEMA IF NOT EXISTS audit;"
       - name: Rodar migrations
         run: python manage.py migrate
+      - name: Criar usuário de teste
+        run: |
+          python manage.py shell -c "
+          from django.contrib.auth import get_user_model
+          from users.models import Perfil, UsuarioPerfil
+          User = get_user_model()
+          user, _ = User.objects.get_or_create(username='ci_smoke', defaults={'email': 'ci@test.com', 'is_superuser': True, 'is_staff': True})
+          user.set_password('CiSmoke@2025')
+          user.save()
+          perfil, _ = Perfil.objects.get_or_create(nome='Super Admin', defaults={'descricao': 'CI', 'permissoes': 'super_admin'})
+          UsuarioPerfil.objects.get_or_create(usuario=user, defaults={'perfil': perfil})
+          "
       - name: Iniciar servidor Django
         run: python manage.py runserver 0.0.0.0:8000 &
       - name: Aguardar app subir
@@ -323,6 +342,8 @@ jobs:
         run: k6 run tests/load/load_test.js
         env:
           BASE_URL: http://localhost:8000
+          AUTH_USERNAME: ci_smoke
+          AUTH_PASSWORD: CiSmoke@2025
       - name: Upload resultado k6
         uses: actions/upload-artifact@v4
         if: always()
@@ -351,8 +372,11 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-      - name: Enable Auto Merge
-        run: gh pr merge ${{ github.event.pull_request.number }} --squash --auto
+      - name: Merge PR
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --squash \
+            --delete-branch

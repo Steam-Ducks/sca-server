@@ -10,30 +10,30 @@ AUTH_ENDPOINT = os.getenv("AUTH_ENDPOINT", "/api/auth/login/")
 
 CHECKS = [
     # Saúde
-    {"method": "GET", "path": "/api/health/",               "expect_status": 200},
-    {"method": "GET", "path": "/api/status/",               "expect_status": 200},
+    {"method": "GET", "path": "/api/health/", "expect_status": 200},
+    {"method": "GET", "path": "/api/status/", "expect_status": 200},
     # Dashboard
-    {"method": "GET", "path": "/api/dashboard/kpis/",           "expect_status": 200},
-    {"method": "GET", "path": "/api/dashboard/projects/",       "expect_status": 200},
-    {"method": "GET", "path": "/api/dashboard/summary/",        "expect_status": 200},
-    {"method": "GET", "path": "/api/dashboard/composition/",    "expect_status": 200},
-    {"method": "GET", "path": "/api/dashboard/top-projects/",   "expect_status": 200},
+    {"method": "GET", "path": "/api/dashboard/kpis/", "expect_status": 200},
+    {"method": "GET", "path": "/api/dashboard/projects/", "expect_status": 200},
+    {"method": "GET", "path": "/api/dashboard/summary/", "expect_status": 200},
+    {"method": "GET", "path": "/api/dashboard/composition/", "expect_status": 200},
+    {"method": "GET", "path": "/api/dashboard/top-projects/", "expect_status": 200},
     {"method": "GET", "path": "/api/dashboard/cost-evolution/", "expect_status": 200},
     # Materiais
-    {"method": "GET", "path": "/api/compras/",                  "expect_status": 200},
-    {"method": "GET", "path": "/api/materials/indicators/",     "expect_status": 200},
-    {"method": "GET", "path": "/api/top-materials/",            "expect_status": 200},
-    {"method": "GET", "path": "/api/cost-by-project/",          "expect_status": 200},
+    {"method": "GET", "path": "/api/compras/", "expect_status": 200},
+    {"method": "GET", "path": "/api/materials/indicators/", "expect_status": 200},
+    {"method": "GET", "path": "/api/top-materials/", "expect_status": 200},
+    {"method": "GET", "path": "/api/cost-by-project/", "expect_status": 200},
     {"method": "GET", "path": "/api/materials/filter-options/", "expect_status": 200},
     # Horas técnicas
-    {"method": "GET", "path": "/api/horas-tecnicas/",           "expect_status": 200},
-    {"method": "GET", "path": "/api/horas-tecnicas/kpis/",      "expect_status": 200},
-    {"method": "GET", "path": "/api/horas-tecnicas/temporal/",  "expect_status": 200},
+    {"method": "GET", "path": "/api/horas-tecnicas/", "expect_status": 200},
+    {"method": "GET", "path": "/api/horas-tecnicas/kpis/", "expect_status": 200},
+    {"method": "GET", "path": "/api/horas-tecnicas/temporal/", "expect_status": 200},
     # Budget / Custos / Consolidado
-    {"method": "GET", "path": "/api/budget/",            "expect_status": 200},
+    {"method": "GET", "path": "/api/budget/", "expect_status": 200},
     {"method": "GET", "path": "/api/budget/indicators/", "expect_status": 200},
-    {"method": "GET", "path": "/api/costs/",             "expect_status": 200},
-    {"method": "GET", "path": "/api/consolidated/",      "expect_status": 200},
+    {"method": "GET", "path": "/api/costs/", "expect_status": 200},
+    {"method": "GET", "path": "/api/consolidated/", "expect_status": 200},
 ]
 
 
@@ -71,7 +71,9 @@ def run() -> None:
                         f"esperado {check['expect_status']}, recebido {resp.status_code}"
                     )
                 else:
-                    print(f"  OK {check['method']} {check['path']} -> {resp.status_code}")
+                    print(
+                        f"  OK {check['method']} {check['path']} -> {resp.status_code}"
+                    )
             except Exception as exc:
                 failed.append(f"ERRO {check['method']} {check['path']}: {exc}")
 
