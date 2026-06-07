@@ -220,6 +220,14 @@ jobs:
                 CREATE SCHEMA IF NOT EXISTS audit;"
       - name: Rodar migrations
         run: python manage.py migrate
+      - name: Criar usuário de teste
+        run: |
+          python manage.py shell -c "
+          from django.contrib.auth import get_user_model
+          User = get_user_model()
+          if not User.objects.filter(username='ci_smoke').exists():
+              User.objects.create_superuser('ci_smoke', 'ci@test.com', 'CiSmoke@2025')
+          "
       - name: Iniciar servidor Django
         run: python manage.py runserver 0.0.0.0:8000 &
       - name: Aguardar app subir
@@ -233,6 +241,8 @@ jobs:
         run: python tests/smoke/smoke_test.py
         env:
           BASE_URL: http://localhost:8000
+          AUTH_USERNAME: ci_smoke
+          AUTH_PASSWORD: CiSmoke@2025
       - name: Step Summary
         if: always()
         run: |
@@ -311,6 +321,14 @@ jobs:
                 CREATE SCHEMA IF NOT EXISTS audit;"
       - name: Rodar migrations
         run: python manage.py migrate
+      - name: Criar usuário de teste
+        run: |
+          python manage.py shell -c "
+          from django.contrib.auth import get_user_model
+          User = get_user_model()
+          if not User.objects.filter(username='ci_smoke').exists():
+              User.objects.create_superuser('ci_smoke', 'ci@test.com', 'CiSmoke@2025')
+          "
       - name: Iniciar servidor Django
         run: python manage.py runserver 0.0.0.0:8000 &
       - name: Aguardar app subir
@@ -322,6 +340,9 @@ jobs:
           done
       - name: Rodar teste de carga
         run: k6 run tests/load/load_test.js
+        env:
+          AUTH_USERNAME: ci_smoke
+          AUTH_PASSWORD: CiSmoke@2025
         env:
           BASE_URL: http://localhost:8000
       - name: Upload resultado k6

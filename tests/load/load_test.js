@@ -15,6 +15,8 @@ import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
 
 const errorRate = new Rate('errors');
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:8000';
+const AUTH_USERNAME = __ENV.AUTH_USERNAME || '';
+const AUTH_PASSWORD = __ENV.AUTH_PASSWORD || '';
 
 export const options = {
   stages: [
@@ -29,11 +31,20 @@ export const options = {
   },
 };
 
-function hit(url, name) {
-  const res = http.get(url, {
-    headers: { 'Content-Type': 'application/json' },
-    tags: { name },
-  });
+export function setup() {
+  if (!AUTH_USERNAME || !AUTH_PASSWORD) return {};
+  const res = http.post(`${BASE_URL}/api/auth/login/`, JSON.stringify({
+    username: AUTH_USERNAME,
+    password: AUTH_PASSWORD,
+  }), { headers: { 'Content-Type': 'application/json' } });
+  const token = res.json('access') || res.json('token');
+  return { token };
+}
+
+function hit(url, name, token) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = http.get(url, { headers, tags: { name } });
   const ok = check(res, {
     [`${name}: status 2xx`]: (r) => r.status >= 200 && r.status < 300,
     [`${name}: tempo < 2s`]:  (r) => r.timings.duration < 2000,
@@ -41,26 +52,27 @@ function hit(url, name) {
   errorRate.add(!ok);
 }
 
-export default function () {
+export default function (data) {
+  const token = data ? data.token : null;
   group('health', () => {
-    hit(`${BASE_URL}/api/health/`, 'health');
-    hit(`${BASE_URL}/api/status/`, 'status');
+    hit(`${BASE_URL}/api/health/`, 'health', token);
+    hit(`${BASE_URL}/api/status/`, 'status', token);
   });
 
   group('dashboard', () => {
-    hit(`${BASE_URL}/api/dashboard/kpis/`,     'dashboard/kpis');
-    hit(`${BASE_URL}/api/dashboard/projects/`, 'dashboard/projects');
-    hit(`${BASE_URL}/api/dashboard/summary/`,  'dashboard/summary');
+    hit(`${BASE_URL}/api/dashboard/kpis/`,     'dashboard/kpis',     token);
+    hit(`${BASE_URL}/api/dashboard/projects/`, 'dashboard/projects', token);
+    hit(`${BASE_URL}/api/dashboard/summary/`,  'dashboard/summary',  token);
   });
 
   group('materials', () => {
-    hit(`${BASE_URL}/api/compras/`,              'compras');
-    hit(`${BASE_URL}/api/materials/indicators/`, 'materials/indicators');
+    hit(`${BASE_URL}/api/compras/`,              'compras',              token);
+    hit(`${BASE_URL}/api/materials/indicators/`, 'materials/indicators', token);
   });
 
   group('horas-tecnicas', () => {
-    hit(`${BASE_URL}/api/horas-tecnicas/`,      'horas-tecnicas');
-    hit(`${BASE_URL}/api/horas-tecnicas/kpis/`, 'horas-tecnicas/kpis');
+    hit(`${BASE_URL}/api/horas-tecnicas/`,      'horas-tecnicas',      token);
+    hit(`${BASE_URL}/api/horas-tecnicas/kpis/`, 'horas-tecnicas/kpis', token);
   });
 
   sleep(1);
