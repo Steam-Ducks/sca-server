@@ -6,7 +6,7 @@ on:
 
 jobs:
 
-  # ─── 1. Lint 
+  # ─── 1. Lint ─────────────────────────────────────────────────────────────────
   lint:
     name: Lint & Format
     runs-on: ubuntu-latest
@@ -22,7 +22,7 @@ jobs:
       - name: Black check
         run: black --check .
 
-  # ─── 2. Unit Tests 
+  # ─── 2. Unit Tests ───────────────────────────────────────────────────────────
   # Usa patch()/MagicMock. Sem DB_HOST → settings_test.py usa SQLite.
   unit-tests:
     name: Unit Tests
@@ -71,7 +71,7 @@ jobs:
           tail -8 unit-output.txt >> $GITHUB_STEP_SUMMARY || true
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
-  # ─── 3. Integration Tests 
+  # ─── 3. Integration Tests ────────────────────────────────────────────────────
   # Com DB_HOST → settings_test.py usa PostgreSQL + mantém sca_data.
   # Nenhum mock — dados reais entram e saem do banco.
   integration-tests:
@@ -364,7 +364,7 @@ jobs:
 
   # ─── 6. Auto-merge
   auto-merge:
-    name: Auto-merge PR
+    name: Auto Merge PR
     runs-on: ubuntu-latest
     needs: [unit-tests, integration-tests, load-test]
     if: success()
