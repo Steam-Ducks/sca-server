@@ -1,29 +1,33 @@
 name: automatic-deploy
 
+# Triggered pelo merge develop → main feito pelo staging.yml (promote-to-prod).
+# Para hotfix de emergência: dispare manualmente via workflow_dispatch.
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-      - name: Deploy to VPS
+      - name: Deploy produção no VPS (DigitalOcean)
         uses: appleboy/ssh-action@v1.2.5
-
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-
           script: |
-            cd /home/deploy/app/sca-server
+            set -e
+            cd /home/deploy/sca-server
 
             git checkout main
-
             git pull origin main
 
             docker compose -f docker-compose.prod.yml up -d --build
+
+            echo "Produção atualizada: $(git rev-parse --short HEAD)"

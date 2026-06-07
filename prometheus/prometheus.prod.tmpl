@@ -2,15 +2,32 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+rule_files:
+  - "alerts.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
 scrape_configs:
-  - job_name: 'django'
+  - job_name: 'sca_prod'
     metrics_path: /metrics
     static_configs:
       - targets: ['backend:8000']
 
+  - job_name: 'sca_staging'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['sca_staging_backend:8000']
+
   - job_name: 'postgresql'
     static_configs:
       - targets: ['postgres-exporter:9187']
+
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
 
 remote_write:
   - url: ${GF_CLOUD_METRICS_URL}

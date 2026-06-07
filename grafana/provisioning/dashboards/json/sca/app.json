@@ -1,0 +1,170 @@
+{
+  "id": null,
+  "uid": "sca-app",
+  "title": "SCA — Aplicação",
+  "tags": ["sca", "app"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Requests por segundo",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(django_http_requests_total_by_method_total{job='sca_prod'}[5m])",
+          "legendFormat": "prod — {{method}}",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(django_http_requests_total_by_method_total{job='sca_staging'}[5m])",
+          "legendFormat": "staging — {{method}}",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Latência p95 (ms)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket{job='sca_prod'}[5m])) * 1000",
+          "legendFormat": "prod p95",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket{job='sca_staging'}[5m])) * 1000",
+          "legendFormat": "staging p95",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 2000 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Taxa de erro (%)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(django_http_responses_total_by_status_total{job='sca_prod',status=~'5..'}[5m]) / rate(django_http_responses_total_by_status_total{job='sca_prod'}[5m]) * 100",
+          "legendFormat": "prod erros 5xx %",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(django_http_responses_total_by_status_total{job='sca_staging',status=~'5..'}[5m]) / rate(django_http_responses_total_by_status_total{job='sca_staging'}[5m]) * 100",
+          "legendFormat": "staging erros 5xx %",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Queries ao banco por segundo",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(django_db_execute_total{job='sca_prod'}[5m])",
+          "legendFormat": "prod — {{vendor}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Cache hit rate (%)",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 16, "w": 8, "h": 6 },
+      "targets": [
+        {
+          "expr": "rate(django_cache_hits_total{job='sca_prod'}[5m]) / (rate(django_cache_hits_total{job='sca_prod'}[5m]) + rate(django_cache_misses_total{job='sca_prod'}[5m])) * 100",
+          "legendFormat": "hit rate %",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "green", "value": 80 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Respostas por status code",
+      "type": "piechart",
+      "gridPos": { "x": 8, "y": 16, "w": 8, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(django_http_responses_total_by_status_total{job='sca_prod'}[5m]))",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Uptime (últimas 24h)",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 16, "w": 8, "h": 6 },
+      "targets": [
+        {
+          "expr": "avg_over_time(up{job='sca_prod'}[24h]) * 100",
+          "legendFormat": "uptime %",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 99 },
+              { "color": "green", "value": 99.9 }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
