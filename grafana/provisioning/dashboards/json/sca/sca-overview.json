@@ -54,7 +54,7 @@
       "gridPos": { "x": 18, "y": 0, "w": 6, "h": 5 },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area", "textMode": "auto" },
       "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 10, "color": "orange" }, { "value": 50, "color": "red" }] } } },
-      "targets": [{ "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "sum(pg_stat_activity_count{state=\"active\"})", "legendFormat": "" }]
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(pg_stat_activity_count{state=\"active\"})", "legendFormat": "" }]
     },
     {
       "id": 5, "type": "timeseries", "title": "Requisições por código HTTP",
@@ -118,7 +118,7 @@
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "sum by (state) (pg_stat_activity_count{state!=\"\"})", "legendFormat": "{{state}}" }
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum by (state) (pg_stat_activity_count{state!=\"\"})", "legendFormat": "{{state}}" }
       ]
     },
     {
@@ -137,8 +137,8 @@
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
-        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "pg_database_size_bytes{datname!~\"template.*|postgres\"}", "legendFormat": "Tamanho (bytes)" },
-        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "sum(pg_locks_count{datname!~\"template.*|postgres\"})", "legendFormat": "Locks ativos" }
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "pg_database_size_bytes{datname!~\"template.*|postgres\"}", "legendFormat": "Tamanho (bytes)" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(pg_locks_count{datname!~\"template.*|postgres\"})", "legendFormat": "Locks ativos" }
       ]
     },
     {

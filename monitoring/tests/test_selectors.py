@@ -68,3 +68,29 @@ class TestGetExecucoesCarga:
         mock_model.objects.all.return_value = mock_qs
         get_execucoes_carga()
         mock_qs.order_by.assert_called_with("-iniciado_em")
+
+    @patch("monitoring.selectors.FatoExecucaoCarga")
+    def test_filters_by_tabela(self, mock_model, mock_qs):
+        mock_model.objects.all.return_value = mock_qs
+        get_execucoes_carga(tabela="materiais")
+        mock_qs.filter.assert_any_call(tabela="materiais")
+
+    @patch("monitoring.selectors.FatoExecucaoCarga")
+    def test_filters_by_fonte(self, mock_model, mock_qs):
+        mock_model.objects.all.return_value = mock_qs
+        get_execucoes_carga(fonte="csv_upload")
+        mock_qs.filter.assert_any_call(fonte="csv_upload")
+
+    @patch("monitoring.selectors.FatoExecucaoCarga")
+    def test_no_tabela_filter_skips_tabela(self, mock_model, mock_qs):
+        mock_model.objects.all.return_value = mock_qs
+        get_execucoes_carga(tabela=None)
+        calls = [str(c) for c in mock_qs.filter.call_args_list]
+        assert not any("tabela" in c for c in calls)
+
+    @patch("monitoring.selectors.FatoExecucaoCarga")
+    def test_no_fonte_filter_skips_fonte(self, mock_model, mock_qs):
+        mock_model.objects.all.return_value = mock_qs
+        get_execucoes_carga(fonte=None)
+        calls = [str(c) for c in mock_qs.filter.call_args_list]
+        assert not any("fonte" in c for c in calls)
