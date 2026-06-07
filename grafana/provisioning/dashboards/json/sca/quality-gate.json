@@ -5,7 +5,7 @@
   "tags": ["sca", "quality-gate"],
   "timezone": "browser",
   "schemaVersion": 38,
-  "version": 1,
+  "version": 2,
   "refresh": "1m",
   "panels": [
     {
@@ -16,11 +16,13 @@
       "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "rate(django_http_responses_total_by_status_total{job='sca_prod',status=~'5..'}[5m]) / rate(django_http_responses_total_by_status_total{job='sca_prod'}[5m]) * 100",
           "legendFormat": "prod",
           "refId": "A"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "rate(django_http_responses_total_by_status_total{job='sca_staging',status=~'5..'}[5m]) / rate(django_http_responses_total_by_status_total{job='sca_staging'}[5m]) * 100",
           "legendFormat": "staging",
           "refId": "B"
@@ -48,11 +50,13 @@
       "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket{job='sca_prod'}[5m])) * 1000",
           "legendFormat": "prod p95 ms",
           "refId": "A"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket{job='sca_staging'}[5m])) * 1000",
           "legendFormat": "staging p95 ms",
           "refId": "B"
@@ -80,6 +84,7 @@
       "gridPos": { "x": 0, "y": 8, "w": 6, "h": 6 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "avg_over_time(up{job='sca_prod'}[24h]) * 100",
           "refId": "A"
         }
@@ -107,6 +112,7 @@
       "gridPos": { "x": 6, "y": 8, "w": 6, "h": 6 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket{job='sca_prod'}[5m])) * 1000",
           "refId": "A"
         }
@@ -133,6 +139,7 @@
       "gridPos": { "x": 12, "y": 8, "w": 6, "h": 6 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "rate(django_http_responses_total_by_status_total{job='sca_prod',status=~'5..'}[5m]) / rate(django_http_responses_total_by_status_total{job='sca_prod'}[5m]) * 100",
           "refId": "A"
         }
@@ -160,6 +167,7 @@
       "gridPos": { "x": 18, "y": 8, "w": 6, "h": 6 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "100 - (avg(rate(node_cpu_seconds_total{mode='idle'}[5m])) * 100)",
           "refId": "A"
         }
@@ -186,6 +194,7 @@
       "gridPos": { "x": 0, "y": 14, "w": 24, "h": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "avg_over_time(histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket{job='sca_prod'}[1h]))[30d:1d]) * 1000",
           "legendFormat": "p95 diário — prod",
           "refId": "A"

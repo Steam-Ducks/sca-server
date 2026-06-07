@@ -5,7 +5,7 @@
   "tags": ["sca", "capacity"],
   "timezone": "browser",
   "schemaVersion": 38,
-  "version": 2,
+  "version": 3,
   "refresh": "1h",
   "templating": {
     "list": [
@@ -34,11 +34,13 @@
       "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "(1 - node_filesystem_avail_bytes{mountpoint='/'} / node_filesystem_size_bytes{mountpoint='/'}) * 100",
           "legendFormat": "uso atual %",
           "refId": "A"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "predict_linear(node_filesystem_avail_bytes{mountpoint='/'}[7d], 90 * 24 * 3600) / node_filesystem_size_bytes{mountpoint='/'} * -100 + 100",
           "legendFormat": "previsão 90 dias %",
           "refId": "B"
@@ -74,11 +76,13 @@
       "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
           "legendFormat": "uso atual %",
           "refId": "A"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "predict_linear(node_memory_MemAvailable_bytes[7d], 30 * 24 * 3600) / node_memory_MemTotal_bytes * -100 + 100",
           "legendFormat": "previsão 30 dias %",
           "refId": "B"
@@ -114,11 +118,13 @@
       "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "100 - (avg(rate(node_cpu_seconds_total{mode='idle'}[1h])) * 100)",
           "legendFormat": "uso atual %",
           "refId": "A"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "predict_linear((100 - avg(rate(node_cpu_seconds_total{mode='idle'}[1h])) * 100)[7d:1h], 30 * 24 * 3600)",
           "legendFormat": "previsão 30 dias %",
           "refId": "B"
@@ -155,6 +161,7 @@
       "gridPos": { "x": 0, "y": 16, "w": 8, "h": 6 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "(node_filesystem_avail_bytes{mountpoint='/'} - (node_filesystem_size_bytes{mountpoint='/'} * 0.15)) / abs(deriv(node_filesystem_avail_bytes{mountpoint='/'}[7d])) / 86400",
           "legendFormat": "dias restantes",
           "refId": "A"
@@ -182,6 +189,7 @@
       "gridPos": { "x": 8, "y": 16, "w": 8, "h": 6 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "(node_memory_MemAvailable_bytes - (node_memory_MemTotal_bytes * 0.10)) / abs(deriv(node_memory_MemAvailable_bytes[7d])) / 86400",
           "legendFormat": "dias restantes",
           "refId": "A"
@@ -210,6 +218,7 @@
       "gridPos": { "x": 16, "y": 16, "w": 8, "h": 6 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "predict_linear(rate(django_http_requests_total_by_method_total{job=\"$env\"}[1h])[7d:1h], 30 * 24 * 3600) / rate(django_http_requests_total_by_method_total{job=\"$env\"}[1h])",
           "legendFormat": "fator de crescimento 30d",
           "refId": "A"
