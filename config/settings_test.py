@@ -15,7 +15,6 @@ from config.settings import *  # noqa: F401,F403
 REST_FRAMEWORK = {  # noqa: F405
     **REST_FRAMEWORK,  # noqa: F405
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
 }
 
 CACHES = {
