@@ -5,7 +5,7 @@
   "tags": ["sca", "infra"],
   "timezone": "browser",
   "schemaVersion": 38,
-  "version": 1,
+  "version": 2,
   "refresh": "30s",
   "panels": [
     {
@@ -15,6 +15,7 @@
       "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "100 - (avg by (instance) (rate(node_cpu_seconds_total{mode='idle'}[5m])) * 100)",
           "legendFormat": "CPU %",
           "refId": "A"
@@ -41,6 +42,7 @@
       "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
           "legendFormat": "RAM %",
           "refId": "A"
@@ -67,6 +69,7 @@
       "gridPos": { "x": 0, "y": 8, "w": 8, "h": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "(1 - node_filesystem_avail_bytes{mountpoint='/'} / node_filesystem_size_bytes{mountpoint='/'}) * 100",
           "legendFormat": "disco %",
           "refId": "A"
@@ -95,11 +98,13 @@
       "gridPos": { "x": 8, "y": 8, "w": 16, "h": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "rate(node_network_receive_bytes_total{device!='lo'}[5m])",
           "legendFormat": "entrada — {{device}}",
           "refId": "A"
         },
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "rate(node_network_transmit_bytes_total{device!='lo'}[5m])",
           "legendFormat": "saída — {{device}}",
           "refId": "B"
@@ -116,6 +121,7 @@
       "gridPos": { "x": 0, "y": 16, "w": 8, "h": 6 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "node_memory_MemAvailable_bytes / 1024 / 1024 / 1024",
           "legendFormat": "GB livres",
           "refId": "A"
@@ -132,6 +138,7 @@
       "gridPos": { "x": 8, "y": 16, "w": 8, "h": 6 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "node_filesystem_avail_bytes{mountpoint='/'} / 1024 / 1024 / 1024",
           "legendFormat": "GB livres",
           "refId": "A"
@@ -148,6 +155,7 @@
       "gridPos": { "x": 16, "y": 16, "w": 8, "h": 6 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "node_time_seconds - node_boot_time_seconds",
           "legendFormat": "uptime",
           "refId": "A"

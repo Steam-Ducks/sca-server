@@ -5,7 +5,7 @@
   "tags": ["sca", "app"],
   "timezone": "browser",
   "schemaVersion": 38,
-  "version": 2,
+  "version": 3,
   "refresh": "30s",
   "templating": {
     "list": [
@@ -33,6 +33,7 @@
       "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "rate(django_http_requests_total_by_method_total{job=\"$env\"}[5m])",
           "legendFormat": "{{method}}",
           "refId": "A"
@@ -46,6 +47,7 @@
       "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket{job=\"$env\"}[5m])) * 1000",
           "legendFormat": "p95",
           "refId": "A"
@@ -72,6 +74,7 @@
       "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "rate(django_http_responses_total_by_status_total{job=\"$env\",status=~\"5..\"}[5m]) / rate(django_http_responses_total_by_status_total{job=\"$env\"}[5m]) * 100",
           "legendFormat": "erros 5xx %",
           "refId": "A"
@@ -98,6 +101,7 @@
       "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "rate(django_db_execute_total{job=\"$env\"}[5m])",
           "legendFormat": "{{vendor}}",
           "refId": "A"
@@ -111,6 +115,7 @@
       "gridPos": { "x": 0, "y": 16, "w": 8, "h": 6 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "rate(django_cache_hits_total{job=\"$env\"}[5m]) / (rate(django_cache_hits_total{job=\"$env\"}[5m]) + rate(django_cache_misses_total{job=\"$env\"}[5m])) * 100",
           "legendFormat": "hit rate %",
           "refId": "A"
@@ -137,6 +142,7 @@
       "gridPos": { "x": 8, "y": 16, "w": 8, "h": 6 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "sum by (status) (rate(django_http_responses_total_by_status_total{job=\"$env\"}[5m]))",
           "legendFormat": "{{status}}",
           "refId": "A"
@@ -150,6 +156,7 @@
       "gridPos": { "x": 16, "y": 16, "w": 8, "h": 6 },
       "targets": [
         {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
           "expr": "avg_over_time(up{job=\"$env\"}[24h]) * 100",
           "legendFormat": "uptime %",
           "refId": "A"

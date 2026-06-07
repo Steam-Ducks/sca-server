@@ -16,17 +16,23 @@ jobs:
     steps:
       - name: Deploy produção no VPS (DigitalOcean)
         uses: appleboy/ssh-action@v1.2.5
+        env:
+          GRAFANA_CLOUD_TOKEN: ${{ secrets.GRAFANA_CLOUD_TOKEN }}
         with:
           host: ${{ secrets.DO_DROPLET_IP }}
           username: ${{ secrets.DO_DEPLOY_USER }}
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
           port: ${{ secrets.SERVER_PORT }}
+          envs: GRAFANA_CLOUD_TOKEN
           script: |
             set -e
             cd /home/deploy/sca-server
 
             git checkout main
             git pull origin main
+
+            sed -i "s|GRAFANA_CLOUD_TOKEN_PLACEHOLDER|$GRAFANA_CLOUD_TOKEN|" prometheus/prometheus.yml
+            docker restart prometheus
 
             docker compose -f docker-compose.prod.yml up -d --build
 
