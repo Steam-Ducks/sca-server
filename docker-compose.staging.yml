@@ -1,0 +1,52 @@
+services:
+  backend:
+    build: .
+    container_name: sca_staging_backend
+    ports:
+      - "8001:8000"
+    env_file:
+      - .env.staging
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings_staging
+      - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_multiproc
+    command: >
+      sh -c "
+      mkdir -p /tmp/prometheus_multiproc &&
+      until pg_isready -h $$DB_HOST -p $$DB_PORT -U $$DB_USER; do
+        echo 'Aguardando PostgreSQL...';
+        sleep 1;
+      done &&
+      python manage.py migrate --noinput &&
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:8000
+      --worker-class gthread
+      --workers 2
+      --threads 4
+      --timeout 120
+      --max-requests 1000
+      --max-requests-jitter 100"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    depends_on:
+      - redis
+    networks:
+      - staging_net
+      - app_net     # permite que o Prometheus de prod scrape o /metrics do staging
+
+  redis:
+    image: redis:7-alpine
+    container_name: sca_staging_redis
+    restart: unless-stopped
+    networks:
+      - staging_net
+
+networks:
+  staging_net:
+    driver: bridge
+  app_net:
+    external: true
+    name: sca_app_net   # rede criada pelo docker-compose.prod.yml

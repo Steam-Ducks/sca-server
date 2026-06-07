@@ -1,4 +1,28 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: sca_redis
+    restart: always
+    networks:
+      - app_net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: always
+    depends_on:
+      - prometheus
+    networks:
+      - app_net
+
   backend:
     build: .
     container_name: backend_app
@@ -14,6 +38,19 @@ services:
     depends_on:
       prometheus:
         condition: service_started
+    environment:
+      - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_multiproc
+    command: >
+      sh -c "
+      mkdir -p /tmp/prometheus_multiproc &&
+      gunicorn config.wsgi:application
+      --bind 0.0.0.0:8000
+      --worker-class gthread
+      --workers 4
+      --threads 8
+      --timeout 120
+      --max-requests 1000
+      --max-requests-jitter 100"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')"]
       interval: 10s
@@ -34,6 +71,33 @@ services:
     networks:
       - app_net
 
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: sca_node_exporter
+    restart: always
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    networks:
+      - app_net
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: sca_alertmanager
+    restart: always
+    volumes:
+      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    networks:
+      - app_net
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -42,29 +106,14 @@ services:
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
+    entrypoint: ["/bin/sh", "/etc/prometheus/entrypoint.sh"]
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--config.file=/tmp/prometheus.runtime.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.enable-remote-write-receiver'
+    env_file:
+      - .env
     restart: always
-    networks:
-      - app_net
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3000}
-    restart: always
-    depends_on:
-      - prometheus
     networks:
       - app_net
 
@@ -75,3 +124,4 @@ volumes:
 networks:
   app_net:
     driver: bridge
+    name: sca_app_net   # nome fixo — evita prefixo do projeto e permite staging entrar na mesma rede

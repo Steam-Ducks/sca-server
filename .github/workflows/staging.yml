@@ -1,0 +1,106 @@
+name: Staging → Produção
+
+on:
+  push:
+    branches: [develop]   # roda após cada PR mergeado no develop
+
+jobs:
+
+  # ─── 1. Staging (porta 8001) ──────────────────────────────────────────────
+  # Faz o deploy do código de develop na porta 8001 e roda smoke tests.
+  deploy-staging:
+    name: Deploy staging (porta 8001)
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy staging no VPS
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.DO_DROPLET_IP }}
+          username: ${{ secrets.DO_DEPLOY_USER }}
+          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            set -e
+            docker network inspect sca_app_net >/dev/null 2>&1 || docker network create sca_app_net
+            cd /home/deploy/sca-server
+
+            git fetch origin
+            git checkout develop
+            git pull origin develop
+
+            docker compose -f docker-compose.staging.yml up -d --build
+
+            echo "Aguardando container sca_staging_backend ficar healthy..."
+            for i in $(seq 1 30); do
+              HEALTH=$(docker inspect --format='{{.State.Health.Status}}' sca_staging_backend 2>/dev/null || echo "unknown")
+              echo "  $i/30 — $HEALTH"
+              [ "$HEALTH" = "healthy" ] && echo "Staging OK" && exit 0
+              sleep 5
+            done
+            echo "Container não ficou healthy após 150s"
+            docker compose -f docker-compose.staging.yml logs --tail=50 backend
+            exit 1
+
+      - name: Smoke test contra staging
+        run: |
+          pip install httpx
+          python tests/smoke/smoke_test.py
+        env:
+          BASE_URL: http://${{ secrets.DO_DROPLET_IP }}:8001
+          AUTH_USERNAME: ${{ secrets.K6_AUTH_USERNAME }}
+          AUTH_PASSWORD: ${{ secrets.K6_AUTH_PASSWORD }}
+
+      - name: Step Summary
+        if: always()
+        run: |
+          echo "## Staging (porta 8001)" >> $GITHUB_STEP_SUMMARY
+          echo "| | |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| SHA | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | develop |" >> $GITHUB_STEP_SUMMARY
+
+  # ─── 2. Promoção para prod — requer aprovação manual ─────────────────────
+  # Após aprovação, faz o merge develop → main.
+  # O automatic-deploy.yml escuta esse push e faz o deploy no DigitalOcean.
+  promote-to-prod:
+    name: Merge develop → main (libera deploy prod)
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    environment: production   # configurar "Required reviewers" nesse environment
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Configurar git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge develop → main
+        run: |
+          git fetch origin develop
+          git merge origin/develop --no-edit
+          git push origin main
+
+      - name: Step Summary
+        if: always()
+        run: |
+          echo "## Merge develop → main" >> $GITHUB_STEP_SUMMARY
+          echo "| | |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| SHA | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Aprovado por | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Próximo passo | automatic-deploy.yml → prod |" >> $GITHUB_STEP_SUMMARY

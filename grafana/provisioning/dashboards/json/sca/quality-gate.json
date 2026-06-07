@@ -1,0 +1,199 @@
+{
+  "id": null,
+  "uid": "sca-quality-gate",
+  "title": "SCA — Quality Gate",
+  "tags": ["sca", "quality-gate"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "1m",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Error rate — staging vs prod",
+      "description": "Threshold: < 1%. Se staging > prod, bloquear promoção.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(django_http_responses_total_by_status_total{job='sca_prod',status=~'5..'}[5m]) / rate(django_http_responses_total_by_status_total{job='sca_prod'}[5m]) * 100",
+          "legendFormat": "prod",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(django_http_responses_total_by_status_total{job='sca_staging',status=~'5..'}[5m]) / rate(django_http_responses_total_by_status_total{job='sca_staging'}[5m]) * 100",
+          "legendFormat": "staging",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Latência p95 — staging vs prod",
+      "description": "Threshold: < 2000ms no CI. Staging deve ser similar à prod.",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket{job='sca_prod'}[5m])) * 1000",
+          "legendFormat": "prod p95 ms",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket{job='sca_staging'}[5m])) * 1000",
+          "legendFormat": "staging p95 ms",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 2000 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Uptime prod (últimas 24h)",
+      "description": "SLO: >= 99.5%",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 8, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "avg_over_time(up{job='sca_prod'}[24h]) * 100",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 99 },
+              { "color": "green", "value": 99.5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "p95 latência atual — prod",
+      "description": "< 500ms ideal, < 2000ms aceitável",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 8, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket{job='sca_prod'}[5m])) * 1000",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 500 },
+              { "color": "red", "value": 2000 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Error rate atual — prod",
+      "description": "Threshold: < 1%",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 8, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "rate(django_http_responses_total_by_status_total{job='sca_prod',status=~'5..'}[5m]) / rate(django_http_responses_total_by_status_total{job='sca_prod'}[5m]) * 100",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "CPU atual — VPS",
+      "description": "< 70% normal, < 90% aceitável",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 8, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode='idle'}[5m])) * 100)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Trend p95 latência — 30 dias (prod)",
+      "description": "Tendência de queda = melhoria contínua.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "expr": "avg_over_time(histogram_quantile(0.95, rate(django_http_requests_latency_seconds_bucket{job='sca_prod'}[1h]))[30d:1d]) * 1000",
+          "legendFormat": "p95 diário — prod",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ms" }
+      }
+    }
+  ]
+}

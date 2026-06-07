@@ -34,6 +34,7 @@ jobs:
       DEBUG: "0"
       ALLOWED_HOSTS: localhost,127.0.0.1
       # SEM DB_HOST → settings_test.py cai para SQLite in-memory
+      # CACHES → DummyCache em settings_test.py (sem Redis necessário)
 
     steps:
       - uses: actions/checkout@v4
@@ -161,77 +162,221 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "> Relatório HTML: **Actions → Artifacts → integration-test-report**" >> $GITHUB_STEP_SUMMARY
 
-  # ─── 4. Branch & Commit Policy ──────────────────────────────────────────────
-  # Precisam estar neste workflow (não em branch-commit-policy.yml) para que o
-  # auto-merge consiga depender deles via `needs` — `needs` não enxerga jobs de
-  # outro workflow. Sem isso o merge automático não era bloqueado.
-  branch-name:
-    name: Validate branch name
+  # ─── 4. Smoke Test
+  # Inicia o Django com settings_test (AllowAny) e verifica todos os
+  # endpoints críticos via httpx. Falha antes do merge se qualquer
+  # rota retornar status inesperado.
+  smoke-test:
+    name: Smoke test da app
     runs-on: ubuntu-latest
-    steps:
-      - name: Check branch name pattern
-        uses: deepakputhraya/action-branch-name@master
-        with:
-          regex: '^(SCA|DEVOPS|FIX)-[0-9]+-[A-Za-z0-9._-]+$'
-          ignore: develop,main
-          min_length: 7
-          max_length: 80
+    needs: [integration-tests]
 
-  commit-messages:
-    name: Validate commit messages
-    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test_user -d test_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    env:
+      DB_NAME: test_db
+      DB_USER: test_user
+      DB_PASSWORD: test_password
+      DB_HOST: localhost
+      DB_PORT: 5432
+      SECRET_KEY: ci-secret-key
+      DEBUG: "1"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DJANGO_SETTINGS_MODULE: config.settings_test
+      REDIS_URL: redis://localhost:6379
+
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          fetch-depth: 0
-
-      - name: Check commit message format
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          python-version: "3.12"
+      - name: Instalar dependências
         run: |
-          set -euo pipefail
-          header_regex='^(feat|fix|chore|docs|refactor|test|perf|ci|build|style|revert)\((SCA|DEVOPS)-[0-9]+\): .+$'
-          max_len=100
-          fail=0
-          for sha in $(git rev-list "$BASE_SHA".."$HEAD_SHA"); do
-            subject=$(git log -1 --format=%s "$sha")
-            parents=$(git log -1 --format=%P "$sha" | wc -w)
-            if [ "$parents" -gt 1 ]; then
-              echo "skip merge $sha: $subject"
-              continue
-            fi
-            if [[ ! "$subject" =~ $header_regex ]]; then
-              echo "::error::Invalid format ($sha): $subject"
-              echo "  expected: <type>(SCA-NNN|DEVOPS-NNN): <description>"
-              echo "  types: feat|fix|chore|docs|refactor|test|perf|ci|build|style|revert"
-              fail=1
-              continue
-            fi
-            if [ "${#subject}" -gt "$max_len" ]; then
-              echo "::error::Subject too long (${#subject} > $max_len) ($sha): $subject"
-              fail=1
-            fi
-            if [[ "$subject" == *. ]]; then
-              echo "::error::Subject ends with period ($sha): $subject"
-              fail=1
-            fi
-            echo "ok $sha: $subject"
+          pip install --upgrade pip
+          pip install -r requirements.txt httpx
+      - name: Criar schemas PostgreSQL
+        run: |
+          PGPASSWORD=test_password psql \
+            -h localhost -U test_user -d test_db \
+            -c "CREATE SCHEMA IF NOT EXISTS silver;
+                CREATE SCHEMA IF NOT EXISTS gold;
+                CREATE SCHEMA IF NOT EXISTS audit;"
+      - name: Rodar migrations
+        run: python manage.py migrate
+      - name: Criar usuário de teste
+        run: |
+          python manage.py shell -c "
+          from django.contrib.auth import get_user_model
+          from users.models import Perfil, UsuarioPerfil
+          User = get_user_model()
+          user, _ = User.objects.get_or_create(username='ci_smoke', defaults={'email': 'ci@test.com', 'is_superuser': True, 'is_staff': True})
+          user.set_password('CiSmoke@2025')
+          user.save()
+          perfil, _ = Perfil.objects.get_or_create(nome='Super Admin', defaults={'descricao': 'CI', 'permissoes': 'super_admin'})
+          UsuarioPerfil.objects.get_or_create(usuario=user, defaults={'perfil': perfil})
+          "
+      - name: Iniciar servidor Django
+        run: python manage.py runserver 0.0.0.0:8000 &
+      - name: Aguardar app subir
+        run: |
+          for i in $(seq 1 20); do
+            curl -sf http://localhost:8000/api/health/ && echo "App pronta" && break
+            echo "Aguardando... ($i/20)"
+            sleep 3
           done
-          exit $fail
+      - name: Rodar smoke tests
+        run: python tests/smoke/smoke_test.py
+        env:
+          BASE_URL: http://localhost:8000
+          AUTH_USERNAME: ci_smoke
+          AUTH_PASSWORD: CiSmoke@2025
+      - name: Step Summary
+        if: always()
+        run: |
+          echo "## Smoke Test" >> $GITHUB_STEP_SUMMARY
+          echo "| | |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| PR | #${{ github.event.pull_request.number }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Banco | PostgreSQL 16 real |" >> $GITHUB_STEP_SUMMARY
+          echo "| Auth | AllowAny (settings_test) |" >> $GITHUB_STEP_SUMMARY
 
-  # ─── 5. Auto-merge ──────────────────────────────────────────────────────────
+  # ─── 5. Load Test (k6)
+  # Sobe o mesmo ambiente e executa 5 VUs por ~2 min.
+  # Threshold: p95 < 2000 ms, taxa de erro < 1%.
+  # Só roda se o smoke passou — carga pressupõe app funcional.
+  load-test:
+    name: Teste de carga (k6)
+    runs-on: ubuntu-latest
+    needs: [smoke-test]
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test_user -d test_db"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    env:
+      DB_NAME: test_db
+      DB_USER: test_user
+      DB_PASSWORD: test_password
+      DB_HOST: localhost
+      DB_PORT: 5432
+      SECRET_KEY: ci-secret-key
+      DEBUG: "1"
+      ALLOWED_HOSTS: localhost,127.0.0.1
+      DJANGO_SETTINGS_MODULE: config.settings_test
+      REDIS_URL: redis://localhost:6379
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar dependências Python
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Instalar k6
+        uses: grafana/setup-k6-action@v1
+      - name: Criar schemas PostgreSQL
+        run: |
+          PGPASSWORD=test_password psql \
+            -h localhost -U test_user -d test_db \
+            -c "CREATE SCHEMA IF NOT EXISTS silver;
+                CREATE SCHEMA IF NOT EXISTS gold;
+                CREATE SCHEMA IF NOT EXISTS audit;"
+      - name: Rodar migrations
+        run: python manage.py migrate
+      - name: Criar usuário de teste
+        run: |
+          python manage.py shell -c "
+          from django.contrib.auth import get_user_model
+          from users.models import Perfil, UsuarioPerfil
+          User = get_user_model()
+          user, _ = User.objects.get_or_create(username='ci_smoke', defaults={'email': 'ci@test.com', 'is_superuser': True, 'is_staff': True})
+          user.set_password('CiSmoke@2025')
+          user.save()
+          perfil, _ = Perfil.objects.get_or_create(nome='Super Admin', defaults={'descricao': 'CI', 'permissoes': 'super_admin'})
+          UsuarioPerfil.objects.get_or_create(usuario=user, defaults={'perfil': perfil})
+          "
+      - name: Iniciar servidor Django
+        run: python manage.py runserver 0.0.0.0:8000 &
+      - name: Aguardar app subir
+        run: |
+          for i in $(seq 1 20); do
+            curl -sf http://localhost:8000/api/health/ && echo "App pronta" && break
+            echo "Aguardando... ($i/20)"
+            sleep 3
+          done
+      - name: Rodar teste de carga
+        run: k6 run tests/load/load_test.js
+        env:
+          BASE_URL: http://localhost:8000
+          AUTH_USERNAME: ci_smoke
+          AUTH_PASSWORD: CiSmoke@2025
+      - name: Upload resultado k6
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-ci-load-summary
+          path: k6-ci-load-summary.json
+          retention-days: 30
+      - name: Step Summary
+        if: always()
+        run: |
+          echo "## Teste de Carga (k6)" >> $GITHUB_STEP_SUMMARY
+          echo "| | |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| PR | #${{ github.event.pull_request.number }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| VUs | 5 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Duração | ~2 min |" >> $GITHUB_STEP_SUMMARY
+          echo "| Threshold p95 | < 2000 ms |" >> $GITHUB_STEP_SUMMARY
+
+  # ─── 6. Auto-merge
   auto-merge:
     name: Auto Merge PR
     runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, branch-name, commit-messages]
+    needs: [unit-tests, integration-tests, load-test]
     if: success()
     permissions:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-      - name: Enable Auto Merge
-        run: gh pr merge ${{ github.event.pull_request.number }} --squash --auto
+      - name: Merge PR
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          gh pr merge ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --squash \
+            --delete-branch

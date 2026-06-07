@@ -1,4 +1,13 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    restart: always
+    networks:
+      - app_net
+
   backend:
     build: .
     container_name: backend_app
@@ -12,14 +21,18 @@ services:
       - .env
     depends_on:
       - postgres
+      - redis
+    environment:
+      - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_multiproc
     command: >
       sh -c "
+      mkdir -p /tmp/prometheus_multiproc &&
       until pg_isready -h $$DB_HOST -p $$DB_PORT -U $$DB_USER; do
         echo 'Aguardando PostgreSQL...';
         sleep 1;
       done &&
       python manage.py migrate &&
-      python manage.py runserver 0.0.0.0:8000 --noreload
+      gunicorn config.wsgi:application --bind 0.0.0.0:8000 --worker-class gthread --workers 4 --threads 8 --timeout 120 --max-requests 1000 --max-requests-jitter 100
       "
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')"]
@@ -47,7 +60,7 @@ services:
     image: prometheuscommunity/postgres-exporter:latest
     container_name: postgres_exporter
     environment:
-      DATA_SOURCE_NAME: "postgresql://${DB_USER}:${DB_PASSWORD}@postgres:${DB_PORT:-5432}/${DB_NAME}?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?sslmode=disable"
     ports:
       - "9187:9187"
     depends_on:

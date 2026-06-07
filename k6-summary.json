@@ -1,0 +1,647 @@
+{
+  "metrics": {
+    "iteration_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 7498.7129,
+        "p(90)": 6857.63054,
+        "p(95)": 6928.762335,
+        "avg": 6554.937180000002,
+        "min": 5997.1697,
+        "med": 6504.9426
+      }
+    },
+    "http_req_connecting": {
+      "contains": "time",
+      "values": {
+        "med": 0,
+        "max": 153.2735,
+        "p(90)": 0,
+        "p(95)": 0,
+        "avg": 0.6037047034764826,
+        "min": 0
+      },
+      "type": "trend"
+    },
+    "http_req_waiting": {
+      "values": {
+        "avg": 195.1650100886166,
+        "min": 157.5129,
+        "med": 188.9256,
+        "max": 724.2309,
+        "p(90)": 222.33042000000003,
+        "p(95)": 237.91247
+      },
+      "type": "trend",
+      "contains": "time"
+    },
+    "http_req_duration{name:status}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 243.29685230769232,
+        "min": 204.3537,
+        "med": 233.1915,
+        "max": 350.2994,
+        "p(90)": 285.25886,
+        "p(95)": 308.8003
+      },
+      "thresholds": {
+        "p(95)<10000": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_tls_handshaking": {
+      "contains": "time",
+      "values": {
+        "avg": 0,
+        "min": 0,
+        "med": 0,
+        "max": 0,
+        "p(90)": 0,
+        "p(95)": 0
+      },
+      "type": "trend"
+    },
+    "vus": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "value": 5,
+        "min": 0,
+        "max": 5
+      }
+    },
+    "group_duration": {
+      "contains": "time",
+      "values": {
+        "avg": 659.0384468181825,
+        "min": 160.2824,
+        "med": 492.5762,
+        "max": 1520.9616,
+        "p(90)": 1154.05035,
+        "p(95)": 1195.49036
+      },
+      "type": "trend"
+    },
+    "http_req_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 243.70620000000005,
+        "avg": 198.3833359236539,
+        "min": 157.7785,
+        "med": 190.1383,
+        "max": 724.2309,
+        "p(90)": 226.37458
+      },
+      "thresholds": {
+        "p(95)<3000": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_receiving": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 4.558450000000001,
+        "avg": 0.7878892978868445,
+        "min": 0,
+        "med": 0,
+        "max": 12.0881,
+        "p(90)": 2.617060000000001
+      }
+    },
+    "vus_max": {
+      "values": {
+        "value": 5,
+        "min": 5,
+        "max": 5
+      },
+      "type": "gauge",
+      "contains": "default"
+    },
+    "checks": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 1,
+        "passes": 2934,
+        "fails": 0
+      }
+    },
+    "iterations": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 60,
+        "rate": 0.38447245402312114
+      }
+    },
+    "http_req_duration{expected_response:true}": {
+      "contains": "time",
+      "values": {
+        "p(95)": 243.70620000000005,
+        "avg": 198.3833359236539,
+        "min": 157.7785,
+        "med": 190.1383,
+        "max": 724.2309,
+        "p(90)": 226.37458
+      },
+      "type": "trend"
+    },
+    "http_req_blocked": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 2.2234609406952974,
+        "min": 0,
+        "med": 0,
+        "max": 161.3534,
+        "p(90)": 0,
+        "p(95)": 0
+      }
+    },
+    "http_req_failed": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0,
+        "passes": 0,
+        "fails": 1467
+      },
+      "thresholds": {
+        "rate<0.01": {
+          "ok": true
+        }
+      }
+    },
+    "data_received": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "rate": 3784.131681477167,
+        "count": 590544
+      }
+    },
+    "data_sent": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 564259,
+        "rate": 3615.7007072438714
+      }
+    },
+    "http_reqs": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 1467,
+        "rate": 9.40035150086531
+      }
+    },
+    "http_req_sending": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(90)": 0,
+        "p(95)": 0,
+        "avg": 2.430436537150648,
+        "min": 0,
+        "med": 0,
+        "max": 288.8117
+      }
+    }
+  },
+  "setup_data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzgwMDA4ODcwLCJpYXQiOjE3Nzk5ODAwNzAsImp0aSI6ImM1YTJiODIzMWIwNDQ4MjQ4MmM1YjA2MjhhNDQxNGM5IiwidXNlcl9pZCI6MX0.7HmkSOceEurLC9Xs0hMWiz4cTlZ2DYvIopW9Akvt-PY"
+  },
+  "root_group": {
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": [
+      {
+        "path": "::setup",
+        "id": "5c0f8025f7e0b6654089e5b00e950f1a",
+        "groups": [],
+        "checks": [
+            {
+              "path": "::setup::login retorna 200",
+              "id": "7532804b74fe8f73fd9dc1ce3f20382b",
+              "passes": 1,
+              "fails": 0,
+              "name": "login retorna 200"
+            },
+            {
+              "path": "::setup::login retorna token",
+              "id": "5adec0853c7df96571918db3ecd2d5b3",
+              "passes": 1,
+              "fails": 0,
+              "name": "login retorna token"
+            }
+          ],
+        "name": "setup"
+      },
+      {
+        "name": "health",
+        "path": "::health",
+        "id": "612cc1c9a7c3d7996d1eb6414fb9c69d",
+        "groups": [],
+        "checks": [
+            {
+              "name": "health: status 2xx",
+              "path": "::health::health: status 2xx",
+              "id": "3564f721fe16feb0f28fb25365f15c1b",
+              "passes": 65,
+              "fails": 0
+            },
+            {
+              "name": "health: tempo < 3s",
+              "path": "::health::health: tempo < 3s",
+              "id": "64685bce9d1818718db981be5dab3894",
+              "passes": 65,
+              "fails": 0
+            },
+            {
+              "id": "b414532fa14344c04ec890d8115c82cc",
+              "passes": 65,
+              "fails": 0,
+              "name": "status: status 2xx",
+              "path": "::health::status: status 2xx"
+            },
+            {
+              "passes": 65,
+              "fails": 0,
+              "name": "status: tempo < 3s",
+              "path": "::health::status: tempo < 3s",
+              "id": "fed8a96e8726b3e966bb8b4c3732be3f"
+            }
+          ]
+      },
+      {
+        "id": "4127c5b4ec4d84d8d6603b3aae632e90",
+        "groups": [],
+        "checks": [
+            {
+              "id": "961f320e8548db59a2d32a0be7be3e1f",
+              "passes": 65,
+              "fails": 0,
+              "name": "dashboard/kpis: status 2xx",
+              "path": "::dashboard::dashboard/kpis: status 2xx"
+            },
+            {
+              "name": "dashboard/kpis: tempo < 3s",
+              "path": "::dashboard::dashboard/kpis: tempo < 3s",
+              "id": "cbe6a0d763066b3143fd5168860d6363",
+              "passes": 65,
+              "fails": 0
+            },
+            {
+              "id": "e642ba7d0f7799a5943592b332a2b9a0",
+              "passes": 65,
+              "fails": 0,
+              "name": "dashboard/projects: status 2xx",
+              "path": "::dashboard::dashboard/projects: status 2xx"
+            },
+            {
+              "name": "dashboard/projects: tempo < 3s",
+              "path": "::dashboard::dashboard/projects: tempo < 3s",
+              "id": "323b505e3b1f7c9c33d341e042f91621",
+              "passes": 65,
+              "fails": 0
+            },
+            {
+              "fails": 0,
+              "name": "dashboard/summary: status 2xx",
+              "path": "::dashboard::dashboard/summary: status 2xx",
+              "id": "47ea7170c39ad5c9c0188927dbc53e87",
+              "passes": 65
+            },
+            {
+              "fails": 0,
+              "name": "dashboard/summary: tempo < 3s",
+              "path": "::dashboard::dashboard/summary: tempo < 3s",
+              "id": "e5b7ed0304713b9b87607488922cbffb",
+              "passes": 65
+            },
+            {
+              "id": "364412a02486693c2e79edffdaaa203c",
+              "passes": 65,
+              "fails": 0,
+              "name": "dashboard/composition: status 2xx",
+              "path": "::dashboard::dashboard/composition: status 2xx"
+            },
+            {
+              "name": "dashboard/composition: tempo < 3s",
+              "path": "::dashboard::dashboard/composition: tempo < 3s",
+              "id": "58df77d0f62a7d352bb28d3ce82ac835",
+              "passes": 65,
+              "fails": 0
+            },
+            {
+              "name": "dashboard/top-projects: status 2xx",
+              "path": "::dashboard::dashboard/top-projects: status 2xx",
+              "id": "f81c496b50a98d332939948ecb07545e",
+              "passes": 65,
+              "fails": 0
+            },
+            {
+              "name": "dashboard/top-projects: tempo < 3s",
+              "path": "::dashboard::dashboard/top-projects: tempo < 3s",
+              "id": "7c36e892f1ef45528d628a93e2a158a7",
+              "passes": 65,
+              "fails": 0
+            },
+            {
+              "name": "dashboard/cost-evolution: status 2xx",
+              "path": "::dashboard::dashboard/cost-evolution: status 2xx",
+              "id": "c778958499efa3f88047169d2f7d0a5f",
+              "passes": 64,
+              "fails": 0
+            },
+            {
+              "name": "dashboard/cost-evolution: tempo < 3s",
+              "path": "::dashboard::dashboard/cost-evolution: tempo < 3s",
+              "id": "2d45ff6c5731267bcb9414b6e553e724",
+              "passes": 64,
+              "fails": 0
+            }
+          ],
+        "name": "dashboard",
+        "path": "::dashboard"
+      },
+      {
+        "name": "materials",
+        "path": "::materials",
+        "id": "546b1cf95e01062f528c580e6f9db9a5",
+        "groups": [],
+        "checks": [
+            {
+              "name": "compras: status 2xx",
+              "path": "::materials::compras: status 2xx",
+              "id": "0c1a1fa0122b049b109a41ededc2916b",
+              "passes": 64,
+              "fails": 0
+            },
+            {
+              "name": "compras: tempo < 3s",
+              "path": "::materials::compras: tempo < 3s",
+              "id": "df10d4c7683bb85626a3774c3a1c3c22",
+              "passes": 64,
+              "fails": 0
+            },
+            {
+              "name": "compras/periodo: status 2xx",
+              "path": "::materials::compras/periodo: status 2xx",
+              "id": "026b1dbfedf84daf0cf273cae61192f4",
+              "passes": 64,
+              "fails": 0
+            },
+            {
+              "name": "compras/periodo: tempo < 3s",
+              "path": "::materials::compras/periodo: tempo < 3s",
+              "id": "84962016245d58bf7aeff5556013f16d",
+              "passes": 64,
+              "fails": 0
+            },
+            {
+              "name": "materials/indicators: status 2xx",
+              "path": "::materials::materials/indicators: status 2xx",
+              "id": "c12c01a47de86001e3264e2ec8418dfd",
+              "passes": 64,
+              "fails": 0
+            },
+            {
+              "id": "cf98bfd2122d87630730a5870d42561f",
+              "passes": 64,
+              "fails": 0,
+              "name": "materials/indicators: tempo < 3s",
+              "path": "::materials::materials/indicators: tempo < 3s"
+            },
+            {
+              "name": "top-materials: status 2xx",
+              "path": "::materials::top-materials: status 2xx",
+              "id": "804102b6c5baa0615db7464b7a1d7228",
+              "passes": 64,
+              "fails": 0
+            },
+            {
+              "id": "c2226096597dbbf736a21fd7469ce166",
+              "passes": 64,
+              "fails": 0,
+              "name": "top-materials: tempo < 3s",
+              "path": "::materials::top-materials: tempo < 3s"
+            },
+            {
+              "name": "cost-by-project: status 2xx",
+              "path": "::materials::cost-by-project: status 2xx",
+              "id": "af154cc17714454bfcf65d9c3e24f85c",
+              "passes": 64,
+              "fails": 0
+            },
+            {
+              "path": "::materials::cost-by-project: tempo < 3s",
+              "id": "e48f740167273a37ce36dc6dea94a87e",
+              "passes": 64,
+              "fails": 0,
+              "name": "cost-by-project: tempo < 3s"
+            },
+            {
+              "name": "materials/filter-options: status 2xx",
+              "path": "::materials::materials/filter-options: status 2xx",
+              "id": "5a505fcf438ac36031c2ab67dc80b53a",
+              "passes": 64,
+              "fails": 0
+            },
+            {
+              "fails": 0,
+              "name": "materials/filter-options: tempo < 3s",
+              "path": "::materials::materials/filter-options: tempo < 3s",
+              "id": "d18827bbef0fb3f98adb1375e1b86062",
+              "passes": 64
+            }
+          ]
+      },
+      {
+        "name": "technical-hours",
+        "path": "::technical-hours",
+        "id": "b120b7b92f18cc0548ac36d6eab065a5",
+        "groups": [],
+        "checks": [
+            {
+              "fails": 0,
+              "name": "horas-tecnicas: status 2xx",
+              "path": "::technical-hours::horas-tecnicas: status 2xx",
+              "id": "9a2c9812555e652e8a0ccbfe22779339",
+              "passes": 64
+            },
+            {
+              "name": "horas-tecnicas: tempo < 3s",
+              "path": "::technical-hours::horas-tecnicas: tempo < 3s",
+              "id": "9782ffdf9647de2cb2c4e31aba8bab90",
+              "passes": 64,
+              "fails": 0
+            },
+            {
+              "name": "horas-tecnicas/periodo: status 2xx",
+              "path": "::technical-hours::horas-tecnicas/periodo: status 2xx",
+              "id": "7364e453149660934b3da22382272ae8",
+              "passes": 64,
+              "fails": 0
+            },
+            {
+              "name": "horas-tecnicas/periodo: tempo < 3s",
+              "path": "::technical-hours::horas-tecnicas/periodo: tempo < 3s",
+              "id": "775cf42f32c06b46017e06e7719589b7",
+              "passes": 64,
+              "fails": 0
+            },
+            {
+              "name": "horas-tecnicas/kpis: status 2xx",
+              "path": "::technical-hours::horas-tecnicas/kpis: status 2xx",
+              "id": "883244a7d47d81414ac9c28cfe70838d",
+              "passes": 64,
+              "fails": 0
+            },
+            {
+              "fails": 0,
+              "name": "horas-tecnicas/kpis: tempo < 3s",
+              "path": "::technical-hours::horas-tecnicas/kpis: tempo < 3s",
+              "id": "b3964ff5d9168cd1635a741d86c016d3",
+              "passes": 64
+            },
+            {
+              "path": "::technical-hours::horas-tecnicas/temporal: status 2xx",
+              "id": "3827cdffe9ee3f97a3af77bf46f02116",
+              "passes": 63,
+              "fails": 0,
+              "name": "horas-tecnicas/temporal: status 2xx"
+            },
+            {
+              "name": "horas-tecnicas/temporal: tempo < 3s",
+              "path": "::technical-hours::horas-tecnicas/temporal: tempo < 3s",
+              "id": "f2f9e0992636bea01fe759031990563f",
+              "passes": 63,
+              "fails": 0
+            }
+          ]
+      },
+      {
+        "name": "budget",
+        "path": "::budget",
+        "id": "3123a55fc3c2ced3629b946ad4101da3",
+        "groups": [],
+        "checks": [
+            {
+              "fails": 0,
+              "name": "budget: status 2xx",
+              "path": "::budget::budget: status 2xx",
+              "id": "48504e76d6571defbba68b8514b8e4bb",
+              "passes": 63
+            },
+            {
+              "path": "::budget::budget: tempo < 3s",
+              "id": "c73ec38c56ce276ec96a14584f91b643",
+              "passes": 63,
+              "fails": 0,
+              "name": "budget: tempo < 3s"
+            },
+            {
+              "path": "::budget::budget/indicators: status 2xx",
+              "id": "f1e979a54accf80372691d54bee540df",
+              "passes": 62,
+              "fails": 0,
+              "name": "budget/indicators: status 2xx"
+            },
+            {
+              "passes": 62,
+              "fails": 0,
+              "name": "budget/indicators: tempo < 3s",
+              "path": "::budget::budget/indicators: tempo < 3s",
+              "id": "1c850cc9d658d56788fd5b8fcc912ff4"
+            }
+          ]
+      },
+      {
+        "path": "::costs",
+        "id": "afb5c1edb6a9f72b2fddcb125293d2de",
+        "groups": [],
+        "checks": [
+            {
+              "fails": 0,
+              "name": "costs: status 2xx",
+              "path": "::costs::costs: status 2xx",
+              "id": "536ba37503dbf9ef2a03c4ff8e252c86",
+              "passes": 61
+            },
+            {
+              "fails": 0,
+              "name": "costs: tempo < 3s",
+              "path": "::costs::costs: tempo < 3s",
+              "id": "2c36c55bbb2d6372d956ced86d42624d",
+              "passes": 61
+            }
+          ],
+        "name": "costs"
+      },
+      {
+        "name": "consolidated",
+        "path": "::consolidated",
+        "id": "2a66f60d7339b7656fa5759223a41db8",
+        "groups": [],
+        "checks": [
+            {
+              "passes": 61,
+              "fails": 0,
+              "name": "consolidated: status 2xx",
+              "path": "::consolidated::consolidated: status 2xx",
+              "id": "40e2760cc2d6868894a6b833f3f7d4f8"
+            },
+            {
+              "name": "consolidated: tempo < 3s",
+              "path": "::consolidated::consolidated: tempo < 3s",
+              "id": "727c09a5325710e52bad7b712ddd79b5",
+              "passes": 61,
+              "fails": 0
+            },
+            {
+              "fails": 0,
+              "name": "consolidated/periodo: status 2xx",
+              "path": "::consolidated::consolidated/periodo: status 2xx",
+              "id": "5c464e891c0581aa5f1411cee4a64adf",
+              "passes": 61
+            },
+            {
+              "id": "c7c11b484cc52f00612292ee20218a4f",
+              "passes": 61,
+              "fails": 0,
+              "name": "consolidated/periodo: tempo < 3s",
+              "path": "::consolidated::consolidated/periodo: tempo < 3s"
+            }
+          ]
+      }
+    ],
+    "checks": []
+  },
+  "options": {
+    "summaryTrendStats": [
+      "avg",
+      "min",
+      "med",
+      "max",
+      "p(90)",
+      "p(95)"
+    ],
+    "summaryTimeUnit": "",
+    "noColor": false
+  },
+  "state": {
+    "isStdOutTTY": true,
+    "isStdErrTTY": true,
+    "testRunDurationMs": 156057.9942
+  }
+}
