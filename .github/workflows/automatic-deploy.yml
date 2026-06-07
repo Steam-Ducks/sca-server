@@ -18,12 +18,13 @@ jobs:
         uses: appleboy/ssh-action@v1.2.5
         env:
           GRAFANA_CLOUD_TOKEN: ${{ secrets.GRAFANA_CLOUD_TOKEN }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         with:
           host: ${{ secrets.DO_DROPLET_IP }}
           username: ${{ secrets.DO_DEPLOY_USER }}
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-          envs: GRAFANA_CLOUD_TOKEN
+          envs: GRAFANA_CLOUD_TOKEN,GMAIL_APP_PASSWORD
           script: |
             set -e
             cd /home/deploy/sca-server
@@ -32,7 +33,8 @@ jobs:
             git pull origin main
 
             sed -i "s|GRAFANA_CLOUD_TOKEN_PLACEHOLDER|$GRAFANA_CLOUD_TOKEN|" prometheus/prometheus.yml
-            docker restart prometheus
+            sed -i "s|GMAIL_APP_PASSWORD_PLACEHOLDER|$GMAIL_APP_PASSWORD|" prometheus/alertmanager.yml
+            docker restart prometheus alertmanager
 
             docker compose -f docker-compose.prod.yml up -d --build
 
