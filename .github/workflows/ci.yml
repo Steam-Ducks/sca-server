@@ -224,9 +224,13 @@ jobs:
         run: |
           python manage.py shell -c "
           from django.contrib.auth import get_user_model
+          from users.models import Perfil, UsuarioPerfil
           User = get_user_model()
-          if not User.objects.filter(username='ci_smoke').exists():
-              User.objects.create_superuser('ci_smoke', 'ci@test.com', 'CiSmoke@2025')
+          user, _ = User.objects.get_or_create(username='ci_smoke', defaults={'email': 'ci@test.com', 'is_superuser': True, 'is_staff': True})
+          user.set_password('CiSmoke@2025')
+          user.save()
+          perfil, _ = Perfil.objects.get_or_create(nome='Super Admin', defaults={'descricao': 'CI', 'permissoes': 'super_admin'})
+          UsuarioPerfil.objects.get_or_create(usuario=user, defaults={'perfil': perfil})
           "
       - name: Iniciar servidor Django
         run: python manage.py runserver 0.0.0.0:8000 &
@@ -325,9 +329,13 @@ jobs:
         run: |
           python manage.py shell -c "
           from django.contrib.auth import get_user_model
+          from users.models import Perfil, UsuarioPerfil
           User = get_user_model()
-          if not User.objects.filter(username='ci_smoke').exists():
-              User.objects.create_superuser('ci_smoke', 'ci@test.com', 'CiSmoke@2025')
+          user, _ = User.objects.get_or_create(username='ci_smoke', defaults={'email': 'ci@test.com', 'is_superuser': True, 'is_staff': True})
+          user.set_password('CiSmoke@2025')
+          user.save()
+          perfil, _ = Perfil.objects.get_or_create(nome='Super Admin', defaults={'descricao': 'CI', 'permissoes': 'super_admin'})
+          UsuarioPerfil.objects.get_or_create(usuario=user, defaults={'perfil': perfil})
           "
       - name: Iniciar servidor Django
         run: python manage.py runserver 0.0.0.0:8000 &
