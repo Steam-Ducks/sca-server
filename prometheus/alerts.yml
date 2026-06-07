@@ -1,0 +1,75 @@
+groups:
+
+  - name: sca_capacity
+    rules:
+
+      - alert: DiscoEnchendoEm30Dias
+        expr: predict_linear(node_filesystem_avail_bytes{mountpoint='/'}[7d], 30 * 24 * 3600) < 0
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disco vai encher em menos de 30 dias"
+          description: "No ritmo atual o disco de {{ $labels.instance }} vai encher em menos de 30 dias."
+
+      - alert: DiscoEnchendoEm7Dias
+        expr: predict_linear(node_filesystem_avail_bytes{mountpoint='/'}[3d], 7 * 24 * 3600) < 0
+        for: 30m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CRÍTICO — disco vai encher em menos de 7 dias"
+          description: "Ação imediata necessária em {{ $labels.instance }}."
+
+      - alert: RAMAltaContínua
+        expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 > 85
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RAM acima de 85% por 15 minutos"
+          description: "RAM em {{ $value | humanize }}% em {{ $labels.instance }}."
+
+      - alert: CPUAltaContínua
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode='idle'}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU acima de 80% por 10 minutos"
+          description: "CPU em {{ $value | humanize }}% em {{ $labels.instance }}."
+
+  - name: sca_app
+    rules:
+
+      - alert: ErrorRateAlto
+        expr: |
+          rate(django_http_responses_total_by_status_total{job='sca_prod',status=~'5..'}[5m])
+          / rate(django_http_responses_total_by_status_total{job='sca_prod'}[5m]) * 100 > 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Error rate acima de 1% em produção"
+          description: "Error rate em {{ $value | humanize }}% nos últimos 5 minutos."
+
+      - alert: LatenciaAltaP95
+        expr: |
+          histogram_quantile(0.95,
+            rate(django_http_requests_latency_seconds_bucket{job='sca_prod'}[5m])
+          ) * 1000 > 2000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latência p95 acima de 2000ms em produção"
+          description: "p95 em {{ $value | humanize }}ms."
+
+      - alert: AppForaDoAr
+        expr: up{job='sca_prod'} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Aplicação de produção fora do ar"
+          description: "O job sca_prod está down há mais de 1 minuto."

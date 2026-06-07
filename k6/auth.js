@@ -9,8 +9,7 @@ export function login() {
   const password = __ENV.K6_AUTH_PASSWORD;
 
   if (!username || !password) {
-    console.warn('[auth] Credenciais não fornecidas, executando sem autenticação');
-    return null;
+    throw new Error('[auth] K6_AUTH_USERNAME e K6_AUTH_PASSWORD são obrigatórios');
   }
 
   const res = http.post(
@@ -22,7 +21,7 @@ export function login() {
     }
   );
 
-  const ok = check(res, {
+  check(res, {
     'login retorna 200': (r) => r.status === 200,
     'login retorna token': (r) => {
       try {
@@ -34,13 +33,18 @@ export function login() {
     },
   });
 
-  if (!ok) {
-    console.warn(`[auth] Login falhou (status ${res.status}), continuando sem autenticação`);
-    return null;
+  if (res.status !== 200) {
+    throw new Error(`[auth] Login falhou com status ${res.status}: ${res.body}`);
   }
 
   const body = JSON.parse(res.body);
-  return body.access || body.token;
+  const token = body.access || body.token;
+
+  if (!token) {
+    throw new Error('[auth] Login retornou 200 mas sem token na resposta');
+  }
+
+  return token;
 }
 
 export function authHeaders(token) {

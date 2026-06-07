@@ -1,0 +1,67 @@
+name: sync-dashboards
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'grafana/provisioning/dashboards/json/**'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sca-server
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync dashboards to Grafana Cloud
+        env:
+          GRAFANA_URL: ${{ secrets.GRAFANA_CLOUD_URL }}
+          GRAFANA_TOKEN: ${{ secrets.GRAFANA_CLOUD_SA_TOKEN }}
+        run: |
+          set -e
+
+          # Busca o UID do data source Prometheus gerenciado pelo Grafana Cloud
+          DS_UID="grafanacloud-prom"
+
+          echo "Data source UID: $DS_UID"
+
+          sync_dashboard() {
+            local file=$1
+            local folder_title=$2
+
+            # Cria a pasta se não existir e pega o UID
+            folder_uid=$(curl -sf \
+              -H "Authorization: Bearer $GRAFANA_TOKEN" \
+              "$GRAFANA_URL/api/folders" | \
+              jq -r --arg t "$folder_title" '.[] | select(.title==$t) | .uid')
+
+            if [ -z "$folder_uid" ]; then
+              echo "Criando pasta: $folder_title"
+              folder_uid=$(curl -sf -X POST \
+                -H "Authorization: Bearer $GRAFANA_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d "{\"title\":\"$folder_title\"}" \
+                "$GRAFANA_URL/api/folders" | jq -r '.uid')
+            fi
+
+            echo "Sincronizando $file → pasta '$folder_title' ($folder_uid)"
+
+            # Substitui o UID do data source e envia o dashboard
+            dashboard=$(jq --arg uid "$DS_UID" \
+              'walk(if type == "object" and has("uid") and .uid == "prometheus" then .uid = $uid else . end)' \
+              "$file")
+
+            curl -sf -X POST \
+              -H "Authorization: Bearer $GRAFANA_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"dashboard\": $dashboard, \"folderUid\": \"$folder_uid\", \"overwrite\": true}" \
+              "$GRAFANA_URL/api/dashboards/db" | jq '.status'
+          }
+
+          sync_dashboard grafana/provisioning/dashboards/json/sca/sca-overview.json "SCA Overview"
+          sync_dashboard grafana/provisioning/dashboards/json/k6/k6-results.json "K6"
+          sync_dashboard grafana/provisioning/dashboards/json/k6/k6-scenarios.json "K6"

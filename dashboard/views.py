@@ -1,4 +1,5 @@
 # dashboard/views.py
+from django.core.cache import cache
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -20,6 +21,15 @@ from dashboard.serializers import (
     TopProjectSerializer,
     CostEvolutionSerializer,
 )
+
+_CACHE_TTL = 300
+
+
+def _ck(prefix, params=None, **kwargs):
+    parts = sorted((params or {}).items())
+    extra = sorted(kwargs.items())
+    suffix = "&".join(f"{k}={v}" for k, v in parts + extra if v)
+    return f"{prefix}:{suffix}" if suffix else prefix
 
 
 def _normalize_dashboard_filters(query_params):
@@ -50,9 +60,14 @@ class DashboardKPIsView(APIView):
     permission_classes = [CanAccessDashboard]
 
     def get(self, request):
+        key = _ck("dashboard_kpis", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
         kpis = get_dashboard_kpis(_normalize_dashboard_filters(request.query_params))
-        serializer = DashboardKPIsSerializer(kpis)
-        return Response(serializer.data)
+        data = DashboardKPIsSerializer(kpis).data
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)
 
 
 class MainDashboardView(APIView):
@@ -69,11 +84,16 @@ class MainDashboardView(APIView):
     permission_classes = [CanAccessDashboard]
 
     def get(self, request):
+        key = _ck("main_dashboard", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
         start_date = request.query_params.get("start_date")
         end_date = request.query_params.get("end_date")
         qs = get_projects_by_period(start_date, end_date)
-        serializer = MainDashboardSerializer(qs, many=True)
-        return Response(serializer.data)
+        data = MainDashboardSerializer(qs, many=True).data
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)
 
 
 class SummaryTableView(APIView):
@@ -93,9 +113,14 @@ class SummaryTableView(APIView):
     permission_classes = [CanAccessDashboard]
 
     def get(self, request):
+        key = _ck("summary_table", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
         rows = get_program_summary(_normalize_dashboard_filters(request.query_params))
-        serializer = ProgramSummarySerializer(rows, many=True)
-        return Response(serializer.data)
+        data = ProgramSummarySerializer(rows, many=True).data
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)
 
 
 class CostCompositionView(APIView):
@@ -115,9 +140,16 @@ class CostCompositionView(APIView):
     permission_classes = [CanAccessDashboard]
 
     def get(self, request):
-        data = get_cost_composition(_normalize_dashboard_filters(request.query_params))
-        serializer = CostCompositionSerializer(data)
-        return Response(serializer.data)
+        key = _ck("cost_composition", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+        composition = get_cost_composition(
+            _normalize_dashboard_filters(request.query_params)
+        )
+        data = CostCompositionSerializer(composition).data
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)
 
 
 class TopProjectsView(APIView):
@@ -138,11 +170,16 @@ class TopProjectsView(APIView):
     permission_classes = [CanAccessDashboard]
 
     def get(self, request):
+        key = _ck("top_projects", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
         rows = get_top_projects_by_cost(
             _normalize_dashboard_filters(request.query_params)
         )
-        serializer = TopProjectSerializer(rows, many=True)
-        return Response(serializer.data)
+        data = TopProjectSerializer(rows, many=True).data
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)
 
 
 class CostEvolutionView(APIView):
@@ -163,6 +200,11 @@ class CostEvolutionView(APIView):
     permission_classes = [CanAccessDashboard]
 
     def get(self, request):
+        key = _ck("cost_evolution", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
         rows = get_cost_evolution(request.query_params)
-        serializer = CostEvolutionSerializer(rows, many=True)
-        return Response(serializer.data)
+        data = CostEvolutionSerializer(rows, many=True).data
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)

@@ -1,0 +1,125 @@
+{
+  "title": "K6 — Resultados dos Testes",
+  "uid": "K6-results",
+  "schemaVersion": 38,
+  "version": 6,
+  "refresh": false,
+  "graphTooltip": 1,
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "scenario",
+        "label": "Cenário",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+        "query": "label_values(k6_http_reqs_total, scenario)",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Usuários — pico",
+      "description": "Máximo de usuários virtuais simultâneos durante o teste",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
+      "options": { "reduceOptions": { "calcs": ["max"] }, "colorMode": "background", "textMode": "value_and_name", "orientation": "vertical" },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "blue" }, "unit": "short" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "max by (scenario) (k6_vus{scenario=~\"$scenario\"})", "legendFormat": "{{scenario}}" }]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Taxa de erro — pior momento",
+      "description": "Verde: < 1% (passou). Vermelho: sistema não aguentou",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 5 },
+      "options": { "reduceOptions": { "calcs": ["max"] }, "colorMode": "background", "textMode": "value_and_name", "orientation": "vertical" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 0.01, "color": "orange" }, { "value": 0.05, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "rate(k6_http_req_failed_total{scenario=~\"$scenario\"}[2m]) / rate(k6_http_reqs_total{scenario=~\"$scenario\"}[2m])", "legendFormat": "{{scenario}}" }]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Latência — pior p95",
+      "description": "95% das requisições responderam abaixo deste tempo no pior momento",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 5 },
+      "options": { "reduceOptions": { "calcs": ["max"] }, "colorMode": "background", "textMode": "value_and_name", "orientation": "vertical" },
+      "fieldConfig": { "defaults": { "unit": "ms", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 2000, "color": "orange" }, { "value": 5000, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "k6_http_req_duration_p95{scenario=~\"$scenario\"}", "legendFormat": "{{scenario}}" }]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Requisições totais",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 5 },
+      "options": { "reduceOptions": { "calcs": ["max"] }, "colorMode": "value", "textMode": "value_and_name", "orientation": "vertical" },
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "max by (scenario) (k6_http_reqs_total{scenario=~\"$scenario\"})", "legendFormat": "{{scenario}}" }]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Usuários vs taxa de erro — ponto de ruptura",
+      "description": "O momento em que a linha vermelha sobe enquanto a azul cresce é onde o sistema parou de aguentar",
+      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 10 },
+      "fieldConfig": {
+        "defaults": { "fillOpacity": 8, "lineWidth": 2 },
+        "overrides": [
+          {
+            "matcher": { "id": "byRegexp", "options": "Usuários.*" },
+            "properties": [
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } },
+              { "id": "unit", "value": "short" }
+            ]
+          },
+          {
+            "matcher": { "id": "byRegexp", "options": "Taxa de erro.*" },
+            "properties": [
+              { "id": "unit", "value": "percentunit" },
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["max", "mean"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "k6_vus{scenario=~\"$scenario\"}", "legendFormat": "Usuários — {{scenario}}" },
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "rate(k6_http_req_failed_total{scenario=~\"$scenario\"}[2m]) / rate(k6_http_reqs_total{scenario=~\"$scenario\"}[2m])", "legendFormat": "Taxa de erro — {{scenario}}" }
+      ]
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Latência ao longo do teste",
+      "description": "Linhas estáveis = sistema sustenta a carga. Subida = degradação de performance",
+      "gridPos": { "x": 0, "y": 15, "w": 12, "h": 9 },
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "fillOpacity": 8, "lineWidth": 2 },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "Mediana.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "95%.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["max", "mean"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "k6_http_req_duration_p50{scenario=~\"$scenario\"}", "legendFormat": "Mediana — {{scenario}}" },
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "k6_http_req_duration_p95{scenario=~\"$scenario\"}", "legendFormat": "95% — {{scenario}}" }
+      ]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Endpoints mais lentos — p95",
+      "description": "Endpoints que crescem mais rápido com o aumento de usuários são os gargalos do sistema",
+      "gridPos": { "x": 12, "y": 15, "w": 12, "h": 9 },
+      "fieldConfig": { "defaults": { "unit": "ms", "fillOpacity": 6, "lineWidth": 2 } },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["max", "mean"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "k6_http_req_duration_p95{scenario=~\"$scenario\", name!=\"\"}", "legendFormat": "{{name}}" }
+      ]
+    }
+  ]
+}

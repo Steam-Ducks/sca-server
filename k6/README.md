@@ -67,9 +67,22 @@ K6_BASE_URL=https://api.seudominio.com k6 run scenarios/soak.js
 
 ---
 
-## Enviando métricas para o Prometheus
+## Enviando métricas para o Grafana Cloud
 
-O Prometheus já está configurado com `--web.enable-remote-write-receiver`. Adicione `--out experimental-prometheus-rw` ao comando:
+Aponte o remote write direto para o Grafana Cloud para que os resultados apareçam em `mariinetic.grafana.net`:
+
+```bash
+K6_BASE_URL=https://api.seudominio.com \
+  K6_PROMETHEUS_RW_SERVER_URL=https://prometheus-prod-40-prod-sa-east-1.grafana.net/api/prom/push \
+  K6_PROMETHEUS_RW_USERNAME=3046984 \
+  K6_PROMETHEUS_RW_PASSWORD=<GF_CLOUD_METRICS_API_KEY> \
+  K6_PROMETHEUS_RW_TREND_STATS="p(50),p(95),p(99),max" \
+  k6 run --out experimental-prometheus-rw scenarios/smoke.js
+```
+
+### Local (sem Grafana Cloud)
+
+Se quiser ver no Grafana local (`http://localhost:3000`), use o Prometheus local:
 
 ```bash
 K6_BASE_URL=https://api.seudominio.com \
@@ -77,8 +90,6 @@ K6_BASE_URL=https://api.seudominio.com \
   K6_PROMETHEUS_RW_TREND_STATS="p(50),p(95),p(99),max" \
   k6 run --out experimental-prometheus-rw scenarios/smoke.js
 ```
-
-As métricas ficarão disponíveis no Grafana em `http://localhost:3000` sob o prefixo `k6_`.
 
 ### Métricas principais do k6 no Grafana
 
