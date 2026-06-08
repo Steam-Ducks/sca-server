@@ -80,6 +80,25 @@ jobs:
           K6_PROMETHEUS_RW_PASSWORD: ${{ secrets.GRAFANA_CLOUD_TOKEN }}
           K6_PROMETHEUS_RW_PUSH_INTERVAL: 5s
 
+      - name: Notificar PR do deploy no staging
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          PR_NUMBER=$(gh api repos/${{ github.repository }}/commits/${{ github.sha }}/pulls \
+            --jq '.[0].number // empty' 2>/dev/null || true)
+          if [ -n "$PR_NUMBER" ]; then
+            if [ "${{ job.status }}" = "success" ]; then
+              gh pr comment $PR_NUMBER --repo ${{ github.repository }} \
+                --body "✅ **Deploy no staging concluído!**
+          - SHA: \`${{ github.sha }}\`
+          - Ambiente: http://${{ secrets.DO_DROPLET_IP }}:8001"
+            else
+              gh pr comment $PR_NUMBER --repo ${{ github.repository }} \
+                --body "❌ **Deploy no staging falhou.** Veja os logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            fi
+          fi
+
       - name: Step Summary
         if: always()
         run: |

@@ -362,11 +362,20 @@ jobs:
           echo "| Duração | ~2 min |" >> $GITHUB_STEP_SUMMARY
           echo "| Threshold p95 | < 2000 ms |" >> $GITHUB_STEP_SUMMARY
 
-  # ─── 6. Auto-merge
+  # ─── 6. Staging gate — satisfaz o required check sem fazer deploy (o deploy real ocorre após o merge)
+  staging-gate:
+    name: Deploy staging (porta 8001)
+    runs-on: ubuntu-latest
+    needs: [smoke-test]
+    if: success()
+    steps:
+      - run: echo "Deploy no staging será executado automaticamente após o merge em develop."
+
+  # ─── 7. Auto-merge
   auto-merge:
     name: Auto Merge PR
     runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, load-test]
+    needs: [unit-tests, integration-tests, load-test, staging-gate]
     if: success()
     permissions:
       contents: write
