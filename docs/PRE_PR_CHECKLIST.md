@@ -36,7 +36,19 @@ git diff --check
 Importante: se `Lint & Format` falhar no CI, os jobs dependentes podem aparecer como
 `skipped`. Corrija primeiro o lint/formatacao e faca novo push.
 
-## 2. Testes unitarios
+## 2. Auto merge
+
+O job `CI - Feature Branch / Auto Merge PR` precisa respeitar as politicas da
+branch base. Use `gh pr merge --auto` no workflow para deixar o GitHub concluir
+o merge somente depois que todos os requisitos obrigatorios forem satisfeitos.
+
+Sem `--auto`, o GitHub CLI pode falhar com:
+
+```text
+the base branch policy prohibits the merge
+```
+
+## 3. Testes unitarios
 
 O job de unit tests roda a suite sem testes de integracao:
 
@@ -47,7 +59,7 @@ O job de unit tests roda a suite sem testes de integracao:
 Quando a mudanca for pequena, rode tambem os testes diretamente relacionados ao
 modulo alterado antes da suite completa.
 
-## 3. Testes de integracao
+## 4. Testes de integracao
 
 O CI roda os testes de integracao com PostgreSQL real e os schemas `silver`,
 `gold` e `audit`.
@@ -66,7 +78,7 @@ export DB_PASSWORD=test_password
 ./venv/bin/python -m pytest -m integration --reuse-db -v
 ```
 
-## 4. Checks de banco
+## 5. Checks de banco
 
 Antes de PRs com migrations ou alteracoes em models, rode:
 
@@ -77,7 +89,7 @@ Antes de PRs com migrations ou alteracoes em models, rode:
 ./venv/bin/python scripts/check_db_compatibility.py
 ```
 
-## 5. Smoke e carga
+## 6. Smoke e carga
 
 O CI tambem sobe a aplicacao e roda:
 
@@ -90,7 +102,7 @@ Esses checks exigem app, banco e variaveis de ambiente preparados. Rode
 localmente quando a mudanca tocar rotas, autenticacao, configuracao, performance
 ou comportamento de ponta a ponta.
 
-## 6. Antes do commit final
+## 7. Antes do commit final
 
 Checklist curta:
 
