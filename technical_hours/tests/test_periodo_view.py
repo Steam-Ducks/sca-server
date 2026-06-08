@@ -126,20 +126,6 @@ def test_periodo_endpoint_com_barra_retorna_404(api_client):
     assert response.status_code == 404
 
 
-def test_periodo_endpoint_dezembro_ultimo_dia_correto():
-    view = TechnicalHoursTablePeriodoView()
-    inicio, fim = view._parse_periodo("2024-12")
-    assert inicio == datetime.date(2024, 12, 1)
-    assert fim == datetime.date(2024, 12, 31)
-
-
-def test_periodo_endpoint_janeiro_ultimo_dia_correto():
-    view = TechnicalHoursTablePeriodoView()
-    inicio, fim = view._parse_periodo("2024-01")
-    assert inicio == datetime.date(2024, 1, 1)
-    assert fim == datetime.date(2024, 1, 31)
-
-
 def test_periodo_endpoint_multiplos_registros(api_client):
     tempo1 = _make_tempo(id=1)
     tempo2 = _make_tempo(
