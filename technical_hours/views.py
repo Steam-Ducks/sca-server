@@ -1,5 +1,3 @@
-import datetime
-
 from django.core.cache import cache
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum
 from django.db.models.functions import TruncMonth
@@ -10,6 +8,7 @@ from rest_framework.response import Response
 from sca_data.models import SilverTempoTarefa
 from technical_hours.serializers import TechnicalHoursTableSerializer
 from users.permissions import CanAccessTechnicalHours
+from core.utils.date_utils import parse_date, parse_period
 
 _CACHE_TTL = 300
 
@@ -41,41 +40,12 @@ class TechnicalHoursTableView(generics.ListAPIView):
     serializer_class = TechnicalHoursTableSerializer
     permission_classes = [CanAccessTechnicalHours]
 
-    def _parse_date(self, raw: str, param_name: str) -> datetime.date:
-        try:
-            return datetime.date.fromisoformat(raw)
-        except ValueError:
-            raise ValidationError(
-                {param_name: f"Data inválida '{raw}'. Use o formato YYYY-MM-DD."}
-            )
-
-    def _parse_periodo(self, raw: str) -> tuple:
-        """YYYY-MM → (primeiro_dia, último_dia) do mês."""
-        try:
-            if len(raw) != 7 or raw[4] != "-":
-                raise ValueError
-            year, month = int(raw[:4]), int(raw[5:7])
-            if not (1 <= month <= 12):
-                raise ValueError
-        except (ValueError, IndexError):
-            raise ValidationError(
-                {"periodo": f"Período inválido '{raw}'. Use o formato YYYY-MM."}
-            )
-
-        primeiro_dia = datetime.date(year, month, 1)
-        if month == 12:
-            ultimo_dia = datetime.date(year + 1, 1, 1) - datetime.timedelta(days=1)
-        else:
-            ultimo_dia = datetime.date(year, month + 1, 1) - datetime.timedelta(days=1)
-
-        return primeiro_dia, ultimo_dia
-
     def _filters_from_date_range(self, raw_inicio, raw_fim) -> dict:
         filters = {}
         if raw_inicio:
-            filters["data__gte"] = self._parse_date(raw_inicio, "data_inicio")
+            filters["data__gte"] = parse_date(raw_inicio, "data_inicio")
         if raw_fim:
-            filters["data__lte"] = self._parse_date(raw_fim, "data_fim")
+            filters["data__lte"] = parse_date(raw_fim, "data_fim")
         if raw_inicio and raw_fim and filters["data__gte"] > filters["data__lte"]:
             raise ValidationError(
                 {"data_inicio": "data_inicio não pode ser posterior a data_fim."}
@@ -106,7 +76,7 @@ class TechnicalHoursTableView(generics.ListAPIView):
             return self._filters_from_date_range(raw_inicio, raw_fim)
 
         if raw_periodo:
-            primeiro_dia, ultimo_dia = self._parse_periodo(raw_periodo)
+            primeiro_dia, ultimo_dia = parse_period(raw_periodo)
             return {"data__gte": primeiro_dia, "data__lte": ultimo_dia}
 
         return self._filters_from_ano_mes(params.get("ano"), params.get("mes"))
@@ -213,7 +183,7 @@ class TechnicalHoursTablePeriodoView(TechnicalHoursTableView):
 
     Rota: GET /api/horas-tecnicas/periodo/<YYYY-MM>/
 
-    Herda _parse_periodo de TechnicalHoursTableView.
+    Usa parse_period para resolver o intervalo do periodo.
 
     Exemplos
     --------
@@ -223,7 +193,7 @@ class TechnicalHoursTablePeriodoView(TechnicalHoursTableView):
 
     def _build_period_filters(self):
         raw_periodo = self.kwargs.get("periodo", "")
-        primeiro_dia, ultimo_dia = self._parse_periodo(raw_periodo)
+        primeiro_dia, ultimo_dia = parse_period(raw_periodo)
         return {
             "data__gte": primeiro_dia,
             "data__lte": ultimo_dia,

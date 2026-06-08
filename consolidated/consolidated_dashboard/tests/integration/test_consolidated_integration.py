@@ -191,13 +191,13 @@ class TestConsolidatedPeriodoIntegration:
 
     def test_periodo_valido_retorna_200(self, api_client):
         # CTI-06 (mínimo): período válido no path → 200
-        # Valida: _parse_periodo converte YYYY-MM → intervalo de datas aceito pelo ORM
+        # Valida: parse_period converte YYYY-MM → intervalo de datas aceito pelo ORM
         response = api_client.get("/api/consolidated/periodo/2024-03/")
         assert response.status_code == 200
 
     def test_periodo_invalido_retorna_400(self, api_client):
         # CTI-07 (adicional): formato inválido → 400 ValidationError
-        # Valida: _parse_periodo levanta DRFValidationError propagada pela view
+        # Valida: parse_period levanta DRFValidationError propagada pela view
         response = api_client.get("/api/consolidated/periodo/2024-13/")
         assert response.status_code == 400
 
