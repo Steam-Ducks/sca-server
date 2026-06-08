@@ -1,26 +1,18 @@
-from django.core.cache import cache
 from django.utils.dateparse import parse_date
 from django.utils.timezone import make_aware
-from rest_framework import generics
-from rest_framework.response import Response
 
+from core.views import BaseFilteredListView
 from costs.serializers import GoldCostsSerializer
 from sca_data.models import GoldCosts
 from users.permissions import CanAccessCosts
 
 from datetime import datetime, time
 
-_CACHE_TTL = 300
 
-
-def _ck(prefix, params=None):
-    suffix = "&".join(f"{k}={v}" for k, v in sorted((params or {}).items()) if v)
-    return f"{prefix}:{suffix}" if suffix else prefix
-
-
-class GoldCostsTableView(generics.ListAPIView):
+class GoldCostsTableView(BaseFilteredListView):
     serializer_class = GoldCostsSerializer
     permission_classes = [CanAccessCosts]
+    cache_key_prefix = "gold_costs"
 
     def get_queryset(self):
         queryset = GoldCosts.objects.all()
@@ -49,12 +41,3 @@ class GoldCostsTableView(generics.ListAPIView):
             queryset = queryset.filter(data__lte=end)
 
         return queryset.order_by("data")
-
-    def list(self, request, *args, **kwargs):
-        key = _ck("gold_costs", request.query_params)
-        cached = cache.get(key)
-        if cached is not None:
-            return Response(cached)
-        response = super().list(request, *args, **kwargs)
-        cache.set(key, response.data, _CACHE_TTL)
-        return response
