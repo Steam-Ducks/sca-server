@@ -36,7 +36,7 @@ jobs:
 
             git fetch origin
             git checkout develop
-            git pull origin develop
+            git reset --hard origin/develop
 
             sed -i "s|GRAFANA_CLOUD_TOKEN_PLACEHOLDER|$GRAFANA_CLOUD_TOKEN|" prometheus/prometheus.yml
             sed -i "s|GMAIL_APP_PASSWORD_PLACEHOLDER|$GMAIL_APP_PASSWORD|" prometheus/alertmanager.yml
