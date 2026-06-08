@@ -40,7 +40,8 @@ jobs:
 
             sed -i "s|GRAFANA_CLOUD_TOKEN_PLACEHOLDER|$GRAFANA_CLOUD_TOKEN|" prometheus/prometheus.yml
             sed -i "s|GMAIL_APP_PASSWORD_PLACEHOLDER|$GMAIL_APP_PASSWORD|" prometheus/alertmanager.yml
-            docker restart prometheus alertmanager
+            docker inspect prometheus >/dev/null 2>&1 && docker restart prometheus || true
+            docker inspect alertmanager >/dev/null 2>&1 && docker restart alertmanager || true
 
             docker compose -p sca-staging -f docker-compose.staging.yml up -d --build
 
