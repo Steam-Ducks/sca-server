@@ -1,0 +1,243 @@
+{
+  "id": null,
+  "uid": "sca-capacity",
+  "title": "SCA — Capacity Planning",
+  "tags": ["sca", "capacity"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 3,
+  "refresh": "1h",
+  "templating": {
+    "list": [
+      {
+        "name": "env",
+        "label": "Ambiente",
+        "type": "custom",
+        "query": "sca_prod,sca_staging",
+        "current": { "selected": true, "text": "prod", "value": "sca_prod" },
+        "options": [
+          { "selected": true,  "text": "prod",    "value": "sca_prod" },
+          { "selected": false, "text": "staging", "value": "sca_staging" }
+        ],
+        "hide": 0,
+        "includeAll": false,
+        "multi": false
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Disco — uso atual + previsão 90 dias",
+      "description": "Linha sólida = uso real. Linha tracejada = projeção. Se cruzar 85% antes de 90 dias, precisa agir.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "expr": "(1 - node_filesystem_avail_bytes{mountpoint='/'} / node_filesystem_size_bytes{mountpoint='/'}) * 100",
+          "legendFormat": "uso atual %",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "expr": "predict_linear(node_filesystem_avail_bytes{mountpoint='/'}[7d], 90 * 24 * 3600) / node_filesystem_size_bytes{mountpoint='/'} * -100 + 100",
+          "legendFormat": "previsão 90 dias %",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "previsão 90 dias %" },
+            "properties": [
+              { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } },
+              { "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "title": "RAM — uso atual + previsão 30 dias",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "expr": "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100",
+          "legendFormat": "uso atual %",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "expr": "predict_linear(node_memory_MemAvailable_bytes[7d], 30 * 24 * 3600) / node_memory_MemTotal_bytes * -100 + 100",
+          "legendFormat": "previsão 30 dias %",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 75 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "previsão 30 dias %" },
+            "properties": [
+              { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } },
+              { "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "title": "CPU — média diária + previsão 30 dias",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "expr": "100 - (avg(rate(node_cpu_seconds_total{mode='idle'}[1h])) * 100)",
+          "legendFormat": "uso atual %",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "expr": "predict_linear((100 - avg(rate(node_cpu_seconds_total{mode='idle'}[1h])) * 100)[7d:1h], 30 * 24 * 3600)",
+          "legendFormat": "previsão 30 dias %",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 90 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "previsão 30 dias %" },
+            "properties": [
+              { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } },
+              { "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "title": "Disco — dias até 85% de uso",
+      "description": "Quantos dias até precisar expandir o disco.",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 16, "w": 8, "h": 6 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "expr": "(node_filesystem_avail_bytes{mountpoint='/'} - (node_filesystem_size_bytes{mountpoint='/'} * 0.15)) / abs(deriv(node_filesystem_avail_bytes{mountpoint='/'}[7d])) / 86400",
+          "legendFormat": "dias restantes",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "d",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "green", "value": 90 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "RAM — dias até 90% de uso",
+      "type": "stat",
+      "gridPos": { "x": 8, "y": 16, "w": 8, "h": 6 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "expr": "(node_memory_MemAvailable_bytes - (node_memory_MemTotal_bytes * 0.10)) / abs(deriv(node_memory_MemAvailable_bytes[7d])) / 86400",
+          "legendFormat": "dias restantes",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "d",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 30 },
+              { "color": "green", "value": 90 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "Requests — fator de crescimento 30 dias",
+      "description": "Se dobrar em 30 dias, revisar o tamanho do droplet.",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 16, "w": 8, "h": 6 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+          "expr": "predict_linear(rate(django_http_requests_total_by_method_total{job=\"$env\"}[1h])[7d:1h], 30 * 24 * 3600) / rate(django_http_requests_total_by_method_total{job=\"$env\"}[1h])",
+          "legendFormat": "fator de crescimento 30d",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "x",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1.5 },
+              { "color": "red", "value": 2 }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

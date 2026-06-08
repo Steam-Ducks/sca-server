@@ -1,5 +1,6 @@
 import datetime
 
+from django.core.cache import cache
 from django.db.models import ExpressionWrapper, F, FloatField, Max, Q, Sum
 from django.utils import timezone
 
@@ -12,6 +13,15 @@ from consolidated.consolidated_dashboard.serializers import (
 )
 from sca_data.models import SilverProjeto
 from users.permissions import CanAccessConsolidated
+
+_CACHE_TTL = 300
+
+
+def _ck(prefix, params=None, **kwargs):
+    parts = sorted((params or {}).items())
+    extra = sorted(kwargs.items())
+    suffix = "&".join(f"{k}={v}" for k, v in parts + extra if v)
+    return f"{prefix}:{suffix}" if suffix else prefix
 
 
 class ConsolidatedDashboardView(generics.ListAPIView):
@@ -129,14 +139,6 @@ class ConsolidatedDashboardView(generics.ListAPIView):
         return compras_filter, tempo_filter
 
     def _build_queryset(self, data_inicio=None, data_fim=None, params=None):
-        """
-        Monta o queryset anotado com filtros de data e query params opcionais.
-
-        Relacionamentos usados (conforme models.py):
-          - tarefas -> tempos                    (horas trabalhadas)
-          - silvercomprasprojeto -> pedido_compra (custo materiais)
-          - silversolicitacaocompra             (qtd materiais)
-        """
         compras_filter, tempo_filter = self._build_source_filters(
             data_inicio=data_inicio,
             data_fim=data_fim,
@@ -202,7 +204,6 @@ class ConsolidatedDashboardView(generics.ListAPIView):
         normalized = []
         for ts in timestamps:
             if timezone.is_naive(ts):
-                # Assume UTC para datetimes sem fuso
                 normalized.append(ts.replace(tzinfo=datetime.timezone.utc))
             else:
                 normalized.append(ts)
@@ -218,6 +219,11 @@ class ConsolidatedDashboardView(generics.ListAPIView):
         )
 
     def list(self, request, *args, **kwargs):
+        key = _ck("consolidated", request.query_params)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         data_inicio, data_fim = self._get_date_range()
@@ -226,14 +232,14 @@ class ConsolidatedDashboardView(generics.ListAPIView):
             data_fim=data_fim,
             params=request.query_params,
         )
-        return Response(
-            {
-                "data": serializer.data,
-                "last_updated_at": (
-                    last_updated_at.isoformat() if last_updated_at else None
-                ),
-            }
-        )
+        data = {
+            "data": serializer.data,
+            "last_updated_at": (
+                last_updated_at.isoformat() if last_updated_at else None
+            ),
+        }
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)
 
 
 class ConsolidatedDashboardPeriodoView(ConsolidatedDashboardView):
@@ -261,8 +267,13 @@ class ConsolidatedDashboardPeriodoView(ConsolidatedDashboardView):
         )
 
     def list(self, request, *args, **kwargs):
-        raw_periodo = self.kwargs.get("periodo", "")
-        data_inicio, data_fim = self._parse_periodo(raw_periodo)
+        periodo = self.kwargs.get("periodo", "")
+        key = _ck("consolidated_p", request.query_params, periodo=periodo)
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+
+        data_inicio, data_fim = self._parse_periodo(periodo)
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         last_updated_at = self._get_last_updated_at(
@@ -270,11 +281,11 @@ class ConsolidatedDashboardPeriodoView(ConsolidatedDashboardView):
             data_fim=data_fim,
             params=request.query_params,
         )
-        return Response(
-            {
-                "data": serializer.data,
-                "last_updated_at": (
-                    last_updated_at.isoformat() if last_updated_at else None
-                ),
-            }
-        )
+        data = {
+            "data": serializer.data,
+            "last_updated_at": (
+                last_updated_at.isoformat() if last_updated_at else None
+            ),
+        }
+        cache.set(key, data, _CACHE_TTL)
+        return Response(data)

@@ -1,0 +1,86 @@
+global:
+  resolve_timeout: 5m
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'marianaoliveiry18@gmail.com'
+  smtp_auth_username: 'marianaoliveiry18@gmail.com'
+  smtp_auth_password: 'GMAIL_APP_PASSWORD_PLACEHOLDER'
+  smtp_require_tls: true
+
+route:
+  group_by: ['severity']
+  group_wait: 1m
+  group_interval: 5m
+  repeat_interval: 24h
+  receiver: email-aviso
+  routes:
+    - match:
+        severity: critical
+      receiver: email-critico
+      group_wait: 30s
+      repeat_interval: 1h
+
+    - match:
+        severity: warning
+      receiver: email-aviso
+      repeat_interval: 24h
+
+    - match:
+        severity: inspection
+      receiver: email-inspecao
+      group_wait: 5m
+      repeat_interval: 168h
+
+receivers:
+  - name: email-critico
+    email_configs:
+      - to: 'marianaoliveiry18@gmail.com'
+        subject: '[CRÍTICO] SCA — {{ len .Alerts }} alerta(s) ativos'
+        html: |-
+          <h2 style="color:#d32f2f">🚨 Alerta Crítico — SCA</h2>
+          {{ range .Alerts }}
+          <p>
+            <strong>{{ .Annotations.summary }}</strong><br>
+            {{ .Annotations.description }}<br>
+            <small>Início: {{ .StartsAt.Format "02/01/2006 15:04" }}</small>
+          </p>
+          <hr>
+          {{ end }}
+          <p><a href="https://mariinetic.grafana.net/dashboards">Ver dashboards no Grafana Cloud →</a></p>
+        send_resolved: true
+
+  - name: email-aviso
+    email_configs:
+      - to: 'marianaoliveiry18@gmail.com'
+        subject: '[AVISO] SCA — {{ len .Alerts }} alerta(s)'
+        html: |-
+          <h2 style="color:#f57c00">⚠️ Aviso — SCA</h2>
+          {{ range .Alerts }}
+          <p>
+            <strong>{{ .Annotations.summary }}</strong><br>
+            {{ .Annotations.description }}<br>
+            <small>Início: {{ .StartsAt.Format "02/01/2006 15:04" }}</small>
+          </p>
+          <hr>
+          {{ end }}
+          <p><a href="https://mariinetic.grafana.net/dashboards">Ver dashboards no Grafana Cloud →</a></p>
+        send_resolved: true
+
+  - name: email-inspecao
+    email_configs:
+      - to: 'marianaoliveiry18@gmail.com'
+        subject: '[INSPEÇÃO SEMANAL] SCA — Capacity Planning'
+        html: |-
+          <h2 style="color:#1565c0">📊 Inspeção Semanal — SCA</h2>
+          <p>Relatório automático semanal do sistema. Itens ativos agora:</p>
+          {{ range .Alerts }}
+          <p>
+            <strong>{{ .Annotations.summary }}</strong><br>
+            {{ .Annotations.description }}
+          </p>
+          <hr>
+          {{ end }}
+          <p>
+            <a href="https://mariinetic.grafana.net/d/sca-capacity">Capacity Planning →</a> &nbsp;|&nbsp;
+            <a href="https://mariinetic.grafana.net/d/sca-infra">Infraestrutura →</a>
+          </p>
+        send_resolved: false

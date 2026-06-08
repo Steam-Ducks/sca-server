@@ -1,0 +1,158 @@
+{
+  "title": "SCA — Visão Geral",
+  "uid": "sca-overview",
+  "version": 8,
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "graphTooltip": 1,
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "env",
+        "label": "Ambiente",
+        "type": "custom",
+        "query": "sca_prod,sca_staging",
+        "current": { "selected": true, "text": "prod", "value": "sca_prod" },
+        "options": [
+          { "selected": true,  "text": "prod",    "value": "sca_prod" },
+          { "selected": false, "text": "staging", "value": "sca_staging" }
+        ],
+        "hide": 0,
+        "includeAll": false,
+        "multi": false
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1, "type": "stat", "title": "Requisições / s",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area", "textMode": "auto" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 50, "color": "orange" }, { "value": 200, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "sum(rate(django_http_requests_latency_including_middlewares_seconds_count{job=\"$env\"}[5m]))", "legendFormat": "" }]
+    },
+    {
+      "id": 2, "type": "stat", "title": "Erros 5xx / s",
+      "description": "Falhas internas do servidor. Meta: próximo de zero",
+      "gridPos": { "x": 6, "y": 0, "w": 6, "h": 5 },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area", "textMode": "auto" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 0.1, "color": "orange" }, { "value": 1, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "sum(rate(django_http_responses_total_by_status_view_method_total{job=\"$env\",status=~\"5..\"}[5m]))", "legendFormat": "" }]
+    },
+    {
+      "id": 3, "type": "stat", "title": "Tempo de resposta — p95",
+      "description": "95% das requisições responderam abaixo deste tempo. Meta: < 500 ms",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 5 },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area", "textMode": "auto" },
+      "fieldConfig": { "defaults": { "unit": "ms", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 500, "color": "orange" }, { "value": 2000, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "histogram_quantile(0.95, sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket{job=\"$env\"}[5m])) by (le)) * 1000", "legendFormat": "" }]
+    },
+    {
+      "id": 4, "type": "stat", "title": "Conexões ativas ao banco",
+      "description": "Conexões de backend ativas no PostgreSQL agora",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 5 },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area", "textMode": "auto" },
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "value": null, "color": "green" }, { "value": 10, "color": "orange" }, { "value": 50, "color": "red" }] } } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(pg_stat_activity_count{state=\"active\"})", "legendFormat": "" }]
+    },
+    {
+      "id": 5, "type": "timeseries", "title": "Requisições por código HTTP",
+      "description": "2xx = sucesso · 4xx = erro do cliente · 5xx = erro do servidor",
+      "gridPos": { "x": 0, "y": 5, "w": 12, "h": 9 },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "fillOpacity": 8, "lineWidth": 2 },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "^2" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "^4" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "^5" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "sum by (status) (rate(django_http_responses_total_by_status_view_method_total{job=\"$env\"}[5m]))", "legendFormat": "{{status}}" }
+      ]
+    },
+    {
+      "id": 6, "type": "timeseries", "title": "Latência ao longo do tempo",
+      "description": "Se as linhas subirem sob carga, há degradação de performance",
+      "gridPos": { "x": 12, "y": 5, "w": 12, "h": 9 },
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "fillOpacity": 8, "lineWidth": 2 },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Mediana (p50)" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Lento (p95)" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max", "mean"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "histogram_quantile(0.50, sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket{job=\"$env\"}[5m])) by (le)) * 1000", "legendFormat": "Mediana (p50)" },
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "histogram_quantile(0.95, sum(rate(django_http_requests_latency_including_middlewares_seconds_bucket{job=\"$env\"}[5m])) by (le)) * 1000", "legendFormat": "Lento (p95)" }
+      ]
+    },
+    {
+      "id": 8, "type": "row", "title": "Banco de Dados",
+      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 9, "type": "timeseries", "title": "Conexões ao banco por estado",
+      "description": "active = query em execução · idle = conexão aberta sem uso · idle in transaction = transação aberta parada",
+      "gridPos": { "x": 0, "y": 15, "w": 12, "h": 9 },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "fillOpacity": 8, "lineWidth": 2 },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*active.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*idle in transaction.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": "^idle$" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum by (state) (pg_stat_activity_count{state!=\"\"})", "legendFormat": "{{state}}" }
+      ]
+    },
+    {
+      "id": 10, "type": "timeseries", "title": "Tamanho do banco e locks",
+      "description": "Tamanho do banco (eixo esquerdo) e locks ativos (eixo direito).",
+      "gridPos": { "x": 12, "y": 15, "w": 12, "h": 9 },
+      "fieldConfig": {
+        "defaults": { "fillOpacity": 8, "lineWidth": 2 },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Tamanho (bytes)" }, "properties": [{ "id": "unit", "value": "bytes" }, { "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Locks ativos" }, "properties": [{ "id": "unit", "value": "short" }, { "id": "custom.axisPlacement", "value": "right" }, { "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
+        ]
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "pg_database_size_bytes{datname!~\"template.*|postgres\"}", "legendFormat": "Tamanho (bytes)" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(pg_locks_count{datname!~\"template.*|postgres\"})", "legendFormat": "Locks ativos" }
+      ]
+    },
+    {
+      "id": 7, "type": "timeseries", "title": "Todos os endpoints — req/s",
+      "description": "Volume de requisições por endpoint.",
+      "gridPos": { "x": 0, "y": 24, "w": 24, "h": 10 },
+      "fieldConfig": { "defaults": { "unit": "reqps", "fillOpacity": 6, "lineWidth": 2 } },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "calcs": ["lastNotNull", "max", "mean"] },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" }, "expr": "sum by (view) (rate(django_http_requests_latency_including_middlewares_seconds_count{job=\"$env\"}[5m]))", "legendFormat": "{{view}}" }
+      ]
+    }
+  ]
+}

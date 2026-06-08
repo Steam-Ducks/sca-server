@@ -1,24 +1,41 @@
 name: automatic-deploy
 
+# Triggered pelo merge develop → main feito pelo staging.yml (promote-to-prod).
+# Para hotfix de emergência: dispare manualmente via workflow_dispatch.
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
-    name: Deploy to DigitalOcean
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
+      - name: Deploy produção no VPS (DigitalOcean)
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          GRAFANA_CLOUD_TOKEN: ${{ secrets.GRAFANA_CLOUD_TOKEN }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         with:
           host: ${{ secrets.DO_DROPLET_IP }}
           username: ${{ secrets.DO_DEPLOY_USER }}
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
           port: ${{ secrets.SERVER_PORT }}
+          envs: GRAFANA_CLOUD_TOKEN,GMAIL_APP_PASSWORD
           script: |
+            set -e
             cd /home/deploy/sca-server
+
+            git checkout main
             git pull origin main
-            docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
-            docker image prune -f
+
+            sed -i "s|GRAFANA_CLOUD_TOKEN_PLACEHOLDER|$GRAFANA_CLOUD_TOKEN|" prometheus/prometheus.yml
+            sed -i "s|GMAIL_APP_PASSWORD_PLACEHOLDER|$GMAIL_APP_PASSWORD|" prometheus/alertmanager.yml
+            docker restart prometheus alertmanager
+
+            docker compose -f docker-compose.prod.yml up -d --build
+
+            echo "Produção atualizada: $(git rev-parse --short HEAD)"
