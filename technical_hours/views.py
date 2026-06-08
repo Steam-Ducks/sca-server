@@ -1,14 +1,13 @@
 from django.core.cache import cache
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum
 from django.db.models.functions import TruncMonth
-from rest_framework import generics
-from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from core.views import BaseFilteredListView
 from sca_data.models import SilverTempoTarefa
 from technical_hours.serializers import TechnicalHoursTableSerializer
 from users.permissions import CanAccessTechnicalHours
-from core.utils.date_utils import parse_date, parse_period
+from core.utils.filters import build_date_filters
 
 _CACHE_TTL = 300
 
@@ -20,7 +19,7 @@ def _ck(prefix, params=None, **kwargs):
     return f"{prefix}:{suffix}" if suffix else prefix
 
 
-class TechnicalHoursTableView(generics.ListAPIView):
+class TechnicalHoursTableView(BaseFilteredListView):
     """
     Tabela de horas técnicas por colaborador.
 
@@ -39,47 +38,14 @@ class TechnicalHoursTableView(generics.ListAPIView):
 
     serializer_class = TechnicalHoursTableSerializer
     permission_classes = [CanAccessTechnicalHours]
-
-    def _filters_from_date_range(self, raw_inicio, raw_fim) -> dict:
-        filters = {}
-        if raw_inicio:
-            filters["data__gte"] = parse_date(raw_inicio, "data_inicio")
-        if raw_fim:
-            filters["data__lte"] = parse_date(raw_fim, "data_fim")
-        if raw_inicio and raw_fim and filters["data__gte"] > filters["data__lte"]:
-            raise ValidationError(
-                {"data_inicio": "data_inicio não pode ser posterior a data_fim."}
-            )
-        return filters
-
-    def _filters_from_ano_mes(self, ano, mes) -> dict:
-        filters = {}
-        if ano:
-            try:
-                filters["data__year"] = int(ano)
-            except ValueError:
-                raise ValidationError({"ano": "Deve ser um número inteiro."})
-        if mes:
-            try:
-                filters["data__month"] = int(mes)
-            except ValueError:
-                raise ValidationError({"mes": "Deve ser um número inteiro."})
-        return filters
+    cache_key_prefix = "tech_hours_table"
 
     def _build_period_filters(self):
-        params = self.request.query_params
-        raw_inicio = params.get("data_inicio")
-        raw_fim = params.get("data_fim")
-        raw_periodo = params.get("periodo")
-
-        if raw_inicio or raw_fim:
-            return self._filters_from_date_range(raw_inicio, raw_fim)
-
-        if raw_periodo:
-            primeiro_dia, ultimo_dia = parse_period(raw_periodo)
-            return {"data__gte": primeiro_dia, "data__lte": ultimo_dia}
-
-        return self._filters_from_ano_mes(params.get("ano"), params.get("mes"))
+        return build_date_filters(
+            self.request.query_params,
+            field="data",
+            allow_year_month=True,
+        )
 
     def _apply_dimension_filters(self, queryset):
         params = self.request.query_params
@@ -125,15 +91,6 @@ class TechnicalHoursTableView(generics.ListAPIView):
         )
         queryset = self._apply_dimension_filters(queryset)
         return queryset.order_by("-custo_total")
-
-    def list(self, request, *args, **kwargs):
-        key = _ck("tech_hours_table", request.query_params)
-        cached = cache.get(key)
-        if cached is not None:
-            return Response(cached)
-        response = super().list(request, *args, **kwargs)
-        cache.set(key, response.data, _CACHE_TTL)
-        return response
 
 
 class TechnicalHoursKpiView(TechnicalHoursTableView):
@@ -183,7 +140,7 @@ class TechnicalHoursTablePeriodoView(TechnicalHoursTableView):
 
     Rota: GET /api/horas-tecnicas/periodo/<YYYY-MM>/
 
-    Usa parse_period para resolver o intervalo do periodo.
+    Usa build_date_filters para resolver o intervalo do periodo.
 
     Exemplos
     --------
@@ -191,24 +148,14 @@ class TechnicalHoursTablePeriodoView(TechnicalHoursTableView):
     GET /api/horas-tecnicas/periodo/2024-03/?ano=2024
     """
 
+    cache_key_prefix = "tech_hours_table_p"
+
+    def get_cache_key_extra(self):
+        return {"periodo": self.kwargs.get("periodo", "")}
+
     def _build_period_filters(self):
         raw_periodo = self.kwargs.get("periodo", "")
-        primeiro_dia, ultimo_dia = parse_period(raw_periodo)
-        return {
-            "data__gte": primeiro_dia,
-            "data__lte": ultimo_dia,
-        }
-
-    def list(self, request, *args, **kwargs):
-        periodo = self.kwargs.get("periodo", "")
-        key = _ck("tech_hours_table_p", request.query_params, periodo=periodo)
-        cached = cache.get(key)
-        if cached is not None:
-            return Response(cached)
-        # skip TechnicalHoursTableView.list() to avoid double caching
-        response = super(TechnicalHoursTableView, self).list(request, *args, **kwargs)
-        cache.set(key, response.data, _CACHE_TTL)
-        return response
+        return build_date_filters({"periodo": raw_periodo}, field="data")
 
 
 class TechnicalHoursTemporalView(TechnicalHoursTableView):
