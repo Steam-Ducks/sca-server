@@ -2,22 +2,15 @@
 Testes unitários para materials/selectors.py.
 
 Cobre:
-  - _get_date_range : lógica de prioridade entre os parâmetros de período
   - get_materials_queryset : construção do queryset com filtros por período
 
-Nota: Os testes para parse_date() e parse_period() estão em core/tests/test_date_utils.py
+Nota: Os testes para construção de filtros de data estão em core/tests/test_filters.py
 """
 
 import datetime
 from unittest.mock import MagicMock, patch
 
-import pytest
-from rest_framework.exceptions import ValidationError as DRFValidationError
-
-from materials.selectors import (
-    _get_date_range,
-    get_materials_queryset,
-)
+from materials.selectors import get_materials_queryset
 
 
 # ---------------------------------------------------------------------------
@@ -47,73 +40,6 @@ def _mock_pedido_objects():
     mock_qs.filter.return_value = mock_qs
     mock_qs.order_by.return_value = mock_qs
     return mock_qs
-
-
-# ---------------------------------------------------------------------------
-# _get_date_range - Lógica de Prioridade
-# ---------------------------------------------------------------------------
-# Nota: Testes específicos de parse_date() e parse_period() estão em
-# core/tests/test_date_utils.py. Aqui testamos apenas a lógica de
-# prioridade e integração com _get_date_range().
-
-
-def test_get_date_range_sem_params_retorna_nulos():
-    inicio, fim = _get_date_range({})
-    assert inicio is None
-    assert fim is None
-
-
-def test_get_date_range_com_periodo_retorna_mes_completo():
-    inicio, fim = _get_date_range({"periodo": "2024-03"})
-    assert inicio == datetime.date(2024, 3, 1)
-    assert fim == datetime.date(2024, 3, 31)
-
-
-def test_get_date_range_com_data_inicio_apenas():
-    inicio, fim = _get_date_range({"data_inicio": "2024-03-01"})
-    assert inicio == datetime.date(2024, 3, 1)
-    assert fim is None
-
-
-def test_get_date_range_com_data_fim_apenas():
-    inicio, fim = _get_date_range({"data_fim": "2024-03-31"})
-    assert inicio is None
-    assert fim == datetime.date(2024, 3, 31)
-
-
-def test_get_date_range_com_intervalo_completo():
-    inicio, fim = _get_date_range(
-        {"data_inicio": "2024-03-01", "data_fim": "2024-03-31"}
-    )
-    assert inicio == datetime.date(2024, 3, 1)
-    assert fim == datetime.date(2024, 3, 31)
-
-
-def test_get_date_range_inicio_posterior_ao_fim_levanta_erro():
-    with pytest.raises(DRFValidationError) as exc_info:
-        _get_date_range({"data_inicio": "2024-03-31", "data_fim": "2024-03-01"})
-    assert "data_inicio" in exc_info.value.detail
-
-
-def test_get_date_range_data_inicio_tem_prioridade_sobre_periodo():
-    """data_inicio/data_fim deve ser usado em vez de periodo."""
-    inicio, fim = _get_date_range({"data_inicio": "2024-03-15", "periodo": "2024-01"})
-    assert inicio == datetime.date(2024, 3, 15)
-    assert fim is None  # periodo foi ignorado, não define data_fim
-
-
-def test_get_date_range_data_fim_tem_prioridade_sobre_periodo():
-    inicio, fim = _get_date_range({"data_fim": "2024-03-31", "periodo": "2024-01"})
-    assert inicio is None
-    assert fim == datetime.date(2024, 3, 31)
-
-
-def test_get_date_range_ambas_datas_com_periodo_ignoram_periodo():
-    inicio, fim = _get_date_range(
-        {"data_inicio": "2024-03-01", "data_fim": "2024-03-31", "periodo": "2024-01"}
-    )
-    assert inicio == datetime.date(2024, 3, 1)
-    assert fim == datetime.date(2024, 3, 31)
 
 
 # ---------------------------------------------------------------------------
