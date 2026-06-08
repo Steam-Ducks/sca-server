@@ -2,7 +2,7 @@
 Conjunto de integração: Materials (Gestão de Materiais)
 
 Funções do conjunto:
-    _parse_periodo (views.py)           — converte YYYY-MM em intervalo de datas
+    parse_period (core/utils)           — converte YYYY-MM em intervalo de datas
     get_materials_queryset (selectors)  — filtra SilverPedidoCompra com ORM
     MaterialsTableView (views.py)       — endpoint GET /api/compras/
     MaterialsTablePeriodoView           — endpoint GET /api/compras/periodo/<YYYY-MM>/
@@ -227,7 +227,7 @@ class TestMaterialsTableIntegration:
 class TestMaterialsTablePeriodoIntegration:
     """
     CT-INT-MAT-02
-    Conjunto: _parse_periodo + get_materials_queryset + MaterialsTablePeriodoView
+    Conjunto: parse_period + get_materials_queryset + MaterialsTablePeriodoView
     """
 
     def test_periodo_valido_retorna_200(self, api_client):
@@ -237,7 +237,7 @@ class TestMaterialsTablePeriodoIntegration:
 
     def test_periodo_invalido_retorna_400(self, api_client):
         # CTI-06 (adicional): formato de período inválido → 400
-        # Valida: _parse_periodo levanta ValidationError propagada pela view
+        # Valida: parse_period levanta ValidationError propagada pela view
         response = api_client.get("/api/compras/periodo/2024-13/")
         assert response.status_code == 400
 
