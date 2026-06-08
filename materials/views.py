@@ -7,6 +7,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+from core.views import BaseFilteredListView
 from materials.selectors import (
     _parse_periodo,
     get_cost_by_project,
@@ -43,7 +44,7 @@ def _ck(prefix, params=None, **kwargs):
     return f"{prefix}:{suffix}" if suffix else prefix
 
 
-class MaterialsTableView(generics.ListAPIView):
+class MaterialsTableView(BaseFilteredListView):
     """
     Tabela de pedidos de compra com materiais.
 
@@ -64,18 +65,10 @@ class MaterialsTableView(generics.ListAPIView):
 
     serializer_class = MaterialsTableSerializer
     permission_classes = [CanAccessMaterials]
+    cache_key_prefix = "materials_table"
 
     def get_queryset(self):
         return get_materials_queryset(self.request.query_params)
-
-    def list(self, request, *args, **kwargs):
-        key = _ck("materials_table", request.query_params)
-        cached = cache.get(key)
-        if cached is not None:
-            return Response(cached)
-        response = super().list(request, *args, **kwargs)
-        cache.set(key, response.data, _CACHE_TTL)
-        return response
 
 
 class MaterialsTablePeriodoView(MaterialsTableView):
@@ -89,6 +82,11 @@ class MaterialsTablePeriodoView(MaterialsTableView):
     GET /api/compras/periodo/2024-03/
     """
 
+    cache_key_prefix = "materials_table_p"
+
+    def get_cache_key_extra(self):
+        return {"periodo": self.kwargs.get("periodo", "")}
+
     def get_queryset(self):
         raw_periodo = self.kwargs.get("periodo", "")
         primeiro_dia, ultimo_dia = _parse_periodo(raw_periodo)
@@ -98,17 +96,6 @@ class MaterialsTablePeriodoView(MaterialsTableView):
             "data_fim": str(ultimo_dia),
         }
         return get_materials_queryset(params)
-
-    def list(self, request, *args, **kwargs):
-        periodo = self.kwargs.get("periodo", "")
-        key = _ck("materials_table_p", request.query_params, periodo=periodo)
-        cached = cache.get(key)
-        if cached is not None:
-            return Response(cached)
-        # skip MaterialsTableView.list() to avoid double caching
-        response = super(MaterialsTableView, self).list(request, *args, **kwargs)
-        cache.set(key, response.data, _CACHE_TTL)
-        return response
 
 
 class MaterialsIndicatorsView(generics.GenericAPIView):

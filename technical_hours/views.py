@@ -3,10 +3,10 @@ import datetime
 from django.core.cache import cache
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum
 from django.db.models.functions import TruncMonth
-from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from core.views import BaseFilteredListView
 from sca_data.models import SilverTempoTarefa
 from technical_hours.serializers import TechnicalHoursTableSerializer
 from users.permissions import CanAccessTechnicalHours
@@ -21,7 +21,7 @@ def _ck(prefix, params=None, **kwargs):
     return f"{prefix}:{suffix}" if suffix else prefix
 
 
-class TechnicalHoursTableView(generics.ListAPIView):
+class TechnicalHoursTableView(BaseFilteredListView):
     """
     Tabela de horas técnicas por colaborador.
 
@@ -40,6 +40,7 @@ class TechnicalHoursTableView(generics.ListAPIView):
 
     serializer_class = TechnicalHoursTableSerializer
     permission_classes = [CanAccessTechnicalHours]
+    cache_key_prefix = "tech_hours_table"
 
     def _parse_date(self, raw: str, param_name: str) -> datetime.date:
         try:
@@ -156,15 +157,6 @@ class TechnicalHoursTableView(generics.ListAPIView):
         queryset = self._apply_dimension_filters(queryset)
         return queryset.order_by("-custo_total")
 
-    def list(self, request, *args, **kwargs):
-        key = _ck("tech_hours_table", request.query_params)
-        cached = cache.get(key)
-        if cached is not None:
-            return Response(cached)
-        response = super().list(request, *args, **kwargs)
-        cache.set(key, response.data, _CACHE_TTL)
-        return response
-
 
 class TechnicalHoursKpiView(TechnicalHoursTableView):
     """
@@ -221,6 +213,11 @@ class TechnicalHoursTablePeriodoView(TechnicalHoursTableView):
     GET /api/horas-tecnicas/periodo/2024-03/?ano=2024
     """
 
+    cache_key_prefix = "tech_hours_table_p"
+
+    def get_cache_key_extra(self):
+        return {"periodo": self.kwargs.get("periodo", "")}
+
     def _build_period_filters(self):
         raw_periodo = self.kwargs.get("periodo", "")
         primeiro_dia, ultimo_dia = self._parse_periodo(raw_periodo)
@@ -228,17 +225,6 @@ class TechnicalHoursTablePeriodoView(TechnicalHoursTableView):
             "data__gte": primeiro_dia,
             "data__lte": ultimo_dia,
         }
-
-    def list(self, request, *args, **kwargs):
-        periodo = self.kwargs.get("periodo", "")
-        key = _ck("tech_hours_table_p", request.query_params, periodo=periodo)
-        cached = cache.get(key)
-        if cached is not None:
-            return Response(cached)
-        # skip TechnicalHoursTableView.list() to avoid double caching
-        response = super(TechnicalHoursTableView, self).list(request, *args, **kwargs)
-        cache.set(key, response.data, _CACHE_TTL)
-        return response
 
 
 class TechnicalHoursTemporalView(TechnicalHoursTableView):
