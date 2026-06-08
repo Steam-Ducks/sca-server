@@ -313,7 +313,6 @@ def test_get_queryset_aplica_filtro_data_inicio(rf):
     assert "data_inicio" in str(datetime.date(2024, 3, 1)) or True
 
 
-
 def test_get_queryset_sem_filtro_retorna_todos(rf):
     from rest_framework.request import Request
 
