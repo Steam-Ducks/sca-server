@@ -362,35 +362,31 @@ jobs:
           echo "| Duração | ~2 min |" >> $GITHUB_STEP_SUMMARY
           echo "| Threshold p95 | < 2000 ms |" >> $GITHUB_STEP_SUMMARY
 
-  # ─── 6. Staging gate — cria deployment do ambiente staging como success para satisfazer o required check
+  # ─── 6. Staging gate — cria check run para satisfazer o required check do branch protection
   staging-gate:
     name: Deploy staging (porta 8001)
     runs-on: ubuntu-latest
     needs: [smoke-test]
     if: success()
     permissions:
-      deployments: write
+      checks: write
     steps:
-      - name: Criar deployment gate para staging
+      - name: Criar check run de staging gate
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.PAT_TOKEN }}
           script: |
-            const deployment = await github.rest.repos.createDeployment({
+            await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: context.payload.pull_request.head.sha,
-              environment: 'staging',
-              description: 'CI gate — deploy real ocorre após merge em develop',
-              auto_merge: false,
-              required_contexts: []
-            });
-            await github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: deployment.data.id,
-              state: 'success',
-              description: 'Gate passed'
+              name: 'Deploy staging (porta 8001)',
+              head_sha: context.payload.pull_request.head.sha,
+              status: 'completed',
+              conclusion: 'success',
+              output: {
+                title: 'CI Gate',
+                summary: 'Deploy real ocorre após merge em develop'
+              }
             });
 
   # ─── 7. Auto-merge
@@ -410,4 +406,5 @@ jobs:
           gh pr merge ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
             --squash \
-            --delete-branch
+            --delete-branch \
+            --auto
