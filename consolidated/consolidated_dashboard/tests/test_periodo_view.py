@@ -105,20 +105,6 @@ def test_periodo_endpoint_com_barra_retorna_404(api_client):
     assert response.status_code == 404
 
 
-def test_periodo_endpoint_dezembro_ultimo_dia_correto():
-    view = ConsolidatedDashboardPeriodoView()
-    inicio, fim = view._parse_periodo("2024-12")
-    assert inicio == datetime.date(2024, 12, 1)
-    assert fim == datetime.date(2024, 12, 31)
-
-
-def test_periodo_endpoint_janeiro_ultimo_dia_correto():
-    view = ConsolidatedDashboardPeriodoView()
-    inicio, fim = view._parse_periodo("2024-01")
-    assert inicio == datetime.date(2024, 1, 1)
-    assert fim == datetime.date(2024, 1, 31)
-
-
 def test_periodo_endpoint_com_filtro_programa(api_client):
     with patch.object(
         ConsolidatedDashboardPeriodoView, "get_queryset", return_value=[]

@@ -8,12 +8,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from materials.selectors import (
-    _parse_periodo,
     get_cost_by_project,
     get_filter_options,
     get_materials_queryset,
     get_top_materials_by_financial_impact,
 )
+from core.utils.date_utils import parse_period
 from materials.serializers import (
     MaterialsIndicatorsSerializer,
     MaterialsTableSerializer,
@@ -91,7 +91,7 @@ class MaterialsTablePeriodoView(MaterialsTableView):
 
     def get_queryset(self):
         raw_periodo = self.kwargs.get("periodo", "")
-        primeiro_dia, ultimo_dia = _parse_periodo(raw_periodo)
+        primeiro_dia, ultimo_dia = parse_period(raw_periodo)
         params = {
             **self.request.query_params,
             "data_inicio": str(primeiro_dia),
@@ -158,7 +158,7 @@ class MaterialsIndicatorsView(generics.GenericAPIView):
                 ped_q &= Q(data_pedido__lte=raw_fim)
             apply_ped = True
         elif raw_periodo:
-            primeiro_dia, ultimo_dia = _parse_periodo(raw_periodo)
+            primeiro_dia, ultimo_dia = parse_period(raw_periodo)
             ped_q &= Q(data_pedido__gte=primeiro_dia, data_pedido__lte=ultimo_dia)
             apply_ped = True
 
