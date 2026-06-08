@@ -20,11 +20,15 @@ jobs:
 
       - name: Deploy staging no VPS
         uses: appleboy/ssh-action@v1.2.5
+        env:
+          GRAFANA_CLOUD_TOKEN: ${{ secrets.GRAFANA_CLOUD_TOKEN }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
         with:
           host: ${{ secrets.DO_DROPLET_IP }}
           username: ${{ secrets.DO_DEPLOY_USER }}
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
           port: ${{ secrets.SERVER_PORT }}
+          envs: GRAFANA_CLOUD_TOKEN,GMAIL_APP_PASSWORD
           script: |
             set -e
             docker network inspect sca_app_net >/dev/null 2>&1 || docker network create sca_app_net
@@ -32,7 +36,12 @@ jobs:
 
             git fetch origin
             git checkout develop
-            git pull origin develop
+            git reset --hard origin/develop
+
+            sed -i "s|GRAFANA_CLOUD_TOKEN_PLACEHOLDER|$GRAFANA_CLOUD_TOKEN|" prometheus/prometheus.yml
+            sed -i "s|GMAIL_APP_PASSWORD_PLACEHOLDER|$GMAIL_APP_PASSWORD|" prometheus/alertmanager.yml
+            docker inspect prometheus >/dev/null 2>&1 && docker restart prometheus || true
+            docker inspect alertmanager >/dev/null 2>&1 && docker restart alertmanager || true
 
             docker compose -p sca-staging -f docker-compose.staging.yml up -d --build
 
@@ -59,14 +68,16 @@ jobs:
       - name: Instalar k6
         uses: grafana/setup-k6-action@v1
 
-      - name: Load test staging → métricas no Prometheus
+      - name: Load test staging → métricas no Grafana Cloud
         run: |
-          k6 run --tag environment=staging tests/load/load_test.js
+          k6 run --out experimental-prometheus-rw --tag environment=staging tests/load/load_test.js
         env:
           BASE_URL: http://${{ secrets.DO_DROPLET_IP }}:8001
           AUTH_USERNAME: ${{ secrets.K6_AUTH_USERNAME }}
           AUTH_PASSWORD: ${{ secrets.K6_AUTH_PASSWORD }}
-          K6_PROMETHEUS_RW_SERVER_URL: http://${{ secrets.DO_DROPLET_IP }}:9090/api/v1/write
+          K6_PROMETHEUS_RW_SERVER_URL: https://prometheus-prod-40-prod-sa-east-1.grafana.net/api/prom/push
+          K6_PROMETHEUS_RW_USERNAME: '3046984'
+          K6_PROMETHEUS_RW_PASSWORD: ${{ secrets.GRAFANA_CLOUD_TOKEN }}
           K6_PROMETHEUS_RW_PUSH_INTERVAL: 5s
 
       - name: Step Summary
