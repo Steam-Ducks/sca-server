@@ -2,10 +2,10 @@
 Testes unitários para materials/selectors.py.
 
 Cobre:
-  - _parse_date     : parsing de datas ISO com mensagem de erro contextualizada
-  - _parse_periodo  : resolução de YYYY-MM para intervalo de datas
   - _get_date_range : lógica de prioridade entre os parâmetros de período
   - get_materials_queryset : construção do queryset com filtros por período
+
+Nota: Os testes para parse_date() e parse_period() estão em core/tests/test_date_utils.py
 """
 
 import datetime
@@ -16,8 +16,6 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from materials.selectors import (
     _get_date_range,
-    _parse_date,
-    _parse_periodo,
     get_materials_queryset,
 )
 
@@ -52,109 +50,11 @@ def _mock_pedido_objects():
 
 
 # ---------------------------------------------------------------------------
-# _parse_date
+# _get_date_range - Lógica de Prioridade
 # ---------------------------------------------------------------------------
-
-
-def test_parse_date_formato_iso_valido():
-    resultado = _parse_date("2024-03-15", "data_inicio")
-    assert resultado == datetime.date(2024, 3, 15)
-
-
-def test_parse_date_formato_dd_mm_yyyy_levanta_erro():
-    with pytest.raises(DRFValidationError) as exc_info:
-        _parse_date("31-03-2024", "data_inicio")
-    assert "data_inicio" in exc_info.value.detail
-
-
-def test_parse_date_string_invalida_levanta_erro():
-    with pytest.raises(DRFValidationError) as exc_info:
-        _parse_date("nao-e-data", "data_fim")
-    assert "data_fim" in exc_info.value.detail
-
-
-def test_parse_date_preserva_param_name_na_mensagem_de_erro():
-    with pytest.raises(DRFValidationError) as exc_info:
-        _parse_date("invalido", "campo_qualquer")
-    assert "campo_qualquer" in exc_info.value.detail
-
-
-def test_parse_date_retorna_tipo_date():
-    resultado = _parse_date("2024-12-31", "data_fim")
-    assert isinstance(resultado, datetime.date)
-
-
-# ---------------------------------------------------------------------------
-# _parse_periodo
-# ---------------------------------------------------------------------------
-
-
-def test_parse_periodo_marco_retorna_intervalo_correto():
-    inicio, fim = _parse_periodo("2024-03")
-    assert inicio == datetime.date(2024, 3, 1)
-    assert fim == datetime.date(2024, 3, 31)
-
-
-def test_parse_periodo_dezembro_retorna_ultimo_dia_31():
-    inicio, fim = _parse_periodo("2024-12")
-    assert inicio == datetime.date(2024, 12, 1)
-    assert fim == datetime.date(2024, 12, 31)
-
-
-def test_parse_periodo_janeiro_retorna_ultimo_dia_31():
-    inicio, fim = _parse_periodo("2024-01")
-    assert inicio == datetime.date(2024, 1, 1)
-    assert fim == datetime.date(2024, 1, 31)
-
-
-def test_parse_periodo_fevereiro_ano_bissexto_retorna_dia_29():
-    inicio, fim = _parse_periodo("2024-02")
-    assert inicio == datetime.date(2024, 2, 1)
-    assert fim == datetime.date(2024, 2, 29)
-
-
-def test_parse_periodo_fevereiro_ano_nao_bissexto_retorna_dia_28():
-    inicio, fim = _parse_periodo("2023-02")
-    assert inicio == datetime.date(2023, 2, 1)
-    assert fim == datetime.date(2023, 2, 28)
-
-
-def test_parse_periodo_dezembro_ultimo_dia_ano_seguinte_nao_vaza():
-    """Garante que dezembro retorna 31/12 e não vira para o ano seguinte."""
-    _, fim = _parse_periodo("2024-12")
-    assert fim.year == 2024
-    assert fim.month == 12
-
-
-def test_parse_periodo_mes_invalido_levanta_erro():
-    with pytest.raises(DRFValidationError) as exc_info:
-        _parse_periodo("2024-13")
-    assert "periodo" in exc_info.value.detail
-
-
-def test_parse_periodo_mes_zero_levanta_erro():
-    with pytest.raises(DRFValidationError):
-        _parse_periodo("2024-00")
-
-
-def test_parse_periodo_formato_invertido_levanta_erro():
-    with pytest.raises(DRFValidationError):
-        _parse_periodo("03-2024")
-
-
-def test_parse_periodo_formato_sem_separador_levanta_erro():
-    with pytest.raises(DRFValidationError):
-        _parse_periodo("202403")
-
-
-def test_parse_periodo_formato_yyyymmdd_levanta_erro():
-    with pytest.raises(DRFValidationError):
-        _parse_periodo("2024-03-15")
-
-
-# ---------------------------------------------------------------------------
-# _get_date_range
-# ---------------------------------------------------------------------------
+# Nota: Testes específicos de parse_date() e parse_period() estão em
+# core/tests/test_date_utils.py. Aqui testamos apenas a lógica de
+# prioridade e integração com _get_date_range().
 
 
 def test_get_date_range_sem_params_retorna_nulos():

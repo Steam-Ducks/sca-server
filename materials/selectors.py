@@ -1,40 +1,7 @@
-import datetime
-
 from django.db.models import Q, Sum, F, DecimalField
 from django.db.models.functions import Cast, TruncMonth
-from rest_framework.exceptions import ValidationError as DRFValidationError
+from core.utils.date_utils import parse_date, parse_period
 from sca_data.models import SilverPedidoCompra
-
-
-def _parse_date(raw: str, param_name: str) -> datetime.date:
-    try:
-        return datetime.date.fromisoformat(raw)
-    except ValueError:
-        raise DRFValidationError(
-            {param_name: f"Data inválida '{raw}'. Use o formato YYYY-MM-DD."}
-        )
-
-
-def _parse_periodo(raw: str) -> tuple:
-    """YYYY-MM → (primeiro_dia, último_dia) do mês."""
-    try:
-        if len(raw) != 7 or raw[4] != "-":
-            raise ValueError
-        year, month = int(raw[:4]), int(raw[5:7])
-        if not (1 <= month <= 12):
-            raise ValueError
-    except (ValueError, IndexError):
-        raise DRFValidationError(
-            {"periodo": f"Período inválido '{raw}'. Use o formato YYYY-MM."}
-        )
-
-    primeiro_dia = datetime.date(year, month, 1)
-    if month == 12:
-        ultimo_dia = datetime.date(year + 1, 1, 1) - datetime.timedelta(days=1)
-    else:
-        ultimo_dia = datetime.date(year, month + 1, 1) - datetime.timedelta(days=1)
-
-    return primeiro_dia, ultimo_dia
 
 
 def _get_date_range(params) -> tuple:
@@ -48,8 +15,10 @@ def _get_date_range(params) -> tuple:
     raw_periodo = params.get("periodo")
 
     if raw_inicio or raw_fim:
-        data_inicio = _parse_date(raw_inicio, "data_inicio") if raw_inicio else None
-        data_fim = _parse_date(raw_fim, "data_fim") if raw_fim else None
+        data_inicio = parse_date(raw_inicio, "data_inicio") if raw_inicio else None
+        data_fim = parse_date(raw_fim, "data_fim") if raw_fim else None
+
+        from rest_framework.exceptions import ValidationError as DRFValidationError
 
         if data_inicio and data_fim and data_inicio > data_fim:
             raise DRFValidationError(
@@ -59,7 +28,7 @@ def _get_date_range(params) -> tuple:
         return data_inicio, data_fim
 
     if raw_periodo:
-        return _parse_periodo(raw_periodo)
+        return parse_period(raw_periodo)
 
     return None, None
 
