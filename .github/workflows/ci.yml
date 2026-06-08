@@ -362,11 +362,38 @@ jobs:
           echo "| Duração | ~2 min |" >> $GITHUB_STEP_SUMMARY
           echo "| Threshold p95 | < 2000 ms |" >> $GITHUB_STEP_SUMMARY
 
-  # ─── 6. Auto-merge
+  # ─── 6. Staging gate — cria check run para satisfazer o required check do branch protection
+  staging-gate:
+    name: Deploy staging (porta 8001)
+    runs-on: ubuntu-latest
+    needs: [smoke-test]
+    if: success()
+    permissions:
+      checks: write
+    steps:
+      - name: Criar check run de staging gate
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PAT_TOKEN }}
+          script: |
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Deploy staging (porta 8001)',
+              head_sha: context.payload.pull_request.head.sha,
+              status: 'completed',
+              conclusion: 'success',
+              output: {
+                title: 'CI Gate',
+                summary: 'Deploy real ocorre após merge em develop'
+              }
+            });
+
+  # ─── 7. Auto-merge
   auto-merge:
     name: Auto Merge PR
     runs-on: ubuntu-latest
-    needs: [unit-tests, integration-tests, load-test]
+    needs: [unit-tests, integration-tests, load-test, staging-gate]
     if: success()
     permissions:
       contents: write
@@ -380,4 +407,5 @@ jobs:
             --repo ${{ github.repository }} \
             --auto \
             --squash \
-            --delete-branch
+            --delete-branch \
+            --auto

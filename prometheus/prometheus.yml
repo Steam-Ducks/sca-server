@@ -7,6 +7,31 @@ remote_write:
     basic_auth:
       username: '3046984'
       password: 'GRAFANA_CLOUD_TOKEN_PLACEHOLDER'
+    write_relabel_configs:
+      # Alta cardinalidade — não usado nos dashboards (476 séries)
+      - source_labels: [__name__]
+        regex: 'django_http_requests_latency_seconds_by_view_method_bucket'
+        action: drop
+      # Buckets de body size — não usados nos dashboards
+      - source_labels: [__name__]
+        regex: 'django_http_requests_body_total_bytes_bucket|django_http_responses_body_total_bytes_bucket'
+        action: drop
+      # Métricas de scrape do node — não usadas nos dashboards
+      - source_labels: [__name__]
+        regex: 'node_scrape_collector_.*'
+        action: drop
+      # Métricas de tabelas do postgres — não usadas nos dashboards
+      - source_labels: [__name__]
+        regex: 'pg_stat_user_tables_.*'
+        action: drop
+      # Métricas internas do Go/Python/process — não usadas nos dashboards
+      - source_labels: [__name__]
+        regex: 'go_.*|python_.*|process_.*|promhttp_.*'
+        action: drop
+      # Métricas de baixo valor do Django
+      - source_labels: [__name__]
+        regex: 'django_migrations_.*|django_model_.*'
+        action: drop
 
 rule_files:
   - "alerts.yml"
