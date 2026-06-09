@@ -254,34 +254,34 @@ def test_temporal_aceita_filtro_funcao():
 
 
 def test_temporal_aplica_filtro_colaborador(rf):
-    """TC02: filtro colaborador é repassado ao queryset via _apply_dimension_filters."""
-    from unittest.mock import MagicMock
-    from rest_framework.request import Request
-
-    request = rf.get(URL, {"colaborador": "Lucas Martins"})
-    view = TechnicalHoursTemporalView()
-    view.request = Request(request)
+    """TC02: filtro colaborador é aplicado pelo selector get_technical_hours_queryset."""
+    from unittest.mock import MagicMock, patch
+    from technical_hours.selectors import get_technical_hours_queryset
 
     mock_qs = MagicMock()
+    mock_qs.select_related.return_value = mock_qs
     mock_qs.filter.return_value = mock_qs
+    mock_qs.annotate.return_value = mock_qs
+    mock_qs.order_by.return_value = mock_qs
 
-    view._apply_dimension_filters(mock_qs)
+    with patch("technical_hours.selectors.SilverTempoTarefa.objects", mock_qs):
+        get_technical_hours_queryset({"colaborador": "Lucas Martins"}, period_filters={})
 
     mock_qs.filter.assert_any_call(usuario__iexact="Lucas Martins")
 
 
 def test_temporal_aplica_filtro_tarefa(rf):
-    """TC02: filtro tarefa é repassado ao queryset via _apply_dimension_filters."""
-    from unittest.mock import MagicMock
-    from rest_framework.request import Request
-
-    request = rf.get(URL, {"tarefa": "Arquitetura Cloud"})
-    view = TechnicalHoursTemporalView()
-    view.request = Request(request)
+    """TC02: filtro tarefa é aplicado pelo selector get_technical_hours_queryset."""
+    from unittest.mock import MagicMock, patch
+    from technical_hours.selectors import get_technical_hours_queryset
 
     mock_qs = MagicMock()
+    mock_qs.select_related.return_value = mock_qs
     mock_qs.filter.return_value = mock_qs
+    mock_qs.annotate.return_value = mock_qs
+    mock_qs.order_by.return_value = mock_qs
 
-    view._apply_dimension_filters(mock_qs)
+    with patch("technical_hours.selectors.SilverTempoTarefa.objects", mock_qs):
+        get_technical_hours_queryset({"tarefa": "Arquitetura Cloud"}, period_filters={})
 
     mock_qs.filter.assert_any_call(tarefa__titulo__iexact="Arquitetura Cloud")
