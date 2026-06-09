@@ -49,6 +49,7 @@ def snapshot_gold(db):
 
 # ── CTI: BudgetSnapshotView ───────────────────────────────────────────────────
 
+
 class TestBudgetSnapshotGoldIntegration:
     """
     CTI-01 ao CTI-07
@@ -98,14 +99,20 @@ class TestBudgetSnapshotGoldIntegration:
     def test_filtro_por_programa_retorna_apenas_dados_do_programa(self, api_client, db):
         # CTI-07 (mínimo): ?programa= → isola dados do programa
         GoldBudgetSnapshot.objects.create(
-            nome_projeto="Proj MANSUP", nome_programa="MANSUP",
-            budget=100_000.0, custo_real=50_000.0,
-            saude_financeira="Saudável", gold_updated_at=datetime.now(tz=timezone.utc),
+            nome_projeto="Proj MANSUP",
+            nome_programa="MANSUP",
+            budget=100_000.0,
+            custo_real=50_000.0,
+            saude_financeira="Saudável",
+            gold_updated_at=datetime.now(tz=timezone.utc),
         )
         GoldBudgetSnapshot.objects.create(
-            nome_projeto="Proj INFRA", nome_programa="INFRA",
-            budget=999_000.0, custo_real=500_000.0,
-            saude_financeira="Em risco", gold_updated_at=datetime.now(tz=timezone.utc),
+            nome_projeto="Proj INFRA",
+            nome_programa="INFRA",
+            budget=999_000.0,
+            custo_real=500_000.0,
+            saude_financeira="Em risco",
+            gold_updated_at=datetime.now(tz=timezone.utc),
         )
         response = api_client.get("/api/budget/?programa=MANSUP")
         assert response.status_code == 200
@@ -115,6 +122,7 @@ class TestBudgetSnapshotGoldIntegration:
 
 
 # ── CTI: BudgetIndicatorsView ─────────────────────────────────────────────────
+
 
 class TestBudgetIndicatorsIntegration:
     """
@@ -146,22 +154,38 @@ class TestBudgetIndicatorsIntegration:
         # Valida: camelCase correto e source fields mapeados
         response = api_client.get("/api/budget/indicators/")
         data = response.data["data"]
-        for campo in ["budgetTotal", "custoRealTotal", "desvioPercentMedio",
-                      "projetosSaudaveis", "projetosAtencao", "projetosCriticos"]:
+        for campo in [
+            "budgetTotal",
+            "custoRealTotal",
+            "desvioPercentMedio",
+            "projetosSaudaveis",
+            "projetosAtencao",
+            "projetosCriticos",
+        ]:
             assert campo in data, f"Campo ausente: {campo}"
 
     def test_indicators_refletem_dados_reais(self, api_client, db):
         # CTI-11 (mínimo): dados inseridos → KPIs calculados corretamente
         # Valida: get_budget_indicators_gold agrega pelo banco real
         GoldBudgetSnapshot.objects.create(
-            id=601, nome_projeto="Proj A", nome_programa="MANSUP",
-            budget=200_000.0, custo_real=150_000.0, desvio_percent=25.0,
-            saude_financeira="Saudável", gold_updated_at=datetime.now(tz=timezone.utc),
+            id=601,
+            nome_projeto="Proj A",
+            nome_programa="MANSUP",
+            budget=200_000.0,
+            custo_real=150_000.0,
+            desvio_percent=25.0,
+            saude_financeira="Saudável",
+            gold_updated_at=datetime.now(tz=timezone.utc),
         )
         GoldBudgetSnapshot.objects.create(
-            id=602, nome_projeto="Proj B", nome_programa="MANSUP",
-            budget=100_000.0, custo_real=130_000.0, desvio_percent=-30.0,
-            saude_financeira="Crítico", gold_updated_at=datetime.now(tz=timezone.utc),
+            id=602,
+            nome_projeto="Proj B",
+            nome_programa="MANSUP",
+            budget=100_000.0,
+            custo_real=130_000.0,
+            desvio_percent=-30.0,
+            saude_financeira="Crítico",
+            gold_updated_at=datetime.now(tz=timezone.utc),
         )
         response = api_client.get("/api/budget/indicators/")
         assert response.status_code == 200

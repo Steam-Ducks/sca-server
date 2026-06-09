@@ -238,12 +238,7 @@ class TestMaterialsTablePeriodoIntegration:
         assert response.status_code == 200
 
     def test_periodo_invalido_retorna_400(self, api_client):
-<<<<<<< HEAD
         # CTI-06 (adicional): período inválido → 400
-=======
-        # CTI-06 (adicional): formato de período inválido → 400
-        # Valida: parse_period levanta ValidationError propagada pela view
->>>>>>> develop
         response = api_client.get("/api/compras/periodo/2024-13/")
         assert response.status_code == 400
 
