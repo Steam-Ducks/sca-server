@@ -255,7 +255,6 @@ def test_temporal_aceita_filtro_funcao():
 
 def test_temporal_aplica_filtro_colaborador(rf):
     """TC02: filtro colaborador é aplicado pelo selector get_technical_hours_queryset."""
-    from unittest.mock import MagicMock, patch
     from technical_hours.selectors import get_technical_hours_queryset
 
     mock_qs = MagicMock()
@@ -265,14 +264,15 @@ def test_temporal_aplica_filtro_colaborador(rf):
     mock_qs.order_by.return_value = mock_qs
 
     with patch("technical_hours.selectors.SilverTempoTarefa.objects", mock_qs):
-        get_technical_hours_queryset({"colaborador": "Lucas Martins"}, period_filters={})
+        get_technical_hours_queryset(
+            {"colaborador": "Lucas Martins"}, period_filters={}
+        )
 
     mock_qs.filter.assert_any_call(usuario__iexact="Lucas Martins")
 
 
 def test_temporal_aplica_filtro_tarefa(rf):
     """TC02: filtro tarefa é aplicado pelo selector get_technical_hours_queryset."""
-    from unittest.mock import MagicMock, patch
     from technical_hours.selectors import get_technical_hours_queryset
 
     mock_qs = MagicMock()

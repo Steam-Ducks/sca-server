@@ -199,9 +199,7 @@ def ingest_csv(df: pd.DataFrame, csv_type: str, filename: str) -> dict:
         try:
             _ensure_silver_schema(engine)
 
-            def _log_silver(
-                table_name, op_status, st, affected_rows=0, metadata=None
-            ):
+            def _log_silver(table_name, op_status, st, affected_rows=0, metadata=None):
                 _audit(
                     engine,
                     run_id,
