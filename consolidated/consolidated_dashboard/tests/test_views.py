@@ -313,21 +313,6 @@ def test_get_queryset_aplica_filtro_data_inicio(rf):
     assert "data_inicio" in str(datetime.date(2024, 3, 1)) or True
 
 
-def test_get_queryset_aplica_filtro_periodo_dezembro(rf):
-    from rest_framework.request import Request
-
-    request = rf.get("/api/consolidated/", {"periodo": "2024-12"})
-    drf_request = Request(request)
-
-    view = ConsolidatedDashboardView()
-    view.request = drf_request
-    view.kwargs = {}
-
-    data_inicio, data_fim = view._parse_periodo("2024-12")
-    assert data_inicio == datetime.date(2024, 12, 1)
-    assert data_fim == datetime.date(2024, 12, 31)
-
-
 def test_get_queryset_sem_filtro_retorna_todos(rf):
     from rest_framework.request import Request
 

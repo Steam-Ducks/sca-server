@@ -10,9 +10,6 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: sca-server
 
     steps:
       - uses: actions/checkout@v4
@@ -64,4 +61,3 @@ jobs:
 
           sync_dashboard grafana/provisioning/dashboards/json/sca/sca-overview.json "SCA Overview"
           sync_dashboard grafana/provisioning/dashboards/json/k6/k6-results.json "K6"
-          sync_dashboard grafana/provisioning/dashboards/json/k6/k6-scenarios.json "K6"
