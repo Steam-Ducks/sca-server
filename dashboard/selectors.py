@@ -2,7 +2,7 @@
 from django.db import connection
 from django.db.models import Count, ExpressionWrapper, F, FloatField, Q, Sum
 from django.db.models.functions import Coalesce
-
+from sca_data.db.schema import Silver
 from sca_data.models import SilverProjeto
 
 SQL_AND = " AND "
@@ -80,33 +80,33 @@ def get_dashboard_kpis(params):
     # FIX: use compras_projeto.valor_alocado (same source as ORM-based selectors)
     sql_materials = f"""
         SELECT COALESCE(SUM(cp.valor_alocado), 0) AS materials_cost
-        FROM silver.compras_projeto cp
-        JOIN silver.projetos   p    ON p.id    = cp.projeto_id
-        LEFT JOIN silver.programas prog ON prog.id = p.programa_id
-        LEFT JOIN silver.pedidos_compra pc ON pc.id = cp.pedido_compra_id
+        FROM {Silver.COMPRAS_PROJETO} cp
+        JOIN {Silver.PROJETOS}   p    ON p.id    = cp.projeto_id
+        LEFT JOIN {Silver.PROGRAMAS} prog ON prog.id = p.programa_id
+        LEFT JOIN {Silver.PEDIDOS_COMPRA} pc ON pc.id = cp.pedido_compra_id
         {materials_where}
     """
 
     sql_hours = f"""
         SELECT COALESCE(SUM(tt.horas_trabalhadas * p.custo_hora), 0) AS hours_cost
-        FROM silver.tempo_tarefas   tt
-        JOIN silver.tarefas_projeto tp   ON tp.id  = tt.tarefa_id
-        JOIN silver.projetos        p    ON p.id   = tp.projeto_id
-        LEFT JOIN silver.programas  prog ON prog.id = p.programa_id
+        FROM {Silver.TEMPO_TAREFAS}   tt
+        JOIN {Silver.TAREFAS_PROJETO} tp   ON tp.id  = tt.tarefa_id
+        JOIN {Silver.PROJETOS}        p    ON p.id   = tp.projeto_id
+        LEFT JOIN {Silver.PROGRAMAS}  prog ON prog.id = p.programa_id
         {hours_where}
     """
 
     sql_projects = f"""
         SELECT COUNT(DISTINCT p.id) AS total_projects
-        FROM silver.projetos   p
-        LEFT JOIN silver.programas prog ON prog.id = p.programa_id
+        FROM {Silver.PROJETOS}   p
+        LEFT JOIN {Silver.PROGRAMAS} prog ON prog.id = p.programa_id
         {projects_where}
     """
 
     sql_programs = f"""
         SELECT COUNT(DISTINCT prog.id) AS total_programs
-        FROM silver.programas prog
-        JOIN silver.projetos  p ON p.programa_id = prog.id
+        FROM {Silver.PROGRAMAS} prog
+        JOIN {Silver.PROJETOS}  p ON p.programa_id = prog.id
         {projects_where}
     """
 
@@ -360,21 +360,21 @@ def get_top_projects_by_cost(params):
             p.nome_projeto,
             COALESCE((
                 SELECT SUM(cp.valor_alocado)
-                FROM silver.compras_projeto cp
-                JOIN silver.pedidos_compra pc ON pc.id = cp.pedido_compra_id
+                FROM {Silver.COMPRAS_PROJETO} cp
+                JOIN {Silver.PEDIDOS_COMPRA} pc ON pc.id = cp.pedido_compra_id
                 WHERE cp.projeto_id = p.id
                   {_and(mat_sub_and)}
             ), 0)
             +
             COALESCE((
                 SELECT SUM(tt.horas_trabalhadas) * p.custo_hora
-                FROM silver.tempo_tarefas tt
-                JOIN silver.tarefas_projeto tp ON tp.id = tt.tarefa_id
+                FROM {Silver.TEMPO_TAREFAS} tt
+                JOIN {Silver.TAREFAS_PROJETO} tp ON tp.id = tt.tarefa_id
                 WHERE tp.projeto_id = p.id
                   {_and(hrs_sub_and)}
             ), 0) AS total_cost
-        FROM silver.projetos p
-        LEFT JOIN silver.programas prog ON p.programa_id = prog.id
+        FROM {Silver.PROJETOS} p
+        LEFT JOIN {Silver.PROGRAMAS} prog ON p.programa_id = prog.id
         {_where(outer_where)}
         ORDER BY total_cost DESC
         LIMIT 10
@@ -458,10 +458,10 @@ def get_cost_evolution(params):
                 TO_CHAR(pc.data_pedido, 'YYYY-MM') AS periodo,
                 cp.valor_alocado                   AS custo_materiais,
                 0                                  AS custo_horas
-            FROM silver.compras_projeto cp
-            JOIN silver.pedidos_compra  pc   ON pc.id    = cp.pedido_compra_id
-            JOIN silver.projetos        p    ON p.id     = cp.projeto_id
-            LEFT JOIN silver.programas  prog ON prog.id  = p.programa_id
+            FROM {Silver.COMPRAS_PROJETO} cp
+            JOIN {Silver.PEDIDOS_COMPRA}  pc   ON pc.id    = cp.pedido_compra_id
+            JOIN {Silver.PROJETOS}        p    ON p.id     = cp.projeto_id
+            LEFT JOIN {Silver.PROGRAMAS}  prog ON prog.id  = p.programa_id
             WHERE pc.data_pedido IS NOT NULL
               {_and(mat_and)}
 
@@ -471,10 +471,10 @@ def get_cost_evolution(params):
                 TO_CHAR(tt.data, 'YYYY-MM')         AS periodo,
                 0                                   AS custo_materiais,
                 tt.horas_trabalhadas * p.custo_hora AS custo_horas
-            FROM silver.tempo_tarefas   tt
-            JOIN silver.tarefas_projeto tp   ON tp.id   = tt.tarefa_id
-            JOIN silver.projetos        p    ON p.id    = tp.projeto_id
-            LEFT JOIN silver.programas  prog ON prog.id = p.programa_id
+            FROM {Silver.TEMPO_TAREFAS}   tt
+            JOIN {Silver.TAREFAS_PROJETO} tp   ON tp.id   = tt.tarefa_id
+            JOIN {Silver.PROJETOS}        p    ON p.id    = tp.projeto_id
+            LEFT JOIN {Silver.PROGRAMAS}  prog ON prog.id = p.programa_id
             WHERE tt.data IS NOT NULL
               {_and(hrs_and)}
         ) combined
