@@ -4,6 +4,8 @@ from sqlalchemy import text
 
 from sca_data.db.connection import get_or_create
 
+from sca_data.db.schema import Silver
+
 logger = logging.getLogger(__name__)
 
 logging.basicConfig(
@@ -12,7 +14,7 @@ logging.basicConfig(
 
 ENGINE = get_or_create()
 
-_SQL_MATERIALS_INDICATORS = """
+_SQL_MATERIALS_INDICATORS = f"""
     TRUNCATE TABLE gold."indicators_materiais";
 
     INSERT INTO gold."indicators_materiais"
@@ -23,14 +25,14 @@ _SQL_MATERIALS_INDICATORS = """
         COUNT(emp.id) FILTER (WHERE m.status = 'Ativo')     AS total_itens,
         AVG(pc.valor_total)                                  AS custo_medio,
         NOW()                                                AS gold_updated_at
-    FROM silver.materiais m
-    LEFT JOIN silver.estoque_materiais_projeto emp ON emp.material_id = m.id
-    LEFT JOIN silver.solicitacoes_compra       sc  ON sc.material_id  = m.id
-    LEFT JOIN silver.pedidos_compra            pc  ON pc.solicitacao_id = sc.id
+    FROM {Silver.MATERIAIS} m
+    LEFT JOIN {Silver.ESTOQUE_MATERIAIS_PROJETO} emp ON emp.material_id = m.id
+    LEFT JOIN {Silver.SOLICITACOES_COMPRA}       sc  ON sc.material_id  = m.id
+    LEFT JOIN {Silver.PEDIDOS_COMPRA}            pc  ON pc.solicitacao_id = sc.id
     GROUP BY m.categoria;
 """
 
-_SQL_COSTS = """
+_SQL_COSTS = f"""
     TRUNCATE TABLE gold.costs;
 
     INSERT INTO gold.costs
@@ -43,15 +45,15 @@ _SQL_COSTS = """
         p.responsavel       AS responsavel_projeto,
         SUM(pc.valor_total) AS custo,
         NOW()               AS gold_updated_at
-    FROM silver.compras_projeto cp
-    LEFT JOIN silver.pedidos_compra pc ON pc.id = cp.pedido_compra_id
-    LEFT JOIN silver.projetos       p  ON cp.projeto_id  = p.id
-    LEFT JOIN silver.programas      po ON p.programa_id  = po.id
+    FROM {Silver.COMPRAS_PROJETO} cp
+    LEFT JOIN {Silver.PEDIDOS_COMPRA} pc ON pc.id = cp.pedido_compra_id
+    LEFT JOIN {Silver.PROJETOS}       p  ON cp.projeto_id  = p.id
+    LEFT JOIN {Silver.PROGRAMAS}      po ON p.programa_id  = po.id
     GROUP BY 1, 2, 3, 4, 5
     ORDER BY 1;
 """
 
-_SQL_BUDGET_SNAPSHOT = """
+_SQL_BUDGET_SNAPSHOT = f"""
     TRUNCATE TABLE gold."budget_snapshot";
 
     INSERT INTO gold."budget_snapshot"
@@ -111,34 +113,34 @@ _SQL_BUDGET_SNAPSHOT = """
         TO_CHAR(p.data_inicio, 'YYYY-MM')                                           AS periodo,
         p.status,
         NOW()                                                                        AS gold_updated_at
-    FROM silver.projetos p
-    LEFT JOIN silver.programas po ON p.programa_id = po.id
+    FROM {Silver.PROJETOS} p
+    LEFT JOIN {Silver.PROGRAMAS} po ON p.programa_id = po.id
     LEFT JOIN (
         SELECT sc.projeto_id,
                SUM(sc.quantidade * m.custo_estimado) AS budget_materiais
-        FROM silver.solicitacoes_compra sc
-        JOIN silver.materiais m ON m.id = sc.material_id
+        FROM {Silver.SOLICITACOES_COMPRA} sc
+        JOIN {Silver.MATERIAIS} m ON m.id = sc.material_id
         GROUP BY sc.projeto_id
     ) est_mat ON est_mat.projeto_id = p.id
     LEFT JOIN (
         SELECT t.projeto_id,
                SUM(t.estimativa_horas * p2.custo_hora) AS budget_horas
-        FROM silver.tarefas_projeto t
-        JOIN silver.projetos p2 ON p2.id = t.projeto_id
+        FROM {Silver.TAREFAS_PROJETO} t
+        JOIN {Silver.PROJETOS} p2 ON p2.id = t.projeto_id
         GROUP BY t.projeto_id
     ) est_h ON est_h.projeto_id = p.id
     LEFT JOIN (
         SELECT cp.projeto_id,
                SUM(cp.valor_alocado) AS custo_materiais
-        FROM silver.compras_projeto cp
+        FROM {Silver.COMPRAS_PROJETO} cp
         GROUP BY cp.projeto_id
     ) real_mat ON real_mat.projeto_id = p.id
     LEFT JOIN (
         SELECT t.projeto_id,
                SUM(tt.horas_trabalhadas * p2.custo_hora) AS custo_horas
-        FROM silver.tempo_tarefas tt
-        JOIN silver.tarefas_projeto t ON t.id = tt.tarefa_id
-        JOIN silver.projetos p2 ON p2.id = t.projeto_id
+        FROM {Silver.TEMPO_TAREFAS} tt
+        JOIN {Silver.TAREFAS_PROJETO} t ON t.id = tt.tarefa_id
+        JOIN {Silver.PROJETOS} p2 ON p2.id = t.projeto_id
         GROUP BY t.projeto_id
     ) real_h ON real_h.projeto_id = p.id
     ORDER BY p.nome_projeto;
