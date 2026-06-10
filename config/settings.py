@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 import os
+import sys
 from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
@@ -25,14 +26,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY",
-    "django-insecure-1tkw^+3d4t+4e=v1&dn-%!-6z3nwpf%u*3t2wdfv3p31)e8v3y",
-)
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False").lower() in ("1", "true", "yes")
+
+# SECURITY WARNING: keep the secret key used in production secret!
+_secret_key_from_env = os.environ.get("SECRET_KEY")
+
+if not DEBUG and not _secret_key_from_env:
+    print(
+        "[CRITICAL] SECRET_KEY is not set. "
+        "The application cannot start in a production environment without a secure secret key. "
+        "Set the SECRET_KEY environment variable before starting.",
+        file=sys.stderr,
+    )
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured(
+        "SECRET_KEY environment variable must be set in production environments."
+    )
+
+SECRET_KEY = _secret_key_from_env or "django-insecure-1tkw^+3d4t+4e=v1&dn-%!-6z3nwpf%u*3t2wdfv3p31)e8v3y"
 
 if DEBUG:
     ALLOWED_HOSTS = ["*"]
