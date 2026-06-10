@@ -40,11 +40,15 @@ if not DEBUG and not _secret_key_from_env:
         file=sys.stderr,
     )
     from django.core.exceptions import ImproperlyConfigured
+
     raise ImproperlyConfigured(
         "SECRET_KEY environment variable must be set in production environments."
     )
 
-SECRET_KEY = _secret_key_from_env or "django-insecure-1tkw^+3d4t+4e=v1&dn-%!-6z3nwpf%u*3t2wdfv3p31)e8v3y"
+SECRET_KEY = (
+    _secret_key_from_env
+    or "django-insecure-1tkw^+3d4t+4e=v1&dn-%!-6z3nwpf%u*3t2wdfv3p31)e8v3y"
+)
 
 if DEBUG:
     ALLOWED_HOSTS = ["*"]
