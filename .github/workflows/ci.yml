@@ -407,5 +407,4 @@ jobs:
             --repo ${{ github.repository }} \
             --auto \
             --squash \
-            --delete-branch \
             --auto
