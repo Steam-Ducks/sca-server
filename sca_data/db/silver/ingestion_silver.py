@@ -6,6 +6,7 @@ from sqlalchemy import text, Table, MetaData
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sca_data.db.connection import get_or_create
 from sca_data.db.enums import OperationStatus
+from sca_data.db.schema import SILVER
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +25,9 @@ def _read_bronze(engine, tb_name: str) -> pd.DataFrame:
 
 def _ensure_schema(engine):
     with engine.connect() as conn:
-        conn.execute(text("CREATE SCHEMA IF NOT EXISTS silver"))
+        conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {SILVER}"))
         conn.commit()
-    logging.info("Schema 'silver' verificado/criado.")
+    logging.info(f"Schema '{SILVER}' verificado/criado.")
 
 
 def _na_to_none(v):
@@ -51,15 +52,15 @@ def _write_silver(df: pd.DataFrame, engine, tb_name: str) -> int:
 
     # Ensure id is a primary key — to_sql(if_exists="replace") drops PK constraints
     inspector = sa_inspect(engine)
-    pk_cols = inspector.get_pk_constraint(tb_name, schema="silver").get(
+    pk_cols = inspector.get_pk_constraint(tb_name, schema=SILVER).get(
         "constrained_columns", []
     )
     if "id" not in pk_cols:
         with engine.begin() as conn:
-            conn.execute(text(f'ALTER TABLE silver."{tb_name}" ADD PRIMARY KEY (id)'))
+            conn.execute(text(f'ALTER TABLE {SILVER}."{tb_name}" ADD PRIMARY KEY (id)'))
 
     metadata = MetaData()
-    table = Table(tb_name, metadata, schema="silver", autoload_with=engine)
+    table = Table(tb_name, metadata, schema=SILVER, autoload_with=engine)
 
     with engine.begin() as conn:
         stmt = pg_insert(table).values(records)
