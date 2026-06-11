@@ -138,8 +138,8 @@ class TestCSVUploadValidation:
 
 
 class TestCSVUploadSuccess:
-    @patch("imports.views._get_engine")
-    @patch("imports.views.audit_mod")
+    @patch("imports.services._get_engine")
+    @patch("imports.services.audit_mod")
     @patch("sca_data.db.bronze.ingestion._ensure_schema")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.silver.ingestion_silver.PIPELINE", [])
@@ -156,8 +156,8 @@ class TestCSVUploadSuccess:
         response = view(request)
         assert response.status_code == 200
 
-    @patch("imports.views._get_engine")
-    @patch("imports.views.audit_mod")
+    @patch("imports.services._get_engine")
+    @patch("imports.services.audit_mod")
     @patch("sca_data.db.bronze.ingestion._ensure_schema")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.silver.ingestion_silver.PIPELINE", [])
@@ -174,8 +174,8 @@ class TestCSVUploadSuccess:
         response = view(request)
         assert "run_id" in response.data
 
-    @patch("imports.views._get_engine")
-    @patch("imports.views.audit_mod")
+    @patch("imports.services._get_engine")
+    @patch("imports.services.audit_mod")
     @patch("sca_data.db.bronze.ingestion._ensure_schema")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.silver.ingestion_silver.PIPELINE", [])
@@ -193,8 +193,8 @@ class TestCSVUploadSuccess:
         assert response.data["tabela"] == "programas"
         assert response.data["linhas_recebidas"] == 5
 
-    @patch("imports.views._get_engine")
-    @patch("imports.views.audit_mod")
+    @patch("imports.services._get_engine")
+    @patch("imports.services.audit_mod")
     @patch("sca_data.db.bronze.ingestion._ensure_schema")
     @patch(
         "sca_data.db.bronze.ingestion._create_table", side_effect=Exception("DB error")
@@ -213,8 +213,8 @@ class TestCSVUploadSuccess:
         assert response.status_code == 500
         assert "error" in response.data
 
-    @patch("imports.views._get_engine")
-    @patch("imports.views.audit_mod")
+    @patch("imports.services._get_engine")
+    @patch("imports.services.audit_mod")
     @patch("sca_data.db.bronze.ingestion._ensure_schema")
     @patch("sca_data.db.bronze.ingestion._create_table")
     def test_silver_failure_still_returns_200(
@@ -236,8 +236,8 @@ class TestCSVUploadSuccess:
                 response = view(request)
         assert response.status_code == 200
 
-    @patch("imports.views._get_engine")
-    @patch("imports.views.audit_mod")
+    @patch("imports.services._get_engine")
+    @patch("imports.services.audit_mod")
     @patch("sca_data.db.bronze.ingestion._ensure_schema")
     @patch("sca_data.db.bronze.ingestion._create_table")
     def test_silver_fn_called_when_in_pipeline(
@@ -258,8 +258,8 @@ class TestCSVUploadSuccess:
                 view(request)
         silver_fn.assert_called_once()
 
-    @patch("imports.views._get_engine")
-    @patch("imports.views.audit_mod")
+    @patch("imports.services._get_engine")
+    @patch("imports.services.audit_mod")
     @patch("sca_data.db.bronze.ingestion._ensure_schema")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.silver.ingestion_silver.PIPELINE", [])
@@ -277,8 +277,8 @@ class TestCSVUploadSuccess:
         _, _, table_name = mock_bronze_create.call_args[0]
         assert table_name == "materiais"
 
-    @patch("imports.views._get_engine")
-    @patch("imports.views.audit_mod")
+    @patch("imports.services._get_engine")
+    @patch("imports.services.audit_mod")
     @patch("sca_data.db.bronze.ingestion._ensure_schema")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.silver.ingestion_silver.PIPELINE", [])
@@ -334,8 +334,8 @@ class TestViewCsvTypes:
 class TestEachEndpointAcceptsItsOwnType:
     """Spot-check that each endpoint correctly accepts its own CSV type."""
 
-    @patch("imports.views._get_engine")
-    @patch("imports.views.audit_mod")
+    @patch("imports.services._get_engine")
+    @patch("imports.services.audit_mod")
     @patch("sca_data.db.bronze.ingestion._ensure_schema")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.silver.ingestion_silver.PIPELINE", [])
@@ -363,8 +363,8 @@ class TestEachEndpointAcceptsItsOwnType:
         assert response.status_code == 400
         assert response.data["tipo_esperado"] == "fornecedores"
 
-    @patch("imports.views._get_engine")
-    @patch("imports.views.audit_mod")
+    @patch("imports.services._get_engine")
+    @patch("imports.services.audit_mod")
     @patch("sca_data.db.bronze.ingestion._ensure_schema")
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.silver.ingestion_silver.PIPELINE", [])
@@ -421,8 +421,8 @@ class TestPerfilImportRestriction:
         force_authenticate(req, user=user)
 
         with (
-            patch("imports.views._get_engine"),
-            patch("imports.views.audit_mod"),
+            patch("imports.services._get_engine"),
+            patch("imports.services.audit_mod"),
             patch("sca_data.db.bronze.ingestion._ensure_schema"),
             patch("sca_data.db.bronze.ingestion._create_table"),
             patch("sca_data.db.silver.ingestion_silver.PIPELINE", []),

@@ -5,6 +5,10 @@ import os
 # an already-set value, so a CI-provided DB_HOST is still respected.
 os.environ.setdefault("DB_HOST", "")
 
+# Provide a test-only SECRET_KEY so local runs without .env don't trigger
+# the production startup guard (which requires SECRET_KEY when DEBUG=False).
+os.environ.setdefault("SECRET_KEY", "ci-secret-key-for-tests-only")
+
 from config.settings import *  # noqa: F401,F403
 
 # Em CI (DB_HOST setado) usa o Postgres herdado do settings.py — testes

@@ -194,7 +194,7 @@ def test_get_queryset_aplica_filtro_por_programa(rf):
     mock_qs.annotate.return_value = mock_qs
     mock_qs.order_by.return_value = mock_qs
 
-    with patch("technical_hours.views.SilverTempoTarefa.objects", mock_qs):
+    with patch("technical_hours.selectors.SilverTempoTarefa.objects", mock_qs):
         result = view.get_queryset()
 
     assert result == mock_qs
@@ -215,7 +215,7 @@ def test_get_queryset_aplica_filtro_por_projeto(rf):
     mock_qs.annotate.return_value = mock_qs
     mock_qs.order_by.return_value = mock_qs
 
-    with patch("technical_hours.views.SilverTempoTarefa.objects", mock_qs):
+    with patch("technical_hours.selectors.SilverTempoTarefa.objects", mock_qs):
         result = view.get_queryset()
 
     assert result == mock_qs
@@ -234,7 +234,7 @@ def test_get_queryset_aplica_filtros_combinados_de_programa_e_projeto(rf):
     mock_qs.annotate.return_value = mock_qs
     mock_qs.order_by.return_value = mock_qs
 
-    with patch("technical_hours.views.SilverTempoTarefa.objects", mock_qs):
+    with patch("technical_hours.selectors.SilverTempoTarefa.objects", mock_qs):
         result = view.get_queryset()
 
     assert result == mock_qs

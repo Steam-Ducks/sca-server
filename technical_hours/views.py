@@ -1,22 +1,17 @@
 from django.core.cache import cache
-from django.db.models import Count, ExpressionWrapper, F, FloatField, Sum
-from django.db.models.functions import TruncMonth
 from rest_framework.response import Response
 
+from core.utils.filters import build_date_filters
 from core.views import BaseFilteredListView
-from sca_data.models import SilverTempoTarefa
+from technical_hours.selectors import (
+    aggregate_kpis,
+    aggregate_temporal,
+    get_technical_hours_queryset,
+)
 from technical_hours.serializers import TechnicalHoursTableSerializer
 from users.permissions import CanAccessTechnicalHours
-from core.utils.filters import build_date_filters
 
 _CACHE_TTL = 300
-
-
-def _ck(prefix, params=None, **kwargs):
-    parts = sorted((params or {}).items())
-    extra = sorted(kwargs.items())
-    suffix = "&".join(f"{k}={v}" for k, v in parts + extra if v)
-    return f"{prefix}:{suffix}" if suffix else prefix
 
 
 class TechnicalHoursTableView(BaseFilteredListView):
@@ -47,50 +42,11 @@ class TechnicalHoursTableView(BaseFilteredListView):
             allow_year_month=True,
         )
 
-    def _apply_dimension_filters(self, queryset):
-        params = self.request.query_params
-
-        programa = params.get("programa")
-        if programa:
-            queryset = queryset.filter(
-                tarefa__projeto__programa__nome_programa__iexact=programa
-            )
-
-        projeto = params.get("projeto")
-        if projeto:
-            queryset = queryset.filter(tarefa__projeto__nome_projeto__iexact=projeto)
-
-        colaborador = params.get("colaborador")
-        if colaborador:
-            queryset = queryset.filter(usuario__iexact=colaborador)
-
-        tarefa = params.get("tarefa")
-        if tarefa:
-            queryset = queryset.filter(tarefa__titulo__iexact=tarefa)
-
-        funcao = params.get("funcao")
-        if funcao:
-            queryset = queryset.filter(tarefa__responsavel__iexact=funcao)
-
-        return queryset
-
     def get_queryset(self):
-        filters = self._build_period_filters()
-
-        queryset = (
-            SilverTempoTarefa.objects.select_related("tarefa__projeto__programa")
-            .filter(tarefa__isnull=False)
-            .filter(**filters)
-            .annotate(
-                custo_por_hora=F("tarefa__projeto__custo_hora"),
-                custo_total=ExpressionWrapper(
-                    F("horas_trabalhadas") * F("tarefa__projeto__custo_hora"),
-                    output_field=FloatField(),
-                ),
-            )
+        return get_technical_hours_queryset(
+            self.request.query_params,
+            period_filters=self._build_period_filters(),
         )
-        queryset = self._apply_dimension_filters(queryset)
-        return queryset.order_by("-custo_total")
 
 
 class TechnicalHoursKpiView(TechnicalHoursTableView):
@@ -110,26 +66,15 @@ class TechnicalHoursKpiView(TechnicalHoursTableView):
     registros    : número de registros
     """
 
+    cache_key_prefix = "tech_hours_kpi"
+
     def get(self, request, *args, **kwargs):
-        key = _ck("tech_hours_kpi", request.query_params)
+        key = self.get_cache_key(request)
         cached = cache.get(key)
         if cached is not None:
             return Response(cached)
 
-        qs = self.get_queryset()
-        agg = qs.aggregate(
-            total_horas=Sum("horas_trabalhadas"),
-            soma_custo=Sum("custo_total"),
-            registros=Count("id"),
-        )
-        total_horas = float(agg["total_horas"] or 0)
-        custo_total = float(agg["soma_custo"] or 0)
-        data = {
-            "custo_total": round(custo_total, 2),
-            "total_horas": round(total_horas, 2),
-            "custo_medio": (round(custo_total / total_horas, 2) if total_horas else 0),
-            "registros": agg["registros"] or 0,
-        }
+        data = aggregate_kpis(self.get_queryset())
         cache.set(key, data, _CACHE_TTL)
         return Response(data)
 
@@ -139,8 +84,6 @@ class TechnicalHoursTablePeriodoView(TechnicalHoursTableView):
     Endpoint dedicado para filtro por período no dashboard de horas técnicas.
 
     Rota: GET /api/horas-tecnicas/periodo/<YYYY-MM>/
-
-    Usa build_date_filters para resolver o intervalo do periodo.
 
     Exemplos
     --------
@@ -173,32 +116,17 @@ class TechnicalHoursTemporalView(TechnicalHoursTableView):
     ordenada cronologicamente.
     """
 
+    cache_key_prefix = "tech_hours_temporal"
+
     def _build_period_filters(self):
         return {}
 
     def get(self, request, *args, **kwargs):
-        key = _ck("tech_hours_temporal", request.query_params)
+        key = self.get_cache_key(request)
         cached = cache.get(key)
         if cached is not None:
             return Response(cached)
 
-        qs = self.get_queryset()
-        agg = (
-            qs.annotate(mes=TruncMonth("data"))
-            .values("mes")
-            .annotate(
-                total_horas=Sum("horas_trabalhadas"),
-                total_custo=Sum("custo_total"),
-            )
-            .order_by("mes")
-        )
-        data = [
-            {
-                "periodo": row["mes"].strftime("%Y-%m"),
-                "total_horas": round(float(row["total_horas"] or 0), 2),
-                "total_custo": round(float(row["total_custo"] or 0), 2),
-            }
-            for row in agg
-        ]
+        data = aggregate_temporal(self.get_queryset())
         cache.set(key, data, _CACHE_TTL)
         return Response(data)

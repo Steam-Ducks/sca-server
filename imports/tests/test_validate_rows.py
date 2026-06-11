@@ -1,6 +1,6 @@
 import pandas as pd
 
-from imports.views import _validate_rows
+from imports.services import _validate_rows
 
 
 class TestValidateRowsErros:
