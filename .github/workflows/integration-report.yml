@@ -1,0 +1,58 @@
+# sca-server/.github/workflows/integration-report.yml
+#
+# Publica o relatório HTML do pytest (integração + unitários) no GitHub Pages
+# após cada run do CI do backend.
+#
+# Acesso: https://<org>.github.io/sca-server/
+#
+# Pré-requisitos:
+#   1. sca-server → Settings → Pages → Source: GitHub Actions
+#   2. No ci.yml do backend, o job de testes deve gerar o artefato "pytest-report"
+#      Adicionar ao step de pytest:
+#        --html=pytest-report/index.html --self-contained-html
+#      E fazer upload do artefato (ver comentário no ci.yml abaixo).
+#   3. Adicionar ao ci.yml:
+#        permissions: { pages: write, id-token: write }
+
+name: Integration Report → GitHub Pages
+
+on:
+  workflow_run:
+    workflows: ["CI"]           # deve ser o name: do ci.yml do backend
+    types: [completed]
+
+permissions:
+  pages: write
+  id-token: write
+
+jobs:
+  publish-report:
+    name: Publish pytest Report
+    runs-on: ubuntu-latest
+    # Publica mesmo quando CI falhou (relatório de falhas é o mais importante)
+    if: ${{ github.event.workflow_run.conclusion != 'cancelled' }}
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Download pytest report artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: pytest-report           # deve bater com o name: do upload no ci.yml
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: pytest-report
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pytest-report
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

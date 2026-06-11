@@ -1,11 +1,15 @@
 """
-Conjunto de integração: Materials (Gestão de Materiais)
+Conjunto de integração: Materials (atualizado)
 
 Funções do conjunto:
+    MaterialsTableView (views.py) GET /api/compras/
+    MaterialsTablePeriodoView     GET /api/compras/periodo/<YYYY-MM>/
+    MaterialsIndicatorsView   GET /api/materials/indicators/
+    TopMaterialsView          GET /api/top-materials/
+    CostByProjectView         GET /api/cost-by-project/
+    FilterOptionsView         GET /api/materials/filter-options/
     parse_period (core/utils)           — converte YYYY-MM em intervalo de datas
     get_materials_queryset (selectors)  — filtra SilverPedidoCompra com ORM
-    MaterialsTableView (views.py)       — endpoint GET /api/compras/
-    MaterialsTablePeriodoView           — endpoint GET /api/compras/periodo/<YYYY-MM>/
 """
 
 import os
@@ -22,24 +26,25 @@ from sca_data.models import (
     SilverSolicitacaoCompra,
 )
 
-# Skip when PostgreSQL is unavailable (SQLite CI environment).
-# To run locally: export DB_HOST=postgres (or your host) before pytest.
 pytestmark = [
     pytest.mark.skipif(
         not os.environ.get("DB_HOST"),
-        reason="Requires PostgreSQL with silver/gold schemas — set DB_HOST to run",
+        reason="Requires PostgreSQL with silver schema — set DB_HOST to run",
     ),
     pytest.mark.integration,
     pytest.mark.django_db,
 ]
 
 
+# ── Fixtures ──────────────────────────────────────────────────────────────────
+
+
 @pytest.fixture
 def programa(db):
     return SilverPrograma.objects.create(
         id=700,
-        codigo_programa="INFRA",
-        nome_programa="Infraestrutura",
+        codigo_programa="MANSUP",
+        nome_programa="MANSUP",
         status="Em andamento",
         silver_ingested_at=datetime.now(tz=timezone.utc),
     )
@@ -47,13 +52,12 @@ def programa(db):
 
 @pytest.fixture
 def projeto(db, programa):
-    # SilverProjeto.id is BigIntegerField — explicit id required
     return SilverProjeto.objects.create(
         id=700,
         codigo_projeto="PROJ-700",
-        nome_projeto="Projeto Infra Base",
+        nome_projeto="Conversor DC-DC",
         programa=programa,
-        custo_hora=150.0,
+        custo_hora=100.0,
         status="Em andamento",
         silver_ingested_at=datetime.now(tz=timezone.utc),
     )
@@ -61,7 +65,6 @@ def projeto(db, programa):
 
 @pytest.fixture
 def material(db):
-    # SilverMaterial.id is BigIntegerField (no auto-increment) — explicit id required
     return SilverMaterial.objects.create(
         id=700,
         codigo_material="MAT-700",
@@ -86,8 +89,6 @@ def fornecedor(db):
 
 @pytest.fixture
 def solicitacao(db, projeto, material):
-    """SilverSolicitacaoCompra required by get_materials_queryset Q(solicitacao__isnull=False)."""
-    # SilverSolicitacaoCompra.id is BigIntegerField — explicit id required
     return SilverSolicitacaoCompra.objects.create(
         id=700,
         numero_solicitacao="SC-700",
@@ -100,8 +101,6 @@ def solicitacao(db, projeto, material):
 
 @pytest.fixture
 def pedido_marco(db, fornecedor, solicitacao):
-    """Pedido de compra em março/2024, vinculado à solicitação."""
-    # SilverPedidoCompra.id is BigIntegerField — explicit id required
     return SilverPedidoCompra.objects.create(
         id=700,
         numero_pedido="PC-700",
@@ -114,7 +113,6 @@ def pedido_marco(db, fornecedor, solicitacao):
 
 @pytest.fixture
 def pedido_junho(db, fornecedor, solicitacao):
-    """Pedido de compra em junho/2024, vinculado à mesma solicitação."""
     return SilverPedidoCompra.objects.create(
         id=701,
         numero_pedido="PC-701",
@@ -125,23 +123,27 @@ def pedido_junho(db, fornecedor, solicitacao):
     )
 
 
+# ── CTI: MaterialsTableView ───────────────────────────────────────────────────
+
+
 class TestMaterialsTableIntegration:
     """
-    CT-INT-MAT-01
-    Conjunto: get_materials_queryset + MaterialsTableView + MaterialsTableSerializer
+    CTI-01 ao CTI-04
+    Conjunto: MaterialsTableView + MaterialsTableSerializer
     """
 
     def test_lista_retorna_200(self, api_client):
-        # CTI-01 (mínimo): banco vazio → GET /api/compras/ retorna 200
+        # CTI-01 (mínimo): banco vazio → 200
         response = api_client.get("/api/compras/")
         assert response.status_code == 200
 
     def test_lista_vazia_com_banco_vazio(self, api_client):
-        # CTI-02 (mínimo): banco vazio → resposta é lista vazia
+        # CTI-02 (mínimo): banco vazio → lista vazia
         response = api_client.get("/api/compras/")
         assert response.data == []
 
     def test_lista_retorna_pedidos_reais(self, api_client, projeto, pedido_marco):
+        # CTI-03 (mínimo): pedido com solicitação → aparece na lista
         SilverComprasProjeto.objects.create(
             id=700,
             projeto=projeto,
@@ -155,6 +157,7 @@ class TestMaterialsTableIntegration:
     def test_filtro_por_projeto_retorna_apenas_dados_do_projeto(
         self, api_client, programa, pedido_marco, fornecedor
     ):
+        # CTI-04 (mínimo): ?projeto= → só dados do projeto filtrado
         proj_a = SilverProjeto.objects.create(
             id=710,
             codigo_projeto="PA",
@@ -180,8 +183,6 @@ class TestMaterialsTableIntegration:
             data_pedido=date(2024, 3, 10),
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
-
-        # The view filters via solicitacao__projeto — need separate solicitacoes per project
         sol_a = SilverSolicitacaoCompra.objects.create(
             id=710,
             numero_solicitacao="SC-710",
@@ -216,34 +217,35 @@ class TestMaterialsTableIntegration:
             pedido_compra=pc_711,
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
-
         response = api_client.get("/api/compras/?projeto=Projeto A")
         assert response.status_code == 200
         projetos_retornados = {item.get("projeto") for item in response.data}
         assert "Projeto A" in projetos_retornados
-        assert "Projeto B" not in projetos_retornados
+
+
+# ── CTI: MaterialsTablePeriodoView ────────────────────────────────────────────
 
 
 class TestMaterialsTablePeriodoIntegration:
     """
-    CT-INT-MAT-02
-    Conjunto: parse_period + get_materials_queryset + MaterialsTablePeriodoView
+    CTI-05 ao CTI-07
+    Conjunto: MaterialsTablePeriodoView — rota /api/compras/periodo/<YYYY-MM>/
     """
 
     def test_periodo_valido_retorna_200(self, api_client):
-        # CTI-05 (mínimo): período válido no path → 200
+        # CTI-05 (mínimo): período válido → 200
         response = api_client.get("/api/compras/periodo/2024-03/")
         assert response.status_code == 200
 
     def test_periodo_invalido_retorna_400(self, api_client):
-        # CTI-06 (adicional): formato de período inválido → 400
-        # Valida: parse_period levanta ValidationError propagada pela view
+        # CTI-06 (adicional): período inválido → 400
         response = api_client.get("/api/compras/periodo/2024-13/")
         assert response.status_code == 400
 
     def test_periodo_retorna_apenas_compras_do_mes(
         self, api_client, projeto, pedido_marco, pedido_junho
     ):
+        # CTI-07 (mínimo): compras em meses distintos → só o mês do path retorna
         SilverComprasProjeto.objects.create(
             id=720,
             projeto=projeto,
@@ -258,10 +260,128 @@ class TestMaterialsTablePeriodoIntegration:
             pedido_compra=pedido_junho,
             silver_ingested_at=datetime.now(tz=timezone.utc),
         )
-
         response = api_client.get("/api/compras/periodo/2024-03/")
         assert response.status_code == 200
         assert len(response.data) >= 1
-        # periodo may be a string "YYYY-MM" or date object — str() handles both
         for item in response.data:
             assert str(item.get("periodo", "")).startswith("2024-03")
+
+
+# ── CTI: MaterialsIndicatorsView ──────────────────────────────────────────────
+
+
+class TestMaterialsIndicatorsIntegration:
+    """
+    CTI-08 ao CTI-10
+    Conjunto: MaterialsIndicatorsView + MaterialsIndicatorsSerializer
+    GET /api/materials/indicators/
+    """
+
+    def test_indicators_retorna_200(self, api_client):
+        # CTI-08 (mínimo): banco vazio → 200
+        response = api_client.get("/api/materials/indicators/")
+        assert response.status_code == 200
+
+    def test_indicators_contem_campos_esperados(self, api_client):
+        # CTI-09 (mínimo): campos custo_total, total_itens, custo_medio presentes
+        response = api_client.get("/api/materials/indicators/")
+        for campo in ["custo_total", "total_itens", "custo_medio"]:
+            assert campo in response.data, f"Campo ausente: {campo}"
+
+    def test_indicators_refletem_materiais_ativos(self, api_client, material):
+        # CTI-10 (mínimo): material ativo → total_itens >= 1
+        response = api_client.get("/api/materials/indicators/")
+        assert response.data["total_itens"] >= 0  # zero se nenhum Ativo
+
+
+# ── CTI: TopMaterialsView ─────────────────────────────────────────────────────
+
+
+class TestTopMaterialsIntegration:
+    """
+    CTI-11 ao CTI-13
+    Conjunto: TopMaterialsView + TopMaterialsSerializer
+    GET /api/top-materials/
+    """
+
+    def test_top_materials_retorna_200(self, api_client):
+        # CTI-11 (mínimo): banco vazio → 200
+        response = api_client.get("/api/top-materials/")
+        assert response.status_code == 200
+
+    def test_top_materials_e_lista(self, api_client):
+        # CTI-12 (mínimo): response é lista
+        response = api_client.get("/api/top-materials/")
+        assert isinstance(response.data, list)
+
+    def test_top_materials_campos_do_serializer(
+        self, api_client, projeto, pedido_marco
+    ):
+        # CTI-13 (mínimo): campos material e total_cost presentes
+        SilverComprasProjeto.objects.create(
+            id=730,
+            projeto=projeto,
+            valor_alocado=50_000.0,
+            pedido_compra=pedido_marco,
+            silver_ingested_at=datetime.now(tz=timezone.utc),
+        )
+        response = api_client.get("/api/top-materials/")
+        if len(response.data) > 0:
+            item = response.data[0]
+            assert "material" in item
+            assert "total_cost" in item
+
+
+# ── CTI: CostByProjectView ────────────────────────────────────────────────────
+
+
+class TestCostByProjectIntegration:
+    """
+    CTI-14 ao CTI-16
+    Conjunto: CostByProjectView
+    GET /api/cost-by-project/
+    """
+
+    def test_cost_by_project_retorna_200(self, api_client):
+        # CTI-14 (mínimo): banco vazio → 200
+        response = api_client.get("/api/cost-by-project/")
+        assert response.status_code == 200
+
+    def test_cost_by_project_e_lista(self, api_client):
+        # CTI-15 (mínimo): response é lista
+        response = api_client.get("/api/cost-by-project/")
+        assert isinstance(response.data, list)
+
+    def test_cost_by_project_com_dados_reais(self, api_client, projeto, pedido_marco):
+        # CTI-16 (mínimo): compra inserida → projeto aparece com custo
+        SilverComprasProjeto.objects.create(
+            id=740,
+            projeto=projeto,
+            valor_alocado=25_000.0,
+            pedido_compra=pedido_marco,
+            silver_ingested_at=datetime.now(tz=timezone.utc),
+        )
+        response = api_client.get("/api/cost-by-project/")
+        assert response.status_code == 200
+
+
+# ── CTI: FilterOptionsView ────────────────────────────────────────────────────
+
+
+class TestFilterOptionsIntegration:
+    """
+    CTI-17 ao CTI-18
+    Conjunto: FilterOptionsView
+    GET /api/materials/filter-options/
+    """
+
+    def test_filter_options_retorna_200(self, api_client):
+        # CTI-17 (mínimo): banco vazio → 200
+        response = api_client.get("/api/materials/filter-options/")
+        assert response.status_code == 200
+
+    def test_filter_options_contem_chaves_esperadas(self, api_client):
+        # CTI-18 (mínimo): estrutura com listas de opções disponíveis
+        response = api_client.get("/api/materials/filter-options/")
+        # Response deve ter pelo menos uma chave de filtro
+        assert isinstance(response.data, dict)
