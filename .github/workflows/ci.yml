@@ -4,6 +4,12 @@ on:
   pull_request:
     branches: [develop]
 
+# Permissões necessárias para publicar no GitHub Pages via integration-report.yml
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
 
   # ─── 1. Lint ─────────────────────────────────────────────────────────────────
@@ -45,19 +51,39 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-      - name: Run unit tests with coverage
+          pip install pytest-html pytest-json-report
+
+      - name: Run unit tests with coverage and HTML report
         run: |
-          coverage run -m pytest -m "not integration" --tb=short -q \
+          mkdir -p pytest-report/unit
+          coverage run -m pytest -m "not integration" \
+            --html=pytest-report/unit/index.html \
+            --self-contained-html \
+            --json-report \
+            --json-report-file=pytest-report/unit/results.json \
+            --tb=short -q \
             2>&1 | tee unit-output.txt
           exit ${PIPESTATUS[0]}
+
       - name: Generate coverage XML
         run: coverage xml
+
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
           name: unit-coverage-report
           path: coverage.xml
           retention-days: 30
+
+      # Artefato parcial — integration-tests vai baixar e combinar com o seu
+      - name: Upload unit HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pytest-report-unit
+          path: pytest-report/unit/
+          retention-days: 1
+
       - name: Step Summary
         if: always()
         run: |
@@ -67,6 +93,11 @@ jobs:
           echo "| PR | #${{ github.event.pull_request.number }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Banco | SQLite in-memory |" >> $GITHUB_STEP_SUMMARY
           echo "| Mocks | patch() / MagicMock |" >> $GITHUB_STEP_SUMMARY
+          if [ -f pytest-report/unit/results.json ]; then
+            PASSED=$(python3 -c "import json; d=json.load(open('pytest-report/unit/results.json')); print(d['summary'].get('passed', 0))")
+            FAILED=$(python3 -c "import json; d=json.load(open('pytest-report/unit/results.json')); print(d['summary'].get('failed', 0))")
+            echo "| Resultado | ✅ $PASSED passed / ❌ $FAILED failed |" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           tail -8 unit-output.txt >> $GITHUB_STEP_SUMMARY || true
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
@@ -113,7 +144,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest-html
+          pip install pytest-html pytest-json-report
 
       # Os modelos silver/gold/audit precisam dos schemas antes das migrations
       - name: Create PostgreSQL schemas
@@ -131,20 +162,92 @@ jobs:
       # --reuse-db: reutiliza o banco já preparado acima
       - name: Run integration tests
         run: |
+          mkdir -p pytest-report/integration
           pytest -m integration \
             --reuse-db \
-            --html=integration-report.html \
+            --html=pytest-report/integration/index.html \
             --self-contained-html \
+            --json-report \
+            --json-report-file=pytest-report/integration/results.json \
             --tb=short -v \
             2>&1 | tee integration-output.txt
           exit ${PIPESTATUS[0]}
 
-      - name: Upload integration report
+      # Baixa o relatório unitário gerado no job anterior e combina na pasta final
+      - name: Download unit report
+        uses: actions/download-artifact@v4
+        if: always()
+        with:
+          name: pytest-report-unit
+          path: pytest-report/unit/
+
+      # Página de entrada do GitHub Pages — lista os dois relatórios
+      - name: Create Pages index
+        if: always()
+        run: |
+          cat > pytest-report/index.html << 'HTML'
+          <!DOCTYPE html>
+          <html lang="pt-BR">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>SCA — Relatórios de Teste</title>
+            <style>
+              *{box-sizing:border-box;margin:0;padding:0}
+              body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+                   background:#0d1117;color:#e6edf3;min-height:100vh;
+                   display:flex;align-items:center;justify-content:center}
+              .container{max-width:600px;width:100%;padding:2rem}
+              h1{font-size:1.5rem;font-weight:600;margin-bottom:.25rem}
+              .subtitle{color:#8b949e;font-size:.9rem;margin-bottom:2rem}
+              .cards{display:grid;gap:1rem}
+              .card{background:#161b22;border:1px solid #30363d;border-radius:8px;
+                    padding:1.25rem 1.5rem;text-decoration:none;color:inherit;
+                    transition:border-color .2s;display:flex;align-items:center;gap:1rem}
+              .card:hover{border-color:#58a6ff}
+              .icon{font-size:2rem;flex-shrink:0}
+              .card-title{font-weight:600;font-size:1rem}
+              .card-desc{color:#8b949e;font-size:.85rem;margin-top:.2rem}
+              .badge{display:inline-block;font-size:.75rem;padding:.1rem .5rem;
+                     border-radius:12px;font-weight:500;margin-left:auto}
+              .green{background:#1f3a1f;color:#3fb950;border:1px solid #3fb950}
+              .blue{background:#1a2d4a;color:#58a6ff;border:1px solid #58a6ff}
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <h1>🧪 SCA — Relatórios de Teste</h1>
+              <p class="subtitle">Backend · sca-server</p>
+              <div class="cards">
+                <a class="card" href="./unit/">
+                  <span class="icon">⚡</span>
+                  <div>
+                    <div class="card-title">Testes Unitários</div>
+                    <div class="card-desc">Views, serializers, selectors, models</div>
+                  </div>
+                  <span class="badge green">pytest</span>
+                </a>
+                <a class="card" href="./integration/">
+                  <span class="icon">🔗</span>
+                  <div>
+                    <div class="card-title">Testes de Integração</div>
+                    <div class="card-desc">API real + PostgreSQL — 109 CTIs</div>
+                  </div>
+                  <span class="badge blue">DB_HOST=postgres</span>
+                </a>
+              </div>
+            </div>
+          </body>
+          </html>
+          HTML
+
+      # Artefato final combinado — consumido pelo integration-report.yml → GitHub Pages
+      - name: Upload combined pytest report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: integration-test-report
-          path: integration-report.html
+          name: pytest-report
+          path: pytest-report/
           retention-days: 30
 
       - name: Step Summary
@@ -157,12 +260,18 @@ jobs:
           echo "| Banco | PostgreSQL 16 real |" >> $GITHUB_STEP_SUMMARY
           echo "| Schemas | silver · gold · audit |" >> $GITHUB_STEP_SUMMARY
           echo "| Mocks | nenhum |" >> $GITHUB_STEP_SUMMARY
+          if [ -f pytest-report/integration/results.json ]; then
+            PASSED=$(python3 -c "import json; d=json.load(open('pytest-report/integration/results.json')); print(d['summary'].get('passed', 0))")
+            FAILED=$(python3 -c "import json; d=json.load(open('pytest-report/integration/results.json')); print(d['summary'].get('failed', 0))")
+            XFAIL=$(python3 -c "import json; d=json.load(open('pytest-report/integration/results.json')); print(d['summary'].get('xfailed', 0))")
+            echo "| Resultado | ✅ $PASSED passed / ❌ $FAILED failed / ⏭ $XFAIL xfail |" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           tail -20 integration-output.txt >> $GITHUB_STEP_SUMMARY || true
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "> Relatório HTML: **Actions → Artifacts → integration-test-report**" >> $GITHUB_STEP_SUMMARY
+          echo "> Relatório HTML: **Actions → Artifacts → pytest-report** ou **GitHub Pages**" >> $GITHUB_STEP_SUMMARY
 
-  # ─── 4. Smoke Test
+  # ─── 4. Smoke Test ───────────────────────────────────────────────────────────
   # Inicia o Django com settings_test (AllowAny) e verifica todos os
   # endpoints críticos via httpx. Falha antes do merge se qualquer
   # rota retornar status inesperado.
@@ -257,7 +366,7 @@ jobs:
           echo "| Banco | PostgreSQL 16 real |" >> $GITHUB_STEP_SUMMARY
           echo "| Auth | AllowAny (settings_test) |" >> $GITHUB_STEP_SUMMARY
 
-  # ─── 5. Load Test (k6)
+  # ─── 5. Load Test (k6) ───────────────────────────────────────────────────────
   # Sobe o mesmo ambiente e executa 5 VUs por ~2 min.
   # Threshold: p95 < 2000 ms, taxa de erro < 1%.
   # Só roda se o smoke passou — carga pressupõe app funcional.
@@ -362,7 +471,8 @@ jobs:
           echo "| Duração | ~2 min |" >> $GITHUB_STEP_SUMMARY
           echo "| Threshold p95 | < 2000 ms |" >> $GITHUB_STEP_SUMMARY
 
-  # ─── 6. Staging gate — cria check run para satisfazer o required check do branch protection
+  # ─── 6. Staging gate ─────────────────────────────────────────────────────────
+  # Cria check run para satisfazer o required check do branch protection.
   staging-gate:
     name: Deploy staging (porta 8001)
     runs-on: ubuntu-latest
@@ -389,7 +499,7 @@ jobs:
               }
             });
 
-  # ─── 7. Auto-merge
+  # ─── 7. Auto-merge ───────────────────────────────────────────────────────────
   auto-merge:
     name: Auto Merge PR
     runs-on: ubuntu-latest
@@ -407,5 +517,4 @@ jobs:
             --repo ${{ github.repository }} \
             --auto \
             --squash \
-            --delete-branch \
-            --auto
+            --delete-branch
