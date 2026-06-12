@@ -217,7 +217,9 @@ class TestExecucaoCargaViewPerfilFilter:
     ):
         import monitoring.views as monitoring_views_mod
         from users import permissions as perm_mod
-        from monitoring.views import _ALLOWED_TABLES_BY_PROFILE
+        from users.access_control import (
+            PROFILE_TABLES_ACCESS as _ALLOWED_TABLES_BY_PROFILE,
+        )
 
         monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "compras")
         monkeypatch.setattr(monitoring_views_mod, "_get_permissao", lambda u: "compras")

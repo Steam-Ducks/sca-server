@@ -4,21 +4,9 @@ from django.utils.dateparse import parse_datetime
 
 from audit.serializers import AuditExecutionLogSerializer
 from sca_data.models import AuditExecutionLog
+from users.access_control import PROFILE_TABLES_ACCESS
 from users.permissions import CanAccessAudit, _get_permissao
 from core.utils.date_utils import parse_date, parse_period
-
-_ALLOWED_TABLES_BY_PROFILE: dict = {
-    "super_admin": None,
-    "financeiro": {"programas", "projetos", "tarefas_projeto", "tempo_tarefas"},
-    "compras": {
-        "fornecedores",
-        "pedidos_compra",
-        "solicitacoes_compra",
-        "compras_projeto",
-    },
-    "almoxarifado": {"materiais", "empenho_materiais", "estoque_materiais_projeto"},
-    "projetos": {"projetos", "tarefas_projeto", "tempo_tarefas"},
-}
 
 
 class AuditExecutionLogTableView(generics.ListAPIView):
@@ -29,7 +17,7 @@ class AuditExecutionLogTableView(generics.ListAPIView):
         queryset = AuditExecutionLog.objects.all()
 
         perfil = _get_permissao(self.request.user)
-        allowed_tables = _ALLOWED_TABLES_BY_PROFILE.get(perfil)
+        allowed_tables = PROFILE_TABLES_ACCESS.get(perfil)
         if allowed_tables is not None:
             queryset = queryset.filter(table_name__in=allowed_tables)
 

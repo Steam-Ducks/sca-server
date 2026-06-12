@@ -279,7 +279,9 @@ class TestAuditExecutionLogTableView:
         force_authenticate(request, user=user)
         response = view(request)
 
-        from audit.views import _ALLOWED_TABLES_BY_PROFILE
+        from users.access_control import (
+            PROFILE_TABLES_ACCESS as _ALLOWED_TABLES_BY_PROFILE,
+        )
 
         assert response.status_code == 200
         calls_as_text = [str(c) for c in qs.filter.call_args_list]
