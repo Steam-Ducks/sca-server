@@ -3,15 +3,11 @@ Conjunto de integração: Budget (Saúde Financeira)
 
 Funções do conjunto:
     get_budget_snapshot_gold (selectors) — lê GoldBudgetSnapshot
-    BudgetSnapshotView (views.py)        — GET /api/budget/
-    GoldBudgetSnapshotSerializer         — renomeia campos do modelo:
-        nome_projeto     → "projeto"
-        saude_financeira → "saude"
-        custo_materiais  → "custoMateriais"
-        custo_horas      → "custoHoras"
-        custo_real       → "custoReal"
-        desvio_percent   → "desvioPercent"
-        projecao_estouro → "projecaoEstouro"
+    get_budget_indicators_gold           — agrega KPIs do gold
+    BudgetSnapshotView    GET /api/budget/
+    BudgetIndicatorsView  GET /api/budget/indicators/   ← NOVO
+    GoldBudgetSnapshotSerializer  — renomeia campos do modelo
+    BudgetIndicatorsSerializer    — KPIs agregados em camelCase
 """
 
 import os
@@ -20,8 +16,6 @@ from datetime import datetime, timezone
 
 from sca_data.models import GoldBudgetSnapshot
 
-# Skip when PostgreSQL is unavailable (SQLite CI environment).
-# To run locally: export DB_HOST=postgres (or your host) before pytest.
 pytestmark = [
     pytest.mark.skipif(
         not os.environ.get("DB_HOST"),
@@ -53,64 +47,57 @@ def snapshot_gold(db):
     )
 
 
+# ── CTI: BudgetSnapshotView ───────────────────────────────────────────────────
+
+
 class TestBudgetSnapshotGoldIntegration:
     """
     CTI-01 ao CTI-07
     Conjunto: get_budget_snapshot_gold + BudgetSnapshotView + GoldBudgetSnapshotSerializer
 
-    Carga: 0–2 objetos GoldBudgetSnapshot por teste (banco limpo a cada teste).
-    NOTA: O serializer usa camelCase e renomeia campos do modelo.
+    Carga: 0–2 objetos GoldBudgetSnapshot por teste.
     Campos retornados: projeto, programa, budget, custoMateriais,
     custoHoras, custoReal, desvioPercent, saude, projecaoEstouro, periodo, status.
     """
 
     def test_retorna_200(self, api_client):
-        # CTI-01 (mínimo): banco vazio → GET retorna 200
-        # Valida: rota /api/budget/ registrada e view responde sem dados
+        # CTI-01 (mínimo): banco vazio → 200
         response = api_client.get("/api/budget/")
         assert response.status_code == 200
 
     def test_retorna_estrutura_data_e_last_updated_at(self, api_client):
-        # CTI-02 (mínimo): estrutura do envelope de resposta
-        # Valida: serializer retorna {"data": [...], "last_updated_at": ...}
+        # CTI-02 (mínimo): envelope {"data": [...], "last_updated_at": ...}
         response = api_client.get("/api/budget/")
         assert "data" in response.data
         assert "last_updated_at" in response.data
 
     def test_usa_dados_gold_quando_disponiveis(self, api_client, snapshot_gold):
-        # CTI-03 (mínimo): dado inserido na gold → aparece na resposta
-        # Valida: selector lê GoldBudgetSnapshot → view → serializer → response
+        # CTI-03 (mínimo): dado gold → aparece na resposta com campos corretos
         response = api_client.get("/api/budget/")
-
         assert response.status_code == 200
         assert len(response.data["data"]) == 1
-        projeto_data = response.data["data"][0]
-        assert projeto_data["projeto"] == "Conversor AC-DC"
-        assert float(projeto_data["budget"]) == 500_000.0
+        item = response.data["data"][0]
+        assert item["projeto"] == "Conversor AC-DC"
+        assert float(item["budget"]) == 500_000.0
 
     def test_saude_financeira_reflete_valor_do_banco(self, api_client, snapshot_gold):
-        # CTI-04 (adicional): campo renomeado pelo serializer
-        # Valida: saude_financeira (modelo) → "saude" (resposta camelCase)
+        # CTI-04 (adicional): saude_financeira → "saude" (camelCase)
         response = api_client.get("/api/budget/")
-        projeto_data = response.data["data"][0]
-        assert projeto_data["saude"] == "Saudável"
+        assert response.data["data"][0]["saude"] == "Saudável"
 
     def test_last_updated_at_retorna_timestamp_da_gold(self, api_client, snapshot_gold):
-        # CTI-05 (adicional): metadado de atualização
-        # Valida: gold_updated_at do banco chega como last_updated_at na resposta
+        # CTI-05 (adicional): gold_updated_at → last_updated_at
         response = api_client.get("/api/budget/")
         assert response.data["last_updated_at"] is not None
 
     def test_gold_vazia_retorna_lista_vazia_de_dados(self, api_client):
-        # CTI-06 (adicional): banco vazio → data é lista vazia, não null/erro
-        # Valida: robustez da view quando gold não tem registros
+        # CTI-06 (adicional): banco vazio → data é lista vazia
         response = api_client.get("/api/budget/")
         assert response.status_code == 200
         assert isinstance(response.data["data"], list)
 
     def test_filtro_por_programa_retorna_apenas_dados_do_programa(self, api_client, db):
-        # CTI-07 (mínimo): filtro ?program= → isola dados do programa
-        # Valida: filtro passado via query param → selector aplica WHERE → response filtrado
+        # CTI-07 (mínimo): ?programa= → isola dados do programa
         GoldBudgetSnapshot.objects.create(
             nome_projeto="Proj MANSUP",
             nome_programa="MANSUP",
@@ -127,10 +114,83 @@ class TestBudgetSnapshotGoldIntegration:
             saude_financeira="Em risco",
             gold_updated_at=datetime.now(tz=timezone.utc),
         )
-
         response = api_client.get("/api/budget/?programa=MANSUP")
         assert response.status_code == 200
-        # FIX: serializer usa "projeto" (não "nome_projeto")
         nomes = [p["projeto"] for p in response.data["data"]]
         assert "Proj MANSUP" in nomes
         assert "Proj INFRA" not in nomes
+
+
+# ── CTI: BudgetIndicatorsView ─────────────────────────────────────────────────
+
+
+class TestBudgetIndicatorsIntegration:
+    """
+    CTI-08 ao CTI-11
+    Conjunto: get_budget_indicators_gold + BudgetIndicatorsView + BudgetIndicatorsSerializer
+    GET /api/budget/indicators/
+
+    Carga: 0–3 objetos GoldBudgetSnapshot por teste.
+    Campos retornados (camelCase):
+        budgetTotal, custoRealTotal, desvioPercentMedio,
+        projetosSaudaveis, projetosAtencao, projetosCriticos
+    """
+
+    def test_indicators_retorna_200(self, api_client):
+        # CTI-08 (mínimo): banco vazio → GET /api/budget/indicators/ retorna 200
+        # Valida: rota registrada, view instanciada sem erro
+        response = api_client.get("/api/budget/indicators/")
+        assert response.status_code == 200
+
+    def test_indicators_estrutura_data_e_last_updated_at(self, api_client):
+        # CTI-09 (mínimo): envelope {"data": {...}, "last_updated_at": ...}
+        # Valida: BudgetIndicatorsSerializer retorna objeto (não lista)
+        response = api_client.get("/api/budget/indicators/")
+        assert "data" in response.data
+        assert "last_updated_at" in response.data
+
+    def test_indicators_contem_campos_do_serializer(self, api_client):
+        # CTI-10 (mínimo): todos os campos do BudgetIndicatorsSerializer presentes
+        # Valida: camelCase correto e source fields mapeados
+        response = api_client.get("/api/budget/indicators/")
+        data = response.data["data"]
+        for campo in [
+            "budgetTotal",
+            "custoRealTotal",
+            "desvioPercentMedio",
+            "projetosSaudaveis",
+            "projetosAtencao",
+            "projetosCriticos",
+        ]:
+            assert campo in data, f"Campo ausente: {campo}"
+
+    def test_indicators_refletem_dados_reais(self, api_client, db):
+        # CTI-11 (mínimo): dados inseridos → KPIs calculados corretamente
+        # Valida: get_budget_indicators_gold agrega pelo banco real
+        GoldBudgetSnapshot.objects.create(
+            id=601,
+            nome_projeto="Proj A",
+            nome_programa="MANSUP",
+            budget=200_000.0,
+            custo_real=150_000.0,
+            desvio_percent=25.0,
+            saude_financeira="Saudável",
+            gold_updated_at=datetime.now(tz=timezone.utc),
+        )
+        GoldBudgetSnapshot.objects.create(
+            id=602,
+            nome_projeto="Proj B",
+            nome_programa="MANSUP",
+            budget=100_000.0,
+            custo_real=130_000.0,
+            desvio_percent=-30.0,
+            saude_financeira="Crítico",
+            gold_updated_at=datetime.now(tz=timezone.utc),
+        )
+        response = api_client.get("/api/budget/indicators/")
+        assert response.status_code == 200
+        data = response.data["data"]
+        # 2 projetos inseridos; totais devem refletir ambos
+        assert float(data["budgetTotal"]) == 300_000.0
+        assert int(data["projetosSaudaveis"]) == 1
+        assert int(data["projetosCriticos"]) == 1

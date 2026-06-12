@@ -7,21 +7,9 @@ from rest_framework.exceptions import PermissionDenied
 
 from imports.schemas import REQUIRED_COLUMNS
 from sca_data.db.enums import OperationStatus, OperationType, LayerSchema
+from users.access_control import PROFILE_TABLES_ACCESS
 
 logger = logging.getLogger(__name__)
-
-_ALLOWED_IMPORTS_BY_PROFILE: dict = {
-    "super_admin": None,
-    "financeiro": {"programas", "projetos", "tarefas_projeto", "tempo_tarefas"},
-    "compras": {
-        "fornecedores",
-        "pedidos_compra",
-        "solicitacoes_compra",
-        "compras_projeto",
-    },
-    "almoxarifado": {"materiais", "empenho_materiais", "estoque_materiais_projeto"},
-    "projetos": {"projetos", "tarefas_projeto", "tempo_tarefas"},
-}
 
 _MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
 
@@ -108,7 +96,7 @@ def _register_execucao(
 
 def check_profile_access(perfil: str, csv_type: str) -> None:
     """Raises PermissionDenied if perfil is not allowed to import csv_type."""
-    allowed = _ALLOWED_IMPORTS_BY_PROFILE.get(perfil)
+    allowed = PROFILE_TABLES_ACCESS.get(perfil)
     if allowed is not None and csv_type not in allowed:
         raise PermissionDenied(
             "Seu perfil não tem permissão para importar este arquivo."

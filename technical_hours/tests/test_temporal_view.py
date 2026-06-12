@@ -2,9 +2,7 @@ import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
-from django.contrib.auth import get_user_model
 from rest_framework.request import Request
-from rest_framework.test import APIClient
 
 from technical_hours.views import TechnicalHoursTemporalView
 
@@ -14,13 +12,6 @@ def patch_permissao(monkeypatch):
     from users import permissions as perm_mod
 
     monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "super_admin")
-
-
-def _auth_client():
-    user = get_user_model()(username="_test", is_active=True)
-    client = APIClient()
-    client.force_authenticate(user=user)
-    return client
 
 
 URL = "/api/horas-tecnicas/temporal/"
@@ -57,30 +48,30 @@ def _mock_qs(rows: list) -> MagicMock:
 # ── TC01: evolução temporal exibida corretamente ─────────────────────────────
 
 
-def test_temporal_retorna_200():
+def test_temporal_retorna_200(api_client):
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs([])
     ):
-        assert _auth_client().get(URL).status_code == 200
+        assert api_client.get(URL).status_code == 200
 
 
-def test_temporal_retorna_lista_vazia_quando_sem_dados():
+def test_temporal_retorna_lista_vazia_quando_sem_dados(api_client):
     """TC01 / TC03: sem registros → lista vazia, status 200."""
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs([])
     ):
-        response = _auth_client().get(URL)
+        response = api_client.get(URL)
         assert response.status_code == 200
         assert response.data == []
 
 
-def test_temporal_retorna_lista_de_periodos():
+def test_temporal_retorna_lista_de_periodos(api_client):
     """TC01: retorna periodo e total_horas em ordem cronológica."""
     rows = [_make_row(2024, 1, 52.0), _make_row(2024, 3, 40.0)]
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs(rows)
     ):
-        response = _auth_client().get(URL)
+        response = api_client.get(URL)
 
     assert isinstance(response.data, list)
     assert len(response.data) == 2
@@ -90,56 +81,56 @@ def test_temporal_retorna_lista_de_periodos():
     assert response.data[1]["total_horas"] == pytest.approx(40.0)
 
 
-def test_temporal_campos_presentes():
+def test_temporal_campos_presentes(api_client):
     """TC01: cada item tem 'periodo', 'total_horas' e 'total_custo'."""
     rows = [_make_row(2024, 3, 70.0, 29400.0)]
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs(rows)
     ):
-        item = _auth_client().get(URL).data[0]
+        item = api_client.get(URL).data[0]
 
     assert set(item.keys()) == {"periodo", "total_horas", "total_custo"}
 
 
-def test_temporal_retorna_total_custo():
+def test_temporal_retorna_total_custo(api_client):
     """TC01: total_custo presente e correto na resposta."""
     rows = [_make_row(2024, 3, 40.0, 16800.0)]
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs(rows)
     ):
-        response = _auth_client().get(URL)
+        response = api_client.get(URL)
 
     assert response.data[0]["total_custo"] == pytest.approx(16800.0)
 
 
-def test_temporal_formato_periodo_yyyy_mm():
+def test_temporal_formato_periodo_yyyy_mm(api_client):
     """TC01: período formatado como YYYY-MM."""
     rows = [_make_row(2024, 1, 10.0)]
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs(rows)
     ):
-        assert _auth_client().get(URL).data[0]["periodo"] == "2024-01"
+        assert api_client.get(URL).data[0]["periodo"] == "2024-01"
 
 
-def test_temporal_mes_formatado_com_zero_a_esquerda():
+def test_temporal_mes_formatado_com_zero_a_esquerda(api_client):
     """TC01: mês < 10 é formatado com zero à esquerda (ex: 2024-03)."""
     rows = [_make_row(2024, 3, 10.0)]
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs(rows)
     ):
-        assert _auth_client().get(URL).data[0]["periodo"] == "2024-03"
+        assert api_client.get(URL).data[0]["periodo"] == "2024-03"
 
 
-def test_temporal_arredonda_para_duas_casas():
+def test_temporal_arredonda_para_duas_casas(api_client):
     """TC01: total_horas arredondado para 2 casas decimais."""
     rows = [_make_row(2024, 1, 33.333333)]
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs(rows)
     ):
-        assert _auth_client().get(URL).data[0]["total_horas"] == pytest.approx(33.33)
+        assert api_client.get(URL).data[0]["total_horas"] == pytest.approx(33.33)
 
 
-def test_temporal_multiplos_periodos_em_ordem():
+def test_temporal_multiplos_periodos_em_ordem(api_client):
     """TC01: períodos retornados em ordem cronológica."""
     rows = [
         _make_row(2024, 1, 52.0),
@@ -149,7 +140,7 @@ def test_temporal_multiplos_periodos_em_ordem():
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs(rows)
     ):
-        response = _auth_client().get(URL)
+        response = api_client.get(URL)
 
     periodos = [item["periodo"] for item in response.data]
     assert periodos == ["2024-01", "2024-02", "2024-03"]
@@ -176,28 +167,28 @@ def test_temporal_ignora_filtro_data_inicio(rf):
     assert view._build_period_filters() == {}
 
 
-def test_temporal_aceita_filtro_programa():
+def test_temporal_aceita_filtro_programa(api_client):
     """TC02: ?programa= não causa erro."""
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs([])
     ):
-        assert _auth_client().get(f"{URL}?programa=Cloud").status_code == 200
+        assert api_client.get(f"{URL}?programa=Cloud").status_code == 200
 
 
-def test_temporal_aceita_filtro_projeto():
+def test_temporal_aceita_filtro_projeto(api_client):
     """TC02: ?projeto= não causa erro."""
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs([])
     ):
-        assert _auth_client().get(f"{URL}?projeto=Migracao+AWS").status_code == 200
+        assert api_client.get(f"{URL}?projeto=Migracao+AWS").status_code == 200
 
 
-def test_temporal_aceita_filtros_combinados():
+def test_temporal_aceita_filtros_combinados(api_client):
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs([])
     ):
         assert (
-            _auth_client().get(f"{URL}?programa=Cloud&projeto=Migracao+AWS").status_code
+            api_client.get(f"{URL}?programa=Cloud&projeto=Migracao+AWS").status_code
             == 200
         )
 
@@ -205,7 +196,7 @@ def test_temporal_aceita_filtros_combinados():
 # ── TC03: comportamento para períodos sem horas registradas ──────────────────
 
 
-def test_temporal_trata_total_horas_none():
+def test_temporal_trata_total_horas_none(api_client):
     """TC03: total_horas None é convertido para 0.0."""
     rows = [
         {"mes": datetime.date(2024, 2, 1), "total_horas": None, "total_custo": None}
@@ -213,44 +204,44 @@ def test_temporal_trata_total_horas_none():
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs(rows)
     ):
-        data = _auth_client().get(URL).data[0]
+        data = api_client.get(URL).data[0]
         assert data["total_horas"] == pytest.approx(0.0)
         assert data["total_custo"] == pytest.approx(0.0)
 
 
-def test_temporal_periodo_invalido_nao_afeta_endpoint():
+def test_temporal_periodo_invalido_nao_afeta_endpoint(api_client):
     """TC03: ?periodo= inválido não causa 400 — o parâmetro é ignorado."""
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs([])
     ):
-        assert _auth_client().get(f"{URL}?periodo=invalido").status_code == 200
+        assert api_client.get(f"{URL}?periodo=invalido").status_code == 200
 
 
 # ── Filtros de dimensão adicionais ────────────────────────────────────────────
 
 
-def test_temporal_aceita_filtro_colaborador():
+def test_temporal_aceita_filtro_colaborador(api_client):
     """TC02: ?colaborador= não causa erro."""
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs([])
     ):
-        assert _auth_client().get(f"{URL}?colaborador=Lucas+Martins").status_code == 200
+        assert api_client.get(f"{URL}?colaborador=Lucas+Martins").status_code == 200
 
 
-def test_temporal_aceita_filtro_tarefa():
+def test_temporal_aceita_filtro_tarefa(api_client):
     """TC02: ?tarefa= não causa erro."""
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs([])
     ):
-        assert _auth_client().get(f"{URL}?tarefa=Arquitetura+Cloud").status_code == 200
+        assert api_client.get(f"{URL}?tarefa=Arquitetura+Cloud").status_code == 200
 
 
-def test_temporal_aceita_filtro_funcao():
+def test_temporal_aceita_filtro_funcao(api_client):
     """TC02: ?funcao= não causa erro."""
     with patch.object(
         TechnicalHoursTemporalView, "get_queryset", return_value=_mock_qs([])
     ):
-        assert _auth_client().get(f"{URL}?funcao=Cloud+Architect").status_code == 200
+        assert api_client.get(f"{URL}?funcao=Cloud+Architect").status_code == 200
 
 
 def test_temporal_aplica_filtro_colaborador(rf):

@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock, patch
 
-import pytest
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIRequestFactory, force_authenticate
@@ -21,28 +20,6 @@ from imports.views import (
 from imports.schemas import REQUIRED_COLUMNS
 
 
-@pytest.fixture
-def factory(monkeypatch):
-    from users import permissions as perm_mod
-
-    monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "super_admin")
-    base = APIRequestFactory()
-    user = get_user_model()(username="_test", is_active=True)
-
-    class _AuthFactory:
-        def get(self, *args, **kwargs):
-            req = base.get(*args, **kwargs)
-            force_authenticate(req, user=user)
-            return req
-
-        def post(self, *args, **kwargs):
-            req = base.post(*args, **kwargs)
-            force_authenticate(req, user=user)
-            return req
-
-    return _AuthFactory()
-
-
 def _csv_bytes(csv_type, rows=2):
     cols = sorted(REQUIRED_COLUMNS[csv_type])
     header = ",".join(cols)
@@ -59,39 +36,41 @@ def _csv_file(csv_type, rows=2, name=None):
 class TestCSVUploadValidation:
     """Base validation logic exercised through ProgramasUploadView."""
 
-    def test_no_file_returns_400(self, factory):
+    def test_no_file_returns_400(self, auth_request_factory):
         view = ProgramasUploadView.as_view()
-        request = factory.post("/api/import/programas/", {}, format="multipart")
+        request = auth_request_factory.post(
+            "/api/import/programas/", {}, format="multipart"
+        )
         response = view(request)
         assert response.status_code == 400
         assert "error" in response.data
 
-    def test_non_csv_extension_returns_400(self, factory):
+    def test_non_csv_extension_returns_400(self, auth_request_factory):
         view = ProgramasUploadView.as_view()
         f = SimpleUploadedFile("data.txt", b"some content", content_type="text/plain")
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/programas/", {"file": f}, format="multipart"
         )
         response = view(request)
         assert response.status_code == 400
         assert "error" in response.data
 
-    def test_file_over_50mb_returns_400(self, factory):
+    def test_file_over_50mb_returns_400(self, auth_request_factory):
         view = ProgramasUploadView.as_view()
         large_content = b"x" * (51 * 1024 * 1024)
         f = SimpleUploadedFile("big.csv", large_content, content_type="text/csv")
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/programas/", {"file": f}, format="multipart"
         )
         response = view(request)
         assert response.status_code == 400
         assert "MB" in response.data["error"]
 
-    def test_wrong_csv_type_returns_400(self, factory):
+    def test_wrong_csv_type_returns_400(self, auth_request_factory):
         view = ProgramasUploadView.as_view()
         # Upload fornecedores CSV to the programas endpoint
         f = _csv_file("fornecedores", name="fornecedores.csv")
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/programas/", {"file": f}, format="multipart"
         )
         response = view(request)
@@ -99,12 +78,12 @@ class TestCSVUploadValidation:
         assert response.data["tipo_esperado"] == "programas"
         assert "colunas_ausentes" in response.data
 
-    def test_missing_columns_are_listed(self, factory):
+    def test_missing_columns_are_listed(self, auth_request_factory):
         view = ProgramasUploadView.as_view()
         f = SimpleUploadedFile(
             "programas.csv", b"id,nome\nval,val", content_type="text/csv"
         )
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/programas/", {"file": f}, format="multipart"
         )
         response = view(request)
@@ -113,24 +92,24 @@ class TestCSVUploadValidation:
         assert isinstance(missing, list)
         assert len(missing) > 0
 
-    def test_missing_columns_are_sorted(self, factory):
+    def test_missing_columns_are_sorted(self, auth_request_factory):
         view = ProgramasUploadView.as_view()
         f = SimpleUploadedFile(
             "programas.csv", b"id,nome\nval,val", content_type="text/csv"
         )
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/programas/", {"file": f}, format="multipart"
         )
         response = view(request)
         missing = response.data["colunas_ausentes"]
         assert missing == sorted(missing)
 
-    def test_error_message_present_for_missing_columns(self, factory):
+    def test_error_message_present_for_missing_columns(self, auth_request_factory):
         view = ProgramasUploadView.as_view()
         f = SimpleUploadedFile(
             "programas.csv", b"id,nome\nval,val", content_type="text/csv"
         )
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/programas/", {"file": f}, format="multipart"
         )
         response = view(request)
@@ -144,11 +123,16 @@ class TestCSVUploadSuccess:
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.silver.ingestion_silver.PIPELINE", [])
     def test_correct_upload_returns_200(
-        self, mock_bronze_create, mock_bronze_schema, mock_audit, mock_engine, factory
+        self,
+        mock_bronze_create,
+        mock_bronze_schema,
+        mock_audit,
+        mock_engine,
+        auth_request_factory,
     ):
         mock_engine.return_value = MagicMock()
         view = ProgramasUploadView.as_view()
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/programas/",
             {"file": _csv_file("programas")},
             format="multipart",
@@ -162,11 +146,16 @@ class TestCSVUploadSuccess:
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.silver.ingestion_silver.PIPELINE", [])
     def test_response_contains_run_id(
-        self, mock_bronze_create, mock_bronze_schema, mock_audit, mock_engine, factory
+        self,
+        mock_bronze_create,
+        mock_bronze_schema,
+        mock_audit,
+        mock_engine,
+        auth_request_factory,
     ):
         mock_engine.return_value = MagicMock()
         view = ProgramasUploadView.as_view()
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/programas/",
             {"file": _csv_file("programas")},
             format="multipart",
@@ -180,11 +169,16 @@ class TestCSVUploadSuccess:
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.silver.ingestion_silver.PIPELINE", [])
     def test_response_contains_tabela_and_row_count(
-        self, mock_bronze_create, mock_bronze_schema, mock_audit, mock_engine, factory
+        self,
+        mock_bronze_create,
+        mock_bronze_schema,
+        mock_audit,
+        mock_engine,
+        auth_request_factory,
     ):
         mock_engine.return_value = MagicMock()
         view = ProgramasUploadView.as_view()
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/programas/",
             {"file": _csv_file("programas", rows=5)},
             format="multipart",
@@ -200,11 +194,16 @@ class TestCSVUploadSuccess:
         "sca_data.db.bronze.ingestion._create_table", side_effect=Exception("DB error")
     )
     def test_bronze_failure_returns_500(
-        self, mock_bronze_create, mock_bronze_schema, mock_audit, mock_engine, factory
+        self,
+        mock_bronze_create,
+        mock_bronze_schema,
+        mock_audit,
+        mock_engine,
+        auth_request_factory,
     ):
         mock_engine.return_value = MagicMock()
         view = ProgramasUploadView.as_view()
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/programas/",
             {"file": _csv_file("programas")},
             format="multipart",
@@ -218,7 +217,12 @@ class TestCSVUploadSuccess:
     @patch("sca_data.db.bronze.ingestion._ensure_schema")
     @patch("sca_data.db.bronze.ingestion._create_table")
     def test_silver_failure_still_returns_200(
-        self, mock_bronze_create, mock_bronze_schema, mock_audit, mock_engine, factory
+        self,
+        mock_bronze_create,
+        mock_bronze_schema,
+        mock_audit,
+        mock_engine,
+        auth_request_factory,
     ):
         mock_engine.return_value = MagicMock()
         failing_silver_fn = MagicMock(side_effect=Exception("Silver error"))
@@ -228,7 +232,7 @@ class TestCSVUploadSuccess:
         ):
             with patch("sca_data.db.silver.ingestion_silver._ensure_schema"):
                 view = ProgramasUploadView.as_view()
-                request = factory.post(
+                request = auth_request_factory.post(
                     "/api/import/programas/",
                     {"file": _csv_file("programas")},
                     format="multipart",
@@ -241,7 +245,12 @@ class TestCSVUploadSuccess:
     @patch("sca_data.db.bronze.ingestion._ensure_schema")
     @patch("sca_data.db.bronze.ingestion._create_table")
     def test_silver_fn_called_when_in_pipeline(
-        self, mock_bronze_create, mock_bronze_schema, mock_audit, mock_engine, factory
+        self,
+        mock_bronze_create,
+        mock_bronze_schema,
+        mock_audit,
+        mock_engine,
+        auth_request_factory,
     ):
         mock_engine.return_value = MagicMock()
         silver_fn = MagicMock()
@@ -250,7 +259,7 @@ class TestCSVUploadSuccess:
         ):
             with patch("sca_data.db.silver.ingestion_silver._ensure_schema"):
                 view = ProgramasUploadView.as_view()
-                request = factory.post(
+                request = auth_request_factory.post(
                     "/api/import/programas/",
                     {"file": _csv_file("programas")},
                     format="multipart",
@@ -264,11 +273,16 @@ class TestCSVUploadSuccess:
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.silver.ingestion_silver.PIPELINE", [])
     def test_bronze_create_called_with_correct_table_name(
-        self, mock_bronze_create, mock_bronze_schema, mock_audit, mock_engine, factory
+        self,
+        mock_bronze_create,
+        mock_bronze_schema,
+        mock_audit,
+        mock_engine,
+        auth_request_factory,
     ):
         mock_engine.return_value = MagicMock()
         view = MateriaisUploadView.as_view()
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/materiais/",
             {"file": _csv_file("materiais")},
             format="multipart",
@@ -283,11 +297,16 @@ class TestCSVUploadSuccess:
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.silver.ingestion_silver.PIPELINE", [])
     def test_audit_success_logged_on_ingest(
-        self, mock_bronze_create, mock_bronze_schema, mock_audit, mock_engine, factory
+        self,
+        mock_bronze_create,
+        mock_bronze_schema,
+        mock_audit,
+        mock_engine,
+        auth_request_factory,
     ):
         mock_engine.return_value = MagicMock()
         view = ProgramasUploadView.as_view()
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/programas/",
             {"file": _csv_file("programas")},
             format="multipart",
@@ -340,11 +359,16 @@ class TestEachEndpointAcceptsItsOwnType:
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.silver.ingestion_silver.PIPELINE", [])
     def test_fornecedores_accepts_fornecedores_csv(
-        self, mock_bronze_create, mock_bronze_schema, mock_audit, mock_engine, factory
+        self,
+        mock_bronze_create,
+        mock_bronze_schema,
+        mock_audit,
+        mock_engine,
+        auth_request_factory,
     ):
         mock_engine.return_value = MagicMock()
         view = FornecedoresUploadView.as_view()
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/fornecedores/",
             {"file": _csv_file("fornecedores")},
             format="multipart",
@@ -352,9 +376,9 @@ class TestEachEndpointAcceptsItsOwnType:
         response = view(request)
         assert response.status_code == 200
 
-    def test_fornecedores_rejects_programas_csv(self, factory):
+    def test_fornecedores_rejects_programas_csv(self, auth_request_factory):
         view = FornecedoresUploadView.as_view()
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/fornecedores/",
             {"file": _csv_file("programas")},
             format="multipart",
@@ -369,11 +393,16 @@ class TestEachEndpointAcceptsItsOwnType:
     @patch("sca_data.db.bronze.ingestion._create_table")
     @patch("sca_data.db.silver.ingestion_silver.PIPELINE", [])
     def test_tempo_tarefas_accepts_its_own_csv(
-        self, mock_bronze_create, mock_bronze_schema, mock_audit, mock_engine, factory
+        self,
+        mock_bronze_create,
+        mock_bronze_schema,
+        mock_audit,
+        mock_engine,
+        auth_request_factory,
     ):
         mock_engine.return_value = MagicMock()
         view = TempoTarefasUploadView.as_view()
-        request = factory.post(
+        request = auth_request_factory.post(
             "/api/import/tempo-tarefas/",
             {"file": _csv_file("tempo_tarefas")},
             format="multipart",

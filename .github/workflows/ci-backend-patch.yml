@@ -1,0 +1,98 @@
+# Trecho a adicionar/modificar no sca-server/.github/workflows/ci.yml
+#
+# ATENÇÃO: este arquivo é apenas o TRECHO que muda — não substitua o ci.yml inteiro.
+# Localize os jobs de pytest no seu ci.yml e aplique as mudanças abaixo.
+#
+# ─── MUDANÇA 1: adicionar permissions no topo do ci.yml ───────────────────────
+#
+# permissions:
+#   contents: read
+#   pages: write        # ← adicionar
+#   id-token: write     # ← adicionar
+#
+# ─── MUDANÇA 2: no job de testes unitários ────────────────────────────────────
+# Localizar o step que roda pytest (unitários) e adicionar os flags de relatório:
+
+      # ANTES:
+      # - name: Run unit tests
+      #   run: pytest -m "not integration" -v
+
+      # DEPOIS:
+      - name: Run unit tests
+        run: |
+          pytest -m "not integration" \
+            --html=pytest-report/unit/index.html \
+            --self-contained-html \
+            --json-report \
+            --json-report-file=pytest-report/unit/results.json \
+            -v
+
+# ─── MUDANÇA 3: no job de testes de integração ────────────────────────────────
+# Localizar o step que roda pytest -m integration e adicionar os flags:
+
+      # ANTES:
+      # - name: Run integration tests
+      #   run: DB_HOST=postgres pytest -m integration -v
+
+      # DEPOIS:
+      - name: Run integration tests
+        run: |
+          DB_HOST=postgres pytest -m integration \
+            --html=pytest-report/integration/index.html \
+            --self-contained-html \
+            --json-report \
+            --json-report-file=pytest-report/integration/results.json \
+            -v
+
+# ─── MUDANÇA 4: upload do artefato (adicionar ao final do job de testes) ──────
+
+      - name: Upload pytest report
+        uses: actions/upload-artifact@v4
+        if: always()    # publica mesmo quando testes falham
+        with:
+          name: pytest-report
+          path: pytest-report/
+          retention-days: 30
+
+      - name: Step Summary
+        if: always()
+        run: |
+          echo "## Resultados dos Testes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Suite | Resultado |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+
+          # Unitários
+          if [ -f pytest-report/unit/results.json ]; then
+            PASSED=$(python3 -c "import json; d=json.load(open('pytest-report/unit/results.json')); print(d['summary'].get('passed', 0))")
+            FAILED=$(python3 -c "import json; d=json.load(open('pytest-report/unit/results.json')); print(d['summary'].get('failed', 0))")
+            echo "| Unitários | ✅ $PASSED passed / ❌ $FAILED failed |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Integração
+          if [ -f pytest-report/integration/results.json ]; then
+            PASSED=$(python3 -c "import json; d=json.load(open('pytest-report/integration/results.json')); print(d['summary'].get('passed', 0))")
+            FAILED=$(python3 -c "import json; d=json.load(open('pytest-report/integration/results.json')); print(d['summary'].get('failed', 0))")
+            XFAIL=$(python3 -c "import json; d=json.load(open('pytest-report/integration/results.json')); print(d['summary'].get('xfailed', 0))")
+            echo "| Integração | ✅ $PASSED passed / ❌ $FAILED failed / ⏭ $XFAIL xfail |" >> $GITHUB_STEP_SUMMARY
+          fi
+
+# ─── MUDANÇA 5: instalar pytest-json-report (requirements.txt ou pip install) ─
+# Adicionar ao requirements.txt do backend:
+#   pytest-json-report
+#
+# Ou ao step de instalação de dependências no ci.yml:
+#   pip install pytest-json-report
+
+# ─── ESTRUTURA FINAL do artefato ──────────────────────────────────────────────
+# pytest-report/
+# ├── unit/
+# │   ├── index.html    ← relatório HTML dos testes unitários
+# │   └── results.json  ← JSON para o Step Summary
+# └── integration/
+#     ├── index.html    ← relatório HTML dos testes de integração
+#     └── results.json  ← JSON para o Step Summary
+#
+# GitHub Pages vai servir:
+#   https://<org>.github.io/sca-server/unit/
+#   https://<org>.github.io/sca-server/integration/

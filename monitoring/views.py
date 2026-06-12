@@ -5,22 +5,10 @@ from rest_framework.views import APIView
 
 from monitoring.selectors import get_execucoes_carga
 from monitoring.serializers import FatoExecucaoCargaSerializer
+from users.access_control import PROFILE_TABLES_ACCESS
 from users.permissions import CanAccessMonitoring, _get_permissao
 
 _VALID_STATUSES = {"SUCCESS", "FAILED", "PARTIAL"}
-
-_ALLOWED_TABLES_BY_PROFILE: dict = {
-    "super_admin": None,
-    "financeiro": {"programas", "projetos", "tarefas_projeto", "tempo_tarefas"},
-    "compras": {
-        "fornecedores",
-        "pedidos_compra",
-        "solicitacoes_compra",
-        "compras_projeto",
-    },
-    "almoxarifado": {"materiais", "empenho_materiais", "estoque_materiais_projeto"},
-    "projetos": {"projetos", "tarefas_projeto", "tempo_tarefas"},
-}
 
 
 class ExecucaoCargaView(APIView):
@@ -68,7 +56,7 @@ class ExecucaoCargaView(APIView):
         )
 
         perfil = _get_permissao(request.user)
-        allowed_tables = _ALLOWED_TABLES_BY_PROFILE.get(perfil)
+        allowed_tables = PROFILE_TABLES_ACCESS.get(perfil)
         if allowed_tables is not None:
             execucoes = execucoes.filter(tabela__in=allowed_tables)
 
