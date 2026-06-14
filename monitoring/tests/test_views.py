@@ -8,28 +8,6 @@ from monitoring.views import ExecucaoCargaView
 
 
 @pytest.fixture
-def factory(monkeypatch):
-    from users import permissions as perm_mod
-
-    monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "super_admin")
-    base = APIRequestFactory()
-    user = get_user_model()(username="_test", is_active=True)
-
-    class _AuthFactory:
-        def get(self, *args, **kwargs):
-            req = base.get(*args, **kwargs)
-            force_authenticate(req, user=user)
-            return req
-
-        def post(self, *args, **kwargs):
-            req = base.post(*args, **kwargs)
-            force_authenticate(req, user=user)
-            return req
-
-    return _AuthFactory()
-
-
-@pytest.fixture
 def mock_execucoes():
     execucao = MagicMock()
     execucao.id = 1
@@ -47,33 +25,39 @@ def mock_execucoes():
 
 
 class TestExecucaoCargaViewValidation:
-    def test_invalid_status_returns_400(self, factory):
+    def test_invalid_status_returns_400(self, auth_request_factory):
         view = ExecucaoCargaView.as_view()
-        request = factory.get("/api/monitoring/execucoes/", {"status": "INVALIDO"})
+        request = auth_request_factory.get(
+            "/api/monitoring/execucoes/", {"status": "INVALIDO"}
+        )
         response = view(request)
         assert response.status_code == 400
         assert "error" in response.data
 
-    def test_invalid_status_message_lists_valid_options(self, factory):
+    def test_invalid_status_message_lists_valid_options(self, auth_request_factory):
         view = ExecucaoCargaView.as_view()
-        request = factory.get("/api/monitoring/execucoes/", {"status": "INVALIDO"})
+        request = auth_request_factory.get(
+            "/api/monitoring/execucoes/", {"status": "INVALIDO"}
+        )
         response = view(request)
         assert "FAILED" in response.data["error"]
         assert "PARTIAL" in response.data["error"]
         assert "SUCCESS" in response.data["error"]
 
-    def test_invalid_data_inicio_returns_400(self, factory):
+    def test_invalid_data_inicio_returns_400(self, auth_request_factory):
         view = ExecucaoCargaView.as_view()
-        request = factory.get(
+        request = auth_request_factory.get(
             "/api/monitoring/execucoes/", {"data_inicio": "not-a-date"}
         )
         response = view(request)
         assert response.status_code == 400
         assert "data_inicio" in response.data["error"]
 
-    def test_invalid_data_fim_returns_400(self, factory):
+    def test_invalid_data_fim_returns_400(self, auth_request_factory):
         view = ExecucaoCargaView.as_view()
-        request = factory.get("/api/monitoring/execucoes/", {"data_fim": "31-12-2025"})
+        request = auth_request_factory.get(
+            "/api/monitoring/execucoes/", {"data_fim": "31-12-2025"}
+        )
         response = view(request)
         assert response.status_code == 400
         assert "data_fim" in response.data["error"]
@@ -82,23 +66,23 @@ class TestExecucaoCargaViewValidation:
 class TestExecucaoCargaViewSuccess:
     @patch("monitoring.views.get_execucoes_carga")
     @patch("monitoring.views.FatoExecucaoCargaSerializer")
-    def test_returns_200(self, mock_serializer, mock_selector, factory):
+    def test_returns_200(self, mock_serializer, mock_selector, auth_request_factory):
         mock_selector.return_value = []
         mock_serializer.return_value.data = []
         view = ExecucaoCargaView.as_view()
-        request = factory.get("/api/monitoring/execucoes/")
+        request = auth_request_factory.get("/api/monitoring/execucoes/")
         response = view(request)
         assert response.status_code == 200
 
     @patch("monitoring.views.get_execucoes_carga")
     @patch("monitoring.views.FatoExecucaoCargaSerializer")
     def test_response_has_count_and_results(
-        self, mock_serializer, mock_selector, factory
+        self, mock_serializer, mock_selector, auth_request_factory
     ):
         mock_selector.return_value = []
         mock_serializer.return_value.data = []
         view = ExecucaoCargaView.as_view()
-        request = factory.get("/api/monitoring/execucoes/")
+        request = auth_request_factory.get("/api/monitoring/execucoes/")
         response = view(request)
         assert "count" in response.data
         assert "results" in response.data
@@ -106,22 +90,24 @@ class TestExecucaoCargaViewSuccess:
     @patch("monitoring.views.get_execucoes_carga")
     @patch("monitoring.views.FatoExecucaoCargaSerializer")
     def test_count_matches_results_length(
-        self, mock_serializer, mock_selector, factory
+        self, mock_serializer, mock_selector, auth_request_factory
     ):
         mock_selector.return_value = []
         mock_serializer.return_value.data = [MagicMock(), MagicMock()]
         view = ExecucaoCargaView.as_view()
-        request = factory.get("/api/monitoring/execucoes/")
+        request = auth_request_factory.get("/api/monitoring/execucoes/")
         response = view(request)
         assert response.data["count"] == 2
 
     @patch("monitoring.views.get_execucoes_carga")
     @patch("monitoring.views.FatoExecucaoCargaSerializer")
-    def test_empty_results_returns_200(self, mock_serializer, mock_selector, factory):
+    def test_empty_results_returns_200(
+        self, mock_serializer, mock_selector, auth_request_factory
+    ):
         mock_selector.return_value = []
         mock_serializer.return_value.data = []
         view = ExecucaoCargaView.as_view()
-        request = factory.get("/api/monitoring/execucoes/")
+        request = auth_request_factory.get("/api/monitoring/execucoes/")
         response = view(request)
         assert response.status_code == 200
         assert response.data["count"] == 0
@@ -130,12 +116,14 @@ class TestExecucaoCargaViewSuccess:
     @patch("monitoring.views.get_execucoes_carga")
     @patch("monitoring.views.FatoExecucaoCargaSerializer")
     def test_status_filter_passed_to_selector(
-        self, mock_serializer, mock_selector, factory
+        self, mock_serializer, mock_selector, auth_request_factory
     ):
         mock_selector.return_value = []
         mock_serializer.return_value.data = []
         view = ExecucaoCargaView.as_view()
-        request = factory.get("/api/monitoring/execucoes/", {"status": "FAILED"})
+        request = auth_request_factory.get(
+            "/api/monitoring/execucoes/", {"status": "FAILED"}
+        )
         view(request)
         mock_selector.assert_called_once()
         _, kwargs = mock_selector.call_args
@@ -144,14 +132,14 @@ class TestExecucaoCargaViewSuccess:
     @patch("monitoring.views.get_execucoes_carga")
     @patch("monitoring.views.FatoExecucaoCargaSerializer")
     def test_date_filters_passed_to_selector(
-        self, mock_serializer, mock_selector, factory
+        self, mock_serializer, mock_selector, auth_request_factory
     ):
         import datetime
 
         mock_selector.return_value = []
         mock_serializer.return_value.data = []
         view = ExecucaoCargaView.as_view()
-        request = factory.get(
+        request = auth_request_factory.get(
             "/api/monitoring/execucoes/",
             {"data_inicio": "2025-01-01", "data_fim": "2025-12-31"},
         )
@@ -162,24 +150,30 @@ class TestExecucaoCargaViewSuccess:
 
     @patch("monitoring.views.get_execucoes_carga")
     @patch("monitoring.views.FatoExecucaoCargaSerializer")
-    def test_valid_statuses_accepted(self, mock_serializer, mock_selector, factory):
+    def test_valid_statuses_accepted(
+        self, mock_serializer, mock_selector, auth_request_factory
+    ):
         mock_selector.return_value = []
         mock_serializer.return_value.data = []
         view = ExecucaoCargaView.as_view()
         for status in ("SUCCESS", "FAILED", "PARTIAL"):
-            request = factory.get("/api/monitoring/execucoes/", {"status": status})
+            request = auth_request_factory.get(
+                "/api/monitoring/execucoes/", {"status": status}
+            )
             response = view(request)
             assert response.status_code == 200
 
     @patch("monitoring.views.get_execucoes_carga")
     @patch("monitoring.views.FatoExecucaoCargaSerializer")
     def test_tabela_filter_passed_to_selector(
-        self, mock_serializer, mock_selector, factory
+        self, mock_serializer, mock_selector, auth_request_factory
     ):
         mock_selector.return_value = []
         mock_serializer.return_value.data = []
         view = ExecucaoCargaView.as_view()
-        request = factory.get("/api/monitoring/execucoes/", {"tabela": "materiais"})
+        request = auth_request_factory.get(
+            "/api/monitoring/execucoes/", {"tabela": "materiais"}
+        )
         view(request)
         _, kwargs = mock_selector.call_args
         assert kwargs["tabela"] == "materiais"
@@ -187,12 +181,14 @@ class TestExecucaoCargaViewSuccess:
     @patch("monitoring.views.get_execucoes_carga")
     @patch("monitoring.views.FatoExecucaoCargaSerializer")
     def test_fonte_filter_passed_to_selector(
-        self, mock_serializer, mock_selector, factory
+        self, mock_serializer, mock_selector, auth_request_factory
     ):
         mock_selector.return_value = []
         mock_serializer.return_value.data = []
         view = ExecucaoCargaView.as_view()
-        request = factory.get("/api/monitoring/execucoes/", {"fonte": "csv_upload"})
+        request = auth_request_factory.get(
+            "/api/monitoring/execucoes/", {"fonte": "csv_upload"}
+        )
         view(request)
         _, kwargs = mock_selector.call_args
         assert kwargs["fonte"] == "csv_upload"
@@ -221,7 +217,9 @@ class TestExecucaoCargaViewPerfilFilter:
     ):
         import monitoring.views as monitoring_views_mod
         from users import permissions as perm_mod
-        from monitoring.views import _ALLOWED_TABLES_BY_PROFILE
+        from users.access_control import (
+            PROFILE_TABLES_ACCESS as _ALLOWED_TABLES_BY_PROFILE,
+        )
 
         monkeypatch.setattr(perm_mod, "_get_permissao", lambda u: "compras")
         monkeypatch.setattr(monitoring_views_mod, "_get_permissao", lambda u: "compras")

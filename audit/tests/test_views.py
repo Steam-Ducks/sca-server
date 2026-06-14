@@ -1,15 +1,11 @@
-import pytest
-from unittest.mock import patch, MagicMock
 import datetime
+import pytest
+from unittest.mock import MagicMock, patch
+
 from django.contrib.auth import get_user_model
-from rest_framework.test import APIRequestFactory, force_authenticate
+from rest_framework.test import force_authenticate
 
 from audit.views import AuditExecutionLogTableView
-
-
-@pytest.fixture
-def factory():
-    return APIRequestFactory()
 
 
 @pytest.fixture
@@ -19,13 +15,13 @@ def view():
 
 class TestAuditExecutionLogTableView:
     @patch("audit.views.AuditExecutionLog.objects")
-    def test_returns_200(self, mock_objects, factory, view, api_user):
+    def test_returns_200(self, mock_objects, api_request_factory, view, api_user):
         mock_objects.all.return_value.filter.return_value = (
             mock_objects.all.return_value
         )
         mock_objects.all.return_value.order_by.return_value = []
 
-        request = factory.get("/api/audit/")
+        request = api_request_factory.get("/api/audit/")
         force_authenticate(request, user=api_user)
         response = view(request)
 
@@ -33,53 +29,59 @@ class TestAuditExecutionLogTableView:
 
     @patch("audit.views.AuditExecutionLog.objects")
     def test_results_ordered_by_started_at_desc(
-        self, mock_objects, factory, view, api_user
+        self, mock_objects, api_request_factory, view, api_user
     ):
         qs = MagicMock()
         mock_objects.all.return_value = qs
         qs.filter.return_value = qs
         qs.order_by.return_value = []
 
-        request = factory.get("/api/audit/")
+        request = api_request_factory.get("/api/audit/")
         force_authenticate(request, user=api_user)
         view(request)
 
         qs.order_by.assert_called_with("-started_at")
 
     @patch("audit.views.AuditExecutionLog.objects")
-    def test_filters_by_status(self, mock_objects, factory, view, api_user):
+    def test_filters_by_status(self, mock_objects, api_request_factory, view, api_user):
         qs = MagicMock()
         mock_objects.all.return_value = qs
         qs.filter.return_value = qs
         qs.order_by.return_value = []
 
-        request = factory.get("/api/audit/", {"status": "SUCCESS"})
+        request = api_request_factory.get("/api/audit/", {"status": "SUCCESS"})
         force_authenticate(request, user=api_user)
         view(request)
 
         qs.filter.assert_any_call(status="SUCCESS")
 
     @patch("audit.views.AuditExecutionLog.objects")
-    def test_filters_by_operation(self, mock_objects, factory, view, api_user):
+    def test_filters_by_operation(
+        self, mock_objects, api_request_factory, view, api_user
+    ):
         qs = MagicMock()
         mock_objects.all.return_value = qs
         qs.filter.return_value = qs
         qs.order_by.return_value = []
 
-        request = factory.get("/api/audit/", {"operation": "INGEST"})
+        request = api_request_factory.get("/api/audit/", {"operation": "INGEST"})
         force_authenticate(request, user=api_user)
         view(request)
 
         qs.filter.assert_any_call(operation="INGEST")
 
     @patch("audit.views.AuditExecutionLog.objects")
-    def test_filters_by_started_at_gte(self, mock_objects, factory, view, api_user):
+    def test_filters_by_started_at_gte(
+        self, mock_objects, api_request_factory, view, api_user
+    ):
         qs = MagicMock()
         mock_objects.all.return_value = qs
         qs.filter.return_value = qs
         qs.order_by.return_value = []
 
-        request = factory.get("/api/audit/", {"started_at_gte": "2024-01-01T00:00:00"})
+        request = api_request_factory.get(
+            "/api/audit/", {"started_at_gte": "2024-01-01T00:00:00"}
+        )
         force_authenticate(request, user=api_user)
         view(request)
 
@@ -88,13 +90,15 @@ class TestAuditExecutionLogTableView:
         assert any("started_at__gte" in kw for kw in call_kwargs)
 
     @patch("audit.views.AuditExecutionLog.objects")
-    def test_filters_by_finalized_at_lte(self, mock_objects, factory, view, api_user):
+    def test_filters_by_finalized_at_lte(
+        self, mock_objects, api_request_factory, view, api_user
+    ):
         qs = MagicMock()
         mock_objects.all.return_value = qs
         qs.filter.return_value = qs
         qs.order_by.return_value = []
 
-        request = factory.get(
+        request = api_request_factory.get(
             "/api/audit/", {"finalized_at_lte": "2024-01-31T23:59:59"}
         )
         force_authenticate(request, user=api_user)
@@ -106,14 +110,16 @@ class TestAuditExecutionLogTableView:
 
     @patch("audit.views.AuditExecutionLog.objects")
     def test_invalid_started_at_gte_ignored(
-        self, mock_objects, factory, view, api_user
+        self, mock_objects, api_request_factory, view, api_user
     ):
         qs = MagicMock()
         mock_objects.all.return_value = qs
         qs.filter.return_value = qs
         qs.order_by.return_value = []
 
-        request = factory.get("/api/audit/", {"started_at_gte": "not-a-date"})
+        request = api_request_factory.get(
+            "/api/audit/", {"started_at_gte": "not-a-date"}
+        )
         force_authenticate(request, user=api_user)
         view(request)
 
@@ -122,14 +128,16 @@ class TestAuditExecutionLogTableView:
 
     @patch("audit.views.AuditExecutionLog.objects")
     def test_invalid_finalized_at_lte_ignored(
-        self, mock_objects, factory, view, api_user
+        self, mock_objects, api_request_factory, view, api_user
     ):
         qs = MagicMock()
         mock_objects.all.return_value = qs
         qs.filter.return_value = qs
         qs.order_by.return_value = []
 
-        request = factory.get("/api/audit/", {"finalized_at_lte": "not-a-date"})
+        request = api_request_factory.get(
+            "/api/audit/", {"finalized_at_lte": "not-a-date"}
+        )
         force_authenticate(request, user=api_user)
         view(request)
 
@@ -138,14 +146,14 @@ class TestAuditExecutionLogTableView:
 
     @patch("audit.views.AuditExecutionLog.objects")
     def test_no_filters_applied_when_no_params(
-        self, mock_objects, factory, view, api_user
+        self, mock_objects, api_request_factory, view, api_user
     ):
         qs = MagicMock()
         mock_objects.all.return_value = qs
         qs.filter.return_value = qs
         qs.order_by.return_value = []
 
-        request = factory.get("/api/audit/")
+        request = api_request_factory.get("/api/audit/")
         force_authenticate(request, user=api_user)
         view(request)
 
@@ -153,14 +161,14 @@ class TestAuditExecutionLogTableView:
 
     @patch("audit.views.AuditExecutionLog.objects")
     def test_filters_by_programa_from_operation_metadata(
-        self, mock_objects, factory, view, api_user
+        self, mock_objects, api_request_factory, view, api_user
     ):
         qs = MagicMock()
         mock_objects.all.return_value = qs
         qs.filter.return_value = qs
         qs.order_by.return_value = []
 
-        request = factory.get("/api/audit/", {"programa": "Cloud"})
+        request = api_request_factory.get("/api/audit/", {"programa": "Cloud"})
         force_authenticate(request, user=api_user)
         view(request)
 
@@ -175,14 +183,14 @@ class TestAuditExecutionLogTableView:
 
     @patch("audit.views.AuditExecutionLog.objects")
     def test_filters_by_projeto_from_operation_metadata(
-        self, mock_objects, factory, view, api_user
+        self, mock_objects, api_request_factory, view, api_user
     ):
         qs = MagicMock()
         mock_objects.all.return_value = qs
         qs.filter.return_value = qs
         qs.order_by.return_value = []
 
-        request = factory.get("/api/audit/", {"projeto": "Migracao AWS"})
+        request = api_request_factory.get("/api/audit/", {"projeto": "Migracao AWS"})
         force_authenticate(request, user=api_user)
         view(request)
 
@@ -195,13 +203,15 @@ class TestAuditExecutionLogTableView:
         )
 
     @patch("audit.views.AuditExecutionLog.objects")
-    def test_filters_by_periodo(self, mock_objects, factory, view, api_user):
+    def test_filters_by_periodo(
+        self, mock_objects, api_request_factory, view, api_user
+    ):
         qs = MagicMock()
         mock_objects.all.return_value = qs
         qs.filter.return_value = qs
         qs.order_by.return_value = []
 
-        request = factory.get("/api/audit/", {"periodo": "2024-03"})
+        request = api_request_factory.get("/api/audit/", {"periodo": "2024-03"})
         force_authenticate(request, user=api_user)
         view(request)
 
@@ -213,14 +223,14 @@ class TestAuditExecutionLogTableView:
 
     @patch("audit.views.AuditExecutionLog.objects")
     def test_filters_by_data_inicio_and_data_fim(
-        self, mock_objects, factory, view, api_user
+        self, mock_objects, api_request_factory, view, api_user
     ):
         qs = MagicMock()
         mock_objects.all.return_value = qs
         qs.filter.return_value = qs
         qs.order_by.return_value = []
 
-        request = factory.get(
+        request = api_request_factory.get(
             "/api/audit/",
             {"data_inicio": "2024-03-01", "data_fim": "2024-03-31"},
         )
@@ -231,16 +241,18 @@ class TestAuditExecutionLogTableView:
         assert {"started_at__date__gte": datetime.date(2024, 3, 1)} in call_kwargs
         assert {"started_at__date__lte": datetime.date(2024, 3, 31)} in call_kwargs
 
-    def test_periodo_invalido_retorna_400(self, factory, view, api_user):
-        request = factory.get("/api/audit/", {"periodo": "2024-13"})
+    def test_periodo_invalido_retorna_400(self, api_request_factory, view, api_user):
+        request = api_request_factory.get("/api/audit/", {"periodo": "2024-13"})
         force_authenticate(request, user=api_user)
         response = view(request)
 
         assert response.status_code == 400
         assert "periodo" in response.data
 
-    def test_data_inicio_invalida_retorna_400(self, factory, view, api_user):
-        request = factory.get("/api/audit/", {"data_inicio": "31-03-2024"})
+    def test_data_inicio_invalida_retorna_400(
+        self, api_request_factory, view, api_user
+    ):
+        request = api_request_factory.get("/api/audit/", {"data_inicio": "31-03-2024"})
         force_authenticate(request, user=api_user)
         response = view(request)
 
@@ -249,7 +261,7 @@ class TestAuditExecutionLogTableView:
 
     @patch("audit.views.AuditExecutionLog.objects")
     def test_filtra_tabelas_por_perfil_nao_super_admin(
-        self, mock_objects, factory, view, monkeypatch
+        self, mock_objects, api_request_factory, view, monkeypatch
     ):
         import audit.views as audit_views_mod
         from users import permissions as perm_mod
@@ -263,11 +275,13 @@ class TestAuditExecutionLogTableView:
         qs.order_by.return_value = []
 
         user = get_user_model()(username="_compras", is_active=True)
-        request = factory.get("/api/audit/")
+        request = api_request_factory.get("/api/audit/")
         force_authenticate(request, user=user)
         response = view(request)
 
-        from audit.views import _ALLOWED_TABLES_BY_PROFILE
+        from users.access_control import (
+            PROFILE_TABLES_ACCESS as _ALLOWED_TABLES_BY_PROFILE,
+        )
 
         assert response.status_code == 200
         calls_as_text = [str(c) for c in qs.filter.call_args_list]

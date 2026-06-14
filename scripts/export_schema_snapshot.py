@@ -6,6 +6,10 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
+_prom_dir = os.environ.get("PROMETHEUS_MULTIPROC_DIR")
+if _prom_dir:
+    os.makedirs(_prom_dir, exist_ok=True)
+
 import django  # noqa: E402
 
 django.setup()

@@ -3,10 +3,12 @@ import os
 import sys
 from datetime import datetime
 
-# Insere o root do projeto no path para que 'config.settings' seja encontrado
-# tanto no Docker (/app) quanto no CI (caminho do runner)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+
+_prom_dir = os.environ.get("PROMETHEUS_MULTIPROC_DIR")
+if _prom_dir:
+    os.makedirs(_prom_dir, exist_ok=True)
 
 import django  # noqa: E402
 
