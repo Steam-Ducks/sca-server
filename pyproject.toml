@@ -11,9 +11,18 @@ markers = [
 # Rodar unitários (padrão, SQLite):
 #   pytest -m "not integration"
 #
+# Rodar unitários com cobertura:
+#   coverage run -m pytest -m "not integration"
+#   coverage report         ← valida threshold (fail_under=80 em .coveragerc)
+#   coverage html           ← gera relatório em htmlcov/index.html
+#
 # Rodar integração localmente (PostgreSQL via Docker):
 #   export DB_HOST=localhost DB_USER=test_user DB_PASSWORD=test_password DB_NAME=test_db
 #   pytest -m integration --reuse-db -v
+#
+# Rodar integração com cobertura:
+#   coverage run -m pytest -m integration --reuse-db
+#   coverage report --fail-under=70
 
 [tool.ruff]
 line-length = 88
