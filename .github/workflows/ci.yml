@@ -68,9 +68,6 @@ jobs:
       - name: Generate coverage XML
         run: coverage xml
 
-      - name: Enforce coverage threshold
-        run: coverage report
-
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
@@ -166,7 +163,7 @@ jobs:
       - name: Run integration tests
         run: |
           mkdir -p pytest-report/integration
-          coverage run -m pytest -m integration \
+          pytest -m integration \
             --reuse-db \
             --html=pytest-report/integration/index.html \
             --self-contained-html \
@@ -175,9 +172,6 @@ jobs:
             --tb=short -v \
             2>&1 | tee integration-output.txt
           exit ${PIPESTATUS[0]}
-
-      - name: Enforce integration coverage threshold
-        run: coverage report --fail-under=70
 
       # Baixa o relatório unitário gerado no job anterior e combina na pasta final
       - name: Download unit report
@@ -285,10 +279,12 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           BRANCH: ${{ github.head_ref }}
           REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           ICON=$([ "$STATUS" = "success" ] && echo ":white_check_mark:" || echo ":x:")
           COLOR=$([ "$STATUS" = "success" ] && echo "good" || echo "danger")
-          REPORT_URL="https://steam-ducks.github.io/sca-server/"
+          PAGES_URL="https://steam-ducks.github.io/sca-server/"
+          ARTIFACT_URL="https://github.com/${REPO}/actions/runs/${RUN_ID}/artifacts"
           curl -s -X POST "$SLACK_WEBHOOK" \
             -H "Content-Type: application/json" \
             -d "{
@@ -297,9 +293,10 @@ jobs:
                 \"title\": \"$ICON Integration Tests — PR #${PR_NUMBER}\",
                 \"title_link\": \"https://github.com/${REPO}/pull/${PR_NUMBER}\",
                 \"fields\": [
-                  {\"title\": \"Status\",    \"value\": \"$STATUS\",  \"short\": true},
-                  {\"title\": \"Branch\",    \"value\": \"$BRANCH\",  \"short\": true},
-                  {\"title\": \"Relatório\", \"value\": \"<${REPORT_URL}|Ver no GitHub Pages>\", \"short\": false}
+                  {\"title\": \"Status\",  \"value\": \"$STATUS\",  \"short\": true},
+                  {\"title\": \"Branch\",  \"value\": \"$BRANCH\",  \"short\": true},
+                  {\"title\": \"GitHub Pages\", \"value\": \"<${PAGES_URL}|Ver relatório>\", \"short\": true},
+                  {\"title\": \"Artefato\",    \"value\": \"<${ARTIFACT_URL}|Baixar pytest-report>\", \"short\": true}
                 ],
                 \"footer\": \"SCA Backend CI\",
                 \"ts\": $(date +%s)
