@@ -271,6 +271,35 @@ jobs:
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           echo "> Relatório HTML: **Actions → Artifacts → pytest-report** ou **GitHub Pages**" >> $GITHUB_STEP_SUMMARY
 
+      - name: Notify Slack
+        if: always()
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          STATUS: ${{ job.status }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BRANCH: ${{ github.head_ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          ICON=$([ "$STATUS" = "success" ] && echo ":white_check_mark:" || echo ":x:")
+          COLOR=$([ "$STATUS" = "success" ] && echo "good" || echo "danger")
+          REPORT_URL="https://steam-ducks.github.io/sca-server/"
+          curl -s -X POST "$SLACK_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"attachments\": [{
+                \"color\": \"$COLOR\",
+                \"title\": \"$ICON Integration Tests — PR #${PR_NUMBER}\",
+                \"title_link\": \"https://github.com/${REPO}/pull/${PR_NUMBER}\",
+                \"fields\": [
+                  {\"title\": \"Status\",    \"value\": \"$STATUS\",  \"short\": true},
+                  {\"title\": \"Branch\",    \"value\": \"$BRANCH\",  \"short\": true},
+                  {\"title\": \"Relatório\", \"value\": \"<${REPORT_URL}|Ver no GitHub Pages>\", \"short\": false}
+                ],
+                \"footer\": \"SCA Backend CI\",
+                \"ts\": $(date +%s)
+              }]
+            }"
+
   # ─── 4. Smoke Test ───────────────────────────────────────────────────────────
   # Inicia o Django com settings_test (AllowAny) e verifica todos os
   # endpoints críticos via httpx. Falha antes do merge se qualquer
