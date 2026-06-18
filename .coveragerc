@@ -1,0 +1,32 @@
+[run]
+source = .
+branch = true
+omit =
+    */migrations/*
+    */tests/*
+    */test_*.py
+    conftest.py
+    manage.py
+    config/asgi.py
+    config/wsgi.py
+    config/settings*.py
+    scripts/*
+    k6/*
+    tests/smoke/*
+    tests/load/*
+
+[report]
+# Minimum coverage threshold — CI fails below this value.
+# Critical apps: users, budget, dashboard, monitoring, imports,
+#                audit, materials, costs, technical_hours, consolidated
+fail_under = 80
+show_missing = true
+precision = 2
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    raise NotImplementedError
+    def __repr__
+
+[html]
+directory = htmlcov

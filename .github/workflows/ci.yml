@@ -68,6 +68,9 @@ jobs:
       - name: Generate coverage XML
         run: coverage xml
 
+      - name: Enforce coverage threshold
+        run: coverage report
+
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
@@ -163,7 +166,7 @@ jobs:
       - name: Run integration tests
         run: |
           mkdir -p pytest-report/integration
-          pytest -m integration \
+          coverage run -m pytest -m integration \
             --reuse-db \
             --html=pytest-report/integration/index.html \
             --self-contained-html \
@@ -172,6 +175,9 @@ jobs:
             --tb=short -v \
             2>&1 | tee integration-output.txt
           exit ${PIPESTATUS[0]}
+
+      - name: Enforce integration coverage threshold
+        run: coverage report --fail-under=70
 
       # Baixa o relatório unitário gerado no job anterior e combina na pasta final
       - name: Download unit report
